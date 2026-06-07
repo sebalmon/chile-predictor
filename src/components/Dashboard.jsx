@@ -87,24 +87,45 @@ export default function Dashboard() {
 
       // ── Partidos de hoy ───────────────────────────────────────
       // Intenta leer de Firestore; si falla, usa datos de ejemplo
+      // ── Partidos de hoy ──
       try {
-        const qPartidos = query(
-          collection(db, "partidos"),
-          where("fecha", "==", hoy)
-        );
-        const snapPartidos = await getDocs(qPartidos);
-        if (!snapPartidos.empty) {
-          setPartidosHoy(
-            snapPartidos.docs.map((d) => ({ id: d.id, ...d.data() }))
-          );
-        } else {
-          // Usar ejemplo si no hay datos reales aún
-          setPartidosHoy(
-            PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy)
-          );
-        }
+      let fechaAmostrar;
+      const hoyDate = new Date(); // hoy real
+      const fechaLimite11 = new Date("2026-06-11T00:00:00");
+
+  // Si aún no hemos llegado al 11 de junio, mostrar los partidos del día 11
+      if (hoyDate < fechaLimite11) {
+      fechaAmostrar = "2026-06-11";
+      } else {
+      fechaAmostrar = hoy;
+      }
+
+      const qPartidos = query(
+      collection(db, "partidos"),
+      where("fecha", "==", fechaAmostrar)
+      );
+      const snapPartidos = await getDocs(qPartidos);
+      if (!snapPartidos.empty) {
+      setPartidosHoy(
+      snapPartidos.docs.map((d) => ({ id: d.id, ...d.data() }))
+      );
+      } else {
+    // Usar datos de ejemplo si no hay en Firestore
+      setPartidosHoy(
+        PARTIDOS_EJEMPLO.filter((p) => p.fecha === fechaAmostrar)
+      );
+     }
       } catch (_) {
-        setPartidosHoy(PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy));
+  // Si falla, usar datos de ejemplo según la fecha calculada
+      let fechaAmostrar;
+      const hoyDate = new Date();
+      const fechaLimite11 = new Date("2026-06-11T00:00:00");
+      if (hoyDate < fechaLimite11) {
+      fechaAmostrar = "2026-06-11";
+      } else {
+      fechaAmostrar = hoy;
+      }
+      setPartidosHoy(PARTIDOS_EJEMPLO.filter((p) => p.fecha === fechaAmostrar));
       }
 
       // ── Pregunta del día ──────────────────────────────────────
