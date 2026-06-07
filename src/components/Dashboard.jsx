@@ -92,6 +92,12 @@ export default function Dashboard() {
       let fechaAmostrar;
       const hoyDate = new Date(); // hoy real
       const fechaLimite11 = new Date("2026-06-11T00:00:00");
+      if (hoyDate < fechaLimite11) {
+  fechaAmostrar = "2026-06-11";
+} else {
+  fechaAmostrar = hoy;
+}
+
 
   // Si aún no hemos llegado al 11 de junio, mostrar los partidos del día 11
       if (hoyDate < fechaLimite11) {
