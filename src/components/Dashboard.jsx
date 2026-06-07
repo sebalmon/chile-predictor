@@ -1,32 +1,32 @@
 import React, { useEffect, useState } from "react";
 import {
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  where,
-  limit,
+  collection, getDocs, orderBy, query, where, limit,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  PARTIDOS_EJEMPLO,
-  PREGUNTAS_EJEMPLO,
-  FRASES_DEL_DIA,
+  PARTIDOS_EJEMPLO, PREGUNTAS_EJEMPLO, FRASES_DEL_DIA,
 } from "../data/sampleData";
-import {
-  hoyStr,
-  ayerStr,
-  formatFecha,
-} from "../utils/helpers";
+import { hoyStr, ayerStr, formatFecha } from "../utils/helpers";
 import PartidoCard from "./PartidoCard";
 import PreguntaCard from "./PreguntaCard";
 import Ranking from "./Ranking";
 import Perfil from "./Perfil";
+import OnboardingModal from "./OnboardingModal";
+import AdminPanel from "./AdminPanel";
 
-// ── Pantalla activa ──────────────────────────────────────────
-const PANTALLAS = { INICIO: "inicio", RANKING: "ranking", PERFIL: "perfil" };
+// ── ADMIN emails (debe coincidir con AdminPanel.jsx) ─────────
+const ADMIN_EMAILS = [
+  "xtokesu@gmail.com", // ← reemplaza con tu email real
+];
+
+const PANTALLAS = {
+  INICIO: "inicio",
+  RANKING: "ranking",
+  PERFIL: "perfil",
+  ADMIN: "admin",
+};
 
 export default function Dashboard() {
   const { firebaseUser, userProfile } = useAuth();
@@ -40,9 +40,9 @@ export default function Dashboard() {
 
   const hoy = hoyStr();
   const ayer = ayerStr();
+  const esAdmin = ADMIN_EMAILS.includes(firebaseUser?.email);
 
   useEffect(() => {
-    // Frase aleatoria
     setFrase(FRASES_DEL_DIA[Math.floor(Math.random() * FRASES_DEL_DIA.length)]);
     cargarDatos();
   }, []);
@@ -50,100 +50,42 @@ export default function Dashboard() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      // ── Ranking general (top 10 en dashboard) ────────────────
-      const qUsuarios = query(
-        collection(db, "usuarios"),
-        orderBy("puntosTotal", "desc"),
-        limit(10)
-      );
-      const snapUsuarios = await getDocs(qUsuarios);
-      setUsuariosRanking(
-        snapUsuarios.docs.map((d) => ({ id: d.id, ...d.data() }))
-      );
+      // Ranking top 10
+      const qU = query(collection(db, "usuarios"), orderBy("puntosTotal", "desc"), limit(10));
+      const snapU = await getDocs(qU);
+      setUsuariosRanking(snapU.docs.map((d) => ({ id: d.id, ...d.data() })));
 
-      // ── Podio del día anterior ────────────────────────────────
-      // Se guarda en colección "puntosDelDia" con { uid, fecha, puntos }
-      // Admin debe calcularlos (o se puede hacer automáticamente)
+      // Podio de ayer
       try {
-        const qAyer = query(
+        const qA = query(
           collection(db, "puntosDelDia"),
           where("fecha", "==", ayer),
           orderBy("puntos", "desc"),
           limit(3)
         );
-        const snapAyer = await getDocs(qAyer);
-        if (!snapAyer.empty) {
-          const podio = await Promise.all(
-            snapAyer.docs.map(async (d) => {
-              const data = d.data();
-              return { ...data };
-            })
-          );
-          setPodioAyer(podio);
+        const snapA = await getDocs(qA);
+        if (!snapA.empty) setPodioAyer(snapA.docs.map((d) => ({ ...d.data() })));
+      } catch (_) {}
+
+      // Partidos de hoy
+      try {
+        const qP = query(collection(db, "partidos"), where("fecha", "==", hoy));
+        const snapP = await getDocs(qP);
+        if (!snapP.empty) {
+          setPartidosHoy(snapP.docs.map((d) => ({ id: d.id, ...d.data() })));
+        } else {
+          setPartidosHoy(PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy));
         }
       } catch (_) {
-        // Sin podio todavía
+        setPartidosHoy(PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy));
       }
 
-      // ── Partidos de hoy ───────────────────────────────────────
-      // Intenta leer de Firestore; si falla, usa datos de ejemplo
-      // ── Partidos de hoy ──
+      // Pregunta de hoy
       try {
-      let fechaAmostrar;
-      const hoyDate = new Date(); // hoy real
-      const fechaLimite11 = new Date("2026-06-11T00:00:00");
-      if (hoyDate < fechaLimite11) {
-  fechaAmostrar = "2026-06-11";
-} else {
-  fechaAmostrar = hoy;
-}
-
-
-  // Si aún no hemos llegado al 11 de junio, mostrar los partidos del día 11
-      if (hoyDate < fechaLimite11) {
-      fechaAmostrar = "2026-06-11";
-      } else {
-      fechaAmostrar = hoy;
-      }
-
-      const qPartidos = query(
-      collection(db, "partidos"),
-      where("fecha", "==", fechaAmostrar)
-      );
-      const snapPartidos = await getDocs(qPartidos);
-      if (!snapPartidos.empty) {
-      setPartidosHoy(
-      snapPartidos.docs.map((d) => ({ id: d.id, ...d.data() }))
-      );
-      } else {
-    // Usar datos de ejemplo si no hay en Firestore
-      setPartidosHoy(
-        PARTIDOS_EJEMPLO.filter((p) => p.fecha === fechaAmostrar)
-      );
-     }
-      } catch (_) {
-  // Si falla, usar datos de ejemplo según la fecha calculada
-      let fechaAmostrar;
-      const hoyDate = new Date();
-      const fechaLimite11 = new Date("2026-06-11T00:00:00");
-      if (hoyDate < fechaLimite11) {
-      fechaAmostrar = "2026-06-11";
-      } else {
-      fechaAmostrar = hoy;
-      }
-      setPartidosHoy(PARTIDOS_EJEMPLO.filter((p) => p.fecha === fechaAmostrar));
-      }
-
-      // ── Pregunta del día ──────────────────────────────────────
-      try {
-        const qPregunta = query(
-          collection(db, "preguntas"),
-          where("fecha", "==", hoy),
-          limit(1)
-        );
-        const snapPregunta = await getDocs(qPregunta);
-        if (!snapPregunta.empty) {
-          setPreguntaHoy({ id: snapPregunta.docs[0].id, ...snapPregunta.docs[0].data() });
+        const qQ = query(collection(db, "preguntas"), where("fecha", "==", hoy), limit(1));
+        const snapQ = await getDocs(qQ);
+        if (!snapQ.empty) {
+          setPreguntaHoy({ id: snapQ.docs[0].id, ...snapQ.docs[0].data() });
         } else {
           const ej = PREGUNTAS_EJEMPLO.find((q) => q.fecha === hoy);
           if (ej) setPreguntaHoy(ej);
@@ -159,49 +101,42 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
+  const handleLogout = async () => { await signOut(auth); };
 
-  // ── Render pantallas secundarias ─────────────────────────────
-  if (pantalla === PANTALLAS.RANKING) {
-    return (
-      <>
-        <TopBar
-          userProfile={userProfile}
-          onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
-          onLogout={handleLogout}
-        />
-        <Ranking onVolver={() => setPantalla(PANTALLAS.INICIO)} />
-        <MenuInferior pantalla={pantalla} setPantalla={setPantalla} />
-      </>
-    );
-  }
-
-  if (pantalla === PANTALLAS.PERFIL) {
-    return (
-      <>
-        <TopBar
-          userProfile={userProfile}
-          onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
-          onLogout={handleLogout}
-        />
-        <Perfil onVolver={() => setPantalla(PANTALLAS.INICIO)} />
-        <MenuInferior pantalla={pantalla} setPantalla={setPantalla} />
-      </>
-    );
-  }
-
-  // ── Dashboard principal ──────────────────────────────────────
   const medallas = ["🥇", "🥈", "🥉"];
 
+  // ── Pantallas secundarias ─────────────────────────────────
+  if (pantalla === PANTALLAS.RANKING) return (
+    <>
+      <TopBar userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)} onLogout={handleLogout} />
+      <Ranking onVolver={() => setPantalla(PANTALLAS.INICIO)} />
+      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} esAdmin={esAdmin} />
+    </>
+  );
+
+  if (pantalla === PANTALLAS.PERFIL) return (
+    <>
+      <TopBar userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)} onLogout={handleLogout} />
+      <Perfil onVolver={() => setPantalla(PANTALLAS.INICIO)} />
+      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} esAdmin={esAdmin} />
+    </>
+  );
+
+  if (pantalla === PANTALLAS.ADMIN) return (
+    <>
+      <TopBar userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)} onLogout={handleLogout} />
+      <AdminPanel onVolver={() => setPantalla(PANTALLAS.INICIO)} />
+      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} esAdmin={esAdmin} />
+    </>
+  );
+
+  // ── Dashboard principal ──────────────────────────────────
   return (
     <>
-      <TopBar
-        userProfile={userProfile}
-        onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
-        onLogout={handleLogout}
-      />
+      {/* Modal de bienvenida (se muestra solo la primera vez) */}
+      <OnboardingModal />
+
+      <TopBar userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)} onLogout={handleLogout} />
 
       <div className="contenedor dashboard-wrapper">
         {/* FRASE DEL DÍA */}
@@ -209,8 +144,7 @@ export default function Dashboard() {
 
         {cargando ? (
           <div className="loading-pantalla" style={{ minHeight: "200px" }}>
-            <span className="spinner">⚙</span>
-            <p>CARGANDO...</p>
+            <span className="spinner">⚙</span><p>CARGANDO...</p>
           </div>
         ) : (
           <>
@@ -219,7 +153,6 @@ export default function Dashboard() {
             {podioAyer.length > 0 ? (
               <div className="caja-pixel mb-16">
                 <div className="podio">
-                  {/* 2do lugar */}
                   {podioAyer[1] && (
                     <div className="podio-lugar podio-2">
                       <span className="podio-avatar">{podioAyer[1].avatarEmoji || "?"}</span>
@@ -228,7 +161,6 @@ export default function Dashboard() {
                       <div className="podio-bloque">2</div>
                     </div>
                   )}
-                  {/* 1er lugar */}
                   {podioAyer[0] && (
                     <div className="podio-lugar podio-1">
                       <span style={{ fontSize: "10px" }}>👑</span>
@@ -238,7 +170,6 @@ export default function Dashboard() {
                       <div className="podio-bloque">1</div>
                     </div>
                   )}
-                  {/* 3er lugar */}
                   {podioAyer[2] && (
                     <div className="podio-lugar podio-3">
                       <span className="podio-avatar">{podioAyer[2].avatarEmoji || "?"}</span>
@@ -252,7 +183,7 @@ export default function Dashboard() {
             ) : (
               <div className="caja-pixel mb-16 text-center">
                 <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>
-                  Sin datos todavía. ¡El podio aparecerá aquí mañana!
+                  Sin datos todavía. ¡El podio aparecerá mañana!
                 </p>
               </div>
             )}
@@ -262,34 +193,17 @@ export default function Dashboard() {
             <div className="caja-pixel mb-16">
               <table className="ranking-tabla">
                 <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>JUGADOR</th>
-                    <th style={{ textAlign: "right" }}>PTS</th>
-                  </tr>
+                  <tr><th>#</th><th>JUGADOR</th><th style={{ textAlign: "right" }}>PTS</th></tr>
                 </thead>
                 <tbody>
                   {usuariosRanking.slice(0, 5).map((u, i) => (
-                    <tr
-                      key={u.id}
-                      className={u.uid === firebaseUser?.uid ? "ranking-fila-yo" : ""}
-                    >
-                      <td className="ranking-pos">
-                        {i < 3 ? medallas[i] : i + 1}
-                      </td>
+                    <tr key={u.id} className={u.uid === firebaseUser?.uid ? "ranking-fila-yo" : ""}>
+                      <td className="ranking-pos">{i < 3 ? medallas[i] : i + 1}</td>
                       <td>
-                        <span style={{ fontSize: "14px", marginRight: "6px" }}>
-                          {u.avatarEmoji}
-                        </span>
+                        <span style={{ fontSize: "14px", marginRight: "6px" }}>{u.avatarEmoji}</span>
                         <span style={{ fontSize: "7px" }}>{u.nickname}</span>
                         {u.uid === firebaseUser?.uid && (
-                          <span style={{
-                            marginLeft: "6px",
-                            fontSize: "5px",
-                            background: "var(--verde-claro)",
-                            color: "var(--negro)",
-                            padding: "1px 3px",
-                          }}>TÚ</span>
+                          <span style={{ marginLeft: "6px", fontSize: "5px", background: "var(--verde-claro)", color: "var(--negro)", padding: "1px 3px" }}>TÚ</span>
                         )}
                       </td>
                       <td style={{ textAlign: "right" }}>
@@ -309,20 +223,13 @@ export default function Dashboard() {
             </div>
 
             {/* PARTIDOS DE HOY */}
-            <div className="seccion-titulo">
-              ⚽ PARTIDOS DE HOY — {formatFecha(hoy)}
-            </div>
+            <div className="seccion-titulo">⚽ PARTIDOS DE HOY — {formatFecha(hoy)}</div>
             {partidosHoy.length > 0 ? (
-              partidosHoy.map((p) => (
-                <PartidoCard key={p.id} partido={p} />
-              ))
+              partidosHoy.map((p) => <PartidoCard key={p.id} partido={p} />)
             ) : (
               <div className="caja-pixel mb-16 text-center">
                 <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>
-                  No hay partidos programados para hoy.
-                  <br /><br />
-                  Agrega partidos en Firebase Console en la
-                  colección "partidos".
+                  No hay partidos hoy. Agrégalos en Firebase Console.
                 </p>
               </div>
             )}
@@ -338,13 +245,12 @@ export default function Dashboard() {
         )}
       </div>
 
-      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} />
+      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} esAdmin={esAdmin} />
     </>
   );
 }
 
 // ── Sub-componentes ──────────────────────────────────────────
-
 function TopBar({ userProfile, onPerfil, onLogout }) {
   return (
     <div className="topbar">
@@ -353,15 +259,9 @@ function TopBar({ userProfile, onPerfil, onLogout }) {
         <span className="nickname-topbar">{userProfile?.nickname}</span>
         <div className="avatar-topbar" onClick={onPerfil}>
           <span className="avatar-emoji">{userProfile?.avatarEmoji || "?"}</span>
-          <span className="avatar-tooltip">
-            {userProfile?.nombreReal || "Usuario"}
-          </span>
+          <span className="avatar-tooltip">{userProfile?.nombreReal || "Usuario"}</span>
         </div>
-        <button
-          className="btn-pixel btn-rojo"
-          style={{ fontSize: "6px", padding: "5px 8px" }}
-          onClick={onLogout}
-        >
+        <button className="btn-pixel btn-rojo" style={{ fontSize: "6px", padding: "5px 8px" }} onClick={onLogout}>
           SALIR
         </button>
       </div>
@@ -369,15 +269,13 @@ function TopBar({ userProfile, onPerfil, onLogout }) {
   );
 }
 
-function MenuInferior({ pantalla, setPantalla }) {
+function MenuInferior({ pantalla, setPantalla, esAdmin }) {
   const items = [
     { id: PANTALLAS.INICIO, label: "INICIO", icono: "🏠" },
     { id: PANTALLAS.RANKING, label: "RANKING", icono: "📊" },
     { id: PANTALLAS.PERFIL, label: "PERFIL", icono: "👤" },
+    ...(esAdmin ? [{ id: PANTALLAS.ADMIN, label: "ADMIN", icono: "⚙" }] : []),
   ];
-
-  // Definir PANTALLAS aquí para que esté disponible
-  const _PANTALLAS = { INICIO: "inicio", RANKING: "ranking", PERFIL: "perfil" };
 
   return (
     <nav className="menu-inferior">
@@ -386,6 +284,7 @@ function MenuInferior({ pantalla, setPantalla }) {
           key={item.id}
           className={`menu-item ${pantalla === item.id ? "activo" : ""}`}
           onClick={() => setPantalla(item.id)}
+          style={item.id === PANTALLAS.ADMIN ? { color: "var(--rojo-chile)" } : {}}
         >
           <span className="menu-item-icono">{item.icono}</span>
           {item.label}
