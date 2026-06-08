@@ -6,75 +6,71 @@ export default function Splash() {
   const [mostrar3, setMostrar3] = useState(false);
   const [mostrar4, setMostrar4] = useState(false);
   const [mostrarTexto, setMostrarTexto] = useState(false);
+  const [mostrarStart, setMostrarStart] = useState(false);
 
   useEffect(() => {
-    const timer2 = setTimeout(() => setMostrar2(true), 1000);   // aparece inicio2 a 1s
-    const timer3 = setTimeout(() => setMostrar3(true), 1500);   // aparece inicio3 a 1.5s
-    
-    const timerFin = setTimeout(() => {
-  // 1. Primero mostramos la imagen 4 (sin ocultar las anteriores)
-  setMostrar4(true);
-  // 2. Esperamos 50 milisegundos para que la imagen 4 ya esté pintada
-  setTimeout(() => {
-    setMostrar1(false);
-    setMostrar2(false);
-    setMostrar3(false);
-    setMostrarTexto(true);
-  }, 50);
-}, 2000);
+    // Temporizadores (todos en milisegundos)
+    const timerInicio2 = setTimeout(() => setMostrar2(true), 1500);   // 1.5s
+    const timerInicio3 = setTimeout(() => setMostrar3(true), 2500);   // 2.5s
+
+    // Pre-cargar inicio4 antes de mostrarlo (evita parpadeo)
+    const preload = new Image();
+    preload.src = "/inicio4.jpg";
+
+    const timerTransicion = setTimeout(() => {
+      // Mostrar inicio4 primero (sin ocultar aún)
+      setMostrar4(true);
+      // Esperar 100ms para que se pinte
+      setTimeout(() => {
+        setMostrar1(false);
+        setMostrar2(false);
+        setMostrar3(false);
+        setMostrarTexto(true);
+        setMostrarStart(true);
+      }, 100);
+    }, 3400); // 3.4s
 
     return () => {
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timerFin);
+      clearTimeout(timerInicio2);
+      clearTimeout(timerInicio3);
+      clearTimeout(timerTransicion);
     };
   }, []);
 
   return (
     <div className="splash-container-unificado">
-      {/* Imagen 1 - fondo inicial (0s a 2s) */}
+      {/* Imagen 1 */}
       {mostrar1 && (
-        <img
-          src="/inicio1.jpg"
-          alt="inicio1"
-          className="splash-fondo"
-        />
+        <img src="/inicio1.jpg" alt="inicio1" className="splash-fondo" />
       )}
 
-      {/* Imagen 2 - fade a los 1s (se superpone a la 1) */}
+      {/* Imagen 2 (con fade) */}
       {mostrar2 && (
-        <img
-          src="/inicio2.png"
-          alt="inicio2"
-          className="splash-fondo fade-in"
-        />
+        <img src="/inicio2.png" alt="inicio2" className="splash-fondo fade-in" />
       )}
 
-      {/* Imagen 3 - slide a los 1.5s */}
+      {/* Imagen 3 (con slide) */}
       {mostrar3 && (
-        <img
-          src="/inicio3.png"
-          alt="inicio3"
-          className="splash-fondo slide-in-right"
-        />
+        <img src="/inicio3.png" alt="inicio3" className="splash-fondo slide-in-right" />
       )}
 
-      {/* Imagen 4 - aparece a los 2s y se queda */}
+      {/* Imagen 4 */}
       {mostrar4 && (
-        <img
-          src="/inicio4.jpg"
-          alt="inicio4"
-          className="splash-fondo"
-        />
+        <img src="/inicio4.jpg" alt="inicio4" className="splash-fondo" />
       )}
 
-      {/* Texto (aparece a los 2s, se queda hasta el final) */}
+      {/* Texto inferior (aparece a los 3.5s) */}
       {mostrarTexto && (
         <div className="splash-texto-final">
           <p>©1995 KON AMIGOS</p>
           <p>TODOS LOS DERECHOS RESERVADOS A</p>
           <p>TUS GAMES FAVORITOS</p>
         </div>
+      )}
+
+      {/* Texto parpadeante "START" en el centro */}
+      {mostrarStart && (
+        <div className="splash-start">START</div>
       )}
     </div>
   );
