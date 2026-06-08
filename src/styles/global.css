@@ -755,3 +755,77 @@ h3 { font-size: 10px; }
   .cartas-grid { grid-template-columns: repeat(2, 1fr); }
   .avatar-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+.splash-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: black; /* fondo mientras carga */
+}
+
+.splash-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* para que cubra toda la pantalla sin deformarse */
+}
+
+.splash-img-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.splash-img-visible {
+  opacity: 1;
+}
+
+.splash-img-fade {
+  animation: fadeIn 0.5s ease-in forwards;
+}
+
+.splash-img-slide {
+  animation: slideInFromRight 0.5s ease-out forwards;
+}
+
+.splash-img-static {
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.splash-texto {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: linear-gradient(45deg, #ffa500, #ffd700);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+  z-index: 10;
+  line-height: 1.4;
+}
+.splash-texto p {
+  margin: 4px 0;
+}
