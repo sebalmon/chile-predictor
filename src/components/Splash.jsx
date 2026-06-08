@@ -64,17 +64,21 @@ export default function Splash() {
     };
   }, [imagenesListas]);
 
-  if (!imagenesListas) {
-    return (
-      <div
-        style={{
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "#1a2a1a", // ajusta según el fondo de tus imágenes
-        }}
-      />
-    );
-  }
+if (!imagenesListas) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "rgb(225, 225, 225)",
+        zIndex: 9999,
+      }}
+    />
+  );
+}
 
   return (
     <div className="splash-container-unificado">
