@@ -89,9 +89,9 @@ if (!imagenesListas) {
       {mostrar4 && <img src="/inicio4.jpg" alt="inicio4" className="splash-fondo" />}
       {mostrarTexto && (
         <div className="splash-texto-final">
-          <p>©1995 KON AMIGOS</p>
+          <p>©1995 KONAMIGOS</p>
           <p>TODOS LOS DERECHOS RESERVADOS A</p>
-          <p>TUS GAMES FAVORITOS</p>
+          <p>TU JUEGO FAVORITO</p>
         </div>
       )}
       {mostrarStart && <div className="splash-start">START</div>}
