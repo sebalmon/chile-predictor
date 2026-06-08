@@ -873,7 +873,7 @@ h3 { font-size: 10px; }
 /* Texto START centrado, parpadeante */
 .splash-start {
   position: absolute;
-  top: 42%;
+  top: 43%;
   left: 50%;
   transform: translate(-50%, -50%);
   font-family: 'Press Start 2P', monospace;
