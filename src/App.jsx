@@ -9,7 +9,10 @@ import Dashboard from "./components/Dashboard";
 function AppCore() {
   const { firebaseUser, userProfile, loadingProfile } = useAuth();
   const [mostrarSplash, setMostrarSplash] = useState(true);
-
+// 👇 NUEVO: Cambiar el título de la pestaña
+  useEffect(() => {
+    document.title = "INTERNATIONAL SUPERSTAR POLLA";
+  }, []);
   useEffect(() => {
     const timer = setTimeout(() => setMostrarSplash(false), 8000);
     return () => clearTimeout(timer);
