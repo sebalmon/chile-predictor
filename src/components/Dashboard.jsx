@@ -67,15 +67,33 @@ export default function Dashboard() {
         if (!snapA.empty) setPodioAyer(snapA.docs.map((d) => ({ ...d.data() })));
       } catch (_) {}
 
-      // Partidos de hoy
+      // ── MODIFICADO: Partidos de hoy + Apuestas Anticipadas ──
       try {
+        // 1. Traer partidos de hoy
         const qP = query(collection(db, "partidos"), where("fecha", "==", hoy));
         const snapP = await getDocs(qP);
-        if (!snapP.empty) {
-          setPartidosHoy(snapP.docs.map((d) => ({ id: d.id, ...d.data() })));
-        } else {
-          setPartidosHoy(PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy));
+        const partidosDeHoyDb = snapP.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        // 2. Traer partidos con apuesta anticipada habilitada
+        const qAnticipados = query(collection(db, "partidos"), where("permitirApuestaAnticipada", "==", true));
+        const snapAnticipados = await getDocs(qAnticipados);
+        const partidosAnticipadosDb = snapAnticipados.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        // 3. Combinar y eliminar duplicados (por id)
+        const combinados = [...partidosDeHoyDb, ...partidosAnticipadosDb];
+        let unicos = combinados.filter(
+          (partido, index, self) => self.findIndex((p) => p.id === partido.id) === index
+        );
+
+        // Si la base de datos está completamente vacía, usamos los de ejemplo filtrados por hoy
+        if (unicos.length === 0) {
+          unicos = PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy);
         }
+
+        // 4. Ordenar por hora de inicio
+        unicos.sort((a, b) => (a.horaInicio || "").localeCompare(b.horaInicio || ""));
+        
+        setPartidosHoy(unicos);
       } catch (_) {
         setPartidosHoy(PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy));
       }
@@ -222,8 +240,8 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* PARTIDOS DE HOY */}
-            <div className="seccion-titulo">⚽ PARTIDOS DE HOY — {formatFecha(hoy)}</div>
+            {/* PARTIDOS DE HOY / PRÓXIMOS */}
+<div className="seccion-titulo">⚽ PARTIDOS DISPONIBLES</div>
             {partidosHoy.length > 0 ? (
               partidosHoy.map((p) => <PartidoCard key={p.id} partido={p} />)
             ) : (
