@@ -21,10 +21,10 @@ export default function Splash() {
 
   const getImagen = () => {
     switch (imagenActual) {
-      case 1: return "/inicio1.png";
+      case 1: return "/inicio1.jpg";
       case 2: return "/inicio2.png";
       case 3: return "/inicio3.png";
-      default: return "/inicio4.png";
+      default: return "/inicio4.jpg";
     }
   };
 
