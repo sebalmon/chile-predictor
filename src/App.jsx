@@ -28,6 +28,7 @@ function AppCore() {
     );
   }
 
+
   // 3. No autenticado → Login
   if (!firebaseUser) return <Login />;
 

@@ -814,3 +814,61 @@ h3 { font-size: 10px; }
   color: transparent;
   margin-top: 20px;
 }
+
+/* === CONTENEDOR PRINCIPAL DEL SPLASH === */
+.splash-container-unificado {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #000; /* fondo de seguridad mientras cargan imágenes */
+}
+
+/* TODAS las imágenes ocupan toda la pantalla */
+.splash-fondo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* para que cubra sin deformarse */
+  display: block;
+}
+
+/* Animaciones */
+.fade-in {
+  animation: fadeIn 0.5s ease-in forwards;
+}
+.slide-in-right {
+  animation: slideInFromRight 0.5s ease-out forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Texto final – centrado abajo, SOBRE la imagen */
+.splash-texto-final {
+  position: absolute;
+  bottom: 30px;        /* separación del borde inferior */
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: linear-gradient(45deg, #ffcc00, #ff6600);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  z-index: 20;        /* asegura que esté encima de las imágenes */
+  line-height: 1.6;
+  pointer-events: none; /* para que no bloquee clics (opcional) */
+}
+.splash-texto-final p {
+  margin: 4px 0;
+}
