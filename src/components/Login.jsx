@@ -33,11 +33,11 @@ export default function Login() {
         <div style={{ fontSize: "40px", textAlign: "center" }}>⚽</div>
 
         <h2 style={{ textAlign: "center", color: "var(--verde-claro)", lineHeight: 2 }}>
-          CHILE
+          INTERNATIONAL
           <br />
-          PREDICTOR
+          SUPERSTAR
           <br />
-          8-BIT
+          POLLA
         </h2>
 
         <p style={{ fontSize: "7px", color: "var(--gris-claro)", textAlign: "center", lineHeight: 2 }}>
@@ -45,7 +45,7 @@ export default function Login() {
           <br />
           Mundial 2026 y compite
           <br />
-          con tus amigos.
+          con tus amigos... y enemigos.
         </p>
 
         {error && <div className="error-msg">{error}</div>}
