@@ -10,7 +10,7 @@ export default function Splash() {
   const [mostrarTexto, setMostrarTexto] = useState(false);
   const [mostrarStart, setMostrarStart] = useState(false);
 
-  // Precargar todas las imágenes
+  // Precargar imágenes
   useEffect(() => {
     const imagenes = [
       "/inicio1.jpg",
@@ -41,18 +41,18 @@ export default function Splash() {
     // Mostrar inicio1 inmediatamente
     setMostrar1(true);
 
-    const timerInicio2 = setTimeout(() => setMostrar2(true), 1500);   // 1.5s
-    const timerInicio3 = setTimeout(() => setMostrar3(true), 2500);   // 2.5s
-    const timerInicio3b = setTimeout(() => setMostrar3b(true), 3000); // 3.0s
-    const timerPreMostrar4 = setTimeout(() => setMostrar4(true), 4400); // 4.4s
+    const timerInicio2 = setTimeout(() => setMostrar2(true), 500);   // 0.5s
+    const timerInicio3 = setTimeout(() => setMostrar3(true), 1000);  // 1.0s
+    const timerInicio3b = setTimeout(() => setMostrar3b(true), 1500); // 1.5s
+    const timerPreMostrar4 = setTimeout(() => setMostrar4(true), 2400); // 2.4s
     const timerOcultar = setTimeout(() => {
       setMostrar1(false);
       setMostrar2(false);
       setMostrar3(false);
       setMostrar3b(false);
       setMostrarTexto(true);
-      setMostrarStart(true);
-    }, 4500); // 4.5s
+    }, 3000); // 3.0s – aparece inicio4 + texto
+    const timerStart = setTimeout(() => setMostrarStart(true), 4000); // 4.0s – aparece START
 
     return () => {
       clearTimeout(timerInicio2);
@@ -60,6 +60,7 @@ export default function Splash() {
       clearTimeout(timerInicio3b);
       clearTimeout(timerPreMostrar4);
       clearTimeout(timerOcultar);
+      clearTimeout(timerStart);
     };
   }, [imagenesListas]);
 
