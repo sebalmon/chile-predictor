@@ -10,13 +10,18 @@ export default function Splash() {
   useEffect(() => {
     const timer2 = setTimeout(() => setMostrar2(true), 1000);   // aparece inicio2 a 1s
     const timer3 = setTimeout(() => setMostrar3(true), 1500);   // aparece inicio3 a 1.5s
+    
     const timerFin = setTimeout(() => {
-      setMostrar1(false);
-      setMostrar2(false);
-      setMostrar3(false);
-      setMostrar4(true);
-      setMostrarTexto(true);
-    }, 2000); // a los 2s, todo cambia a inicio4 + texto
+  // 1. Primero mostramos la imagen 4 (sin ocultar las anteriores)
+  setMostrar4(true);
+  // 2. Esperamos 50 milisegundos para que la imagen 4 ya esté pintada
+  setTimeout(() => {
+    setMostrar1(false);
+    setMostrar2(false);
+    setMostrar3(false);
+    setMostrarTexto(true);
+  }, 50);
+}, 2000);
 
     return () => {
       clearTimeout(timer2);
