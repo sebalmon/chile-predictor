@@ -11,7 +11,7 @@ function AppCore() {
   const [mostrarSplash, setMostrarSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setMostrarSplash(false), 6000);
+    const timer = setTimeout(() => setMostrarSplash(false), 7000);
     return () => clearTimeout(timer);
   }, []);
 

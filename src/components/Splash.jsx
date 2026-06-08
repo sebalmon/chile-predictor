@@ -1,26 +1,46 @@
 import React, { useEffect, useState } from "react";
 
 export default function Splash() {
-  const [mostrar1, setMostrar1] = useState(true);
+  const [imagenesListas, setImagenesListas] = useState(false);
+  const [mostrar1, setMostrar1] = useState(false);
   const [mostrar2, setMostrar2] = useState(false);
   const [mostrar3, setMostrar3] = useState(false);
   const [mostrar4, setMostrar4] = useState(false);
   const [mostrarTexto, setMostrarTexto] = useState(false);
   const [mostrarStart, setMostrarStart] = useState(false);
 
+  // Precargar todas las imágenes antes de mostrar el splash
   useEffect(() => {
-    // Temporizadores (todos en milisegundos)
+    const imagenes = [
+      "/inicio1.jpg",
+      "/inicio2.png",
+      "/inicio3.png",
+      "/inicio4.jpg"
+    ];
+    let cargadas = 0;
+    imagenes.forEach((src) => {
+      const img = new Image();
+      img.onload = () => {
+        cargadas++;
+        if (cargadas === imagenes.length) {
+          setImagenesListas(true);
+        }
+      };
+      img.src = src;
+    });
+  }, []);
+
+  // Una vez precargadas, comenzar la secuencia
+  useEffect(() => {
+    if (!imagenesListas) return;
+
+    // Mostrar la primera imagen inmediatamente
+    setMostrar1(true);
+
     const timerInicio2 = setTimeout(() => setMostrar2(true), 1500);   // 1.5s
     const timerInicio3 = setTimeout(() => setMostrar3(true), 2500);   // 2.5s
-
-    // Pre-cargar inicio4 antes de mostrarlo (evita parpadeo)
-    const preload = new Image();
-    preload.src = "/inicio4.jpg";
-
     const timerTransicion = setTimeout(() => {
-      // Mostrar inicio4 primero (sin ocultar aún)
       setMostrar4(true);
-      // Esperar 100ms para que se pinte
       setTimeout(() => {
         setMostrar1(false);
         setMostrar2(false);
@@ -35,31 +55,27 @@ export default function Splash() {
       clearTimeout(timerInicio3);
       clearTimeout(timerTransicion);
     };
-  }, []);
+  }, [imagenesListas]);
+
+  if (!imagenesListas) {
+    // Mientras precarga, mostrar un color sólido (el mismo fondo de inicio1.jpg)
+    return (
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "rgb(225, 225, 225)", // Ajusta este color al de tus imágenes
+        }}
+      />
+    );
+  }
 
   return (
     <div className="splash-container-unificado">
-      {/* Imagen 1 */}
-      {mostrar1 && (
-        <img src="/inicio1.jpg" alt="inicio1" className="splash-fondo" />
-      )}
-
-      {/* Imagen 2 (con fade) */}
-      {mostrar2 && (
-        <img src="/inicio2.png" alt="inicio2" className="splash-fondo fade-in" />
-      )}
-
-      {/* Imagen 3 (con slide) */}
-      {mostrar3 && (
-        <img src="/inicio3.png" alt="inicio3" className="splash-fondo slide-in-right" />
-      )}
-
-      {/* Imagen 4 */}
-      {mostrar4 && (
-        <img src="/inicio4.jpg" alt="inicio4" className="splash-fondo" />
-      )}
-
-      {/* Texto inferior (aparece a los 3.5s) */}
+      {mostrar1 && <img src="/inicio1.jpg" alt="inicio1" className="splash-fondo" />}
+      {mostrar2 && <img src="/inicio2.png" alt="inicio2" className="splash-fondo fade-in" />}
+      {mostrar3 && <img src="/inicio3.png" alt="inicio3" className="splash-fondo slide-in-right" />}
+      {mostrar4 && <img src="/inicio4.jpg" alt="inicio4" className="splash-fondo" />}
       {mostrarTexto && (
         <div className="splash-texto-final">
           <p>©1995 KON AMIGOS</p>
@@ -67,11 +83,7 @@ export default function Splash() {
           <p>TUS GAMES FAVORITOS</p>
         </div>
       )}
-
-      {/* Texto parpadeante "START" en el centro */}
-      {mostrarStart && (
-        <div className="splash-start">START</div>
-      )}
+      {mostrarStart && <div className="splash-start">START</div>}
     </div>
   );
 }
