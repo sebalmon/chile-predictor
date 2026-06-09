@@ -47,8 +47,8 @@ export const PREGUNTAS_EJEMPLO = [
 // ── FRASES DEL DÍA ─────────────────────────────────────────────
 // Una por cada día del mundial (o más); se rotan cíclicamente.
 export const FRASES_DEL_DIA = [
-  "El lunes quieres cambiarlos a todos, el miércoles crees que se pueden salvar dos o tres, <br> el viernes piensas que puedes recuperar a cinco o seis y el domingo juegan los mismo once cabrones de siempre. <br>  J.B Toshack" ,
-  "La prensa es muy mentirosa. Dicen que me he acostado con 200 mujeres, pero solo fueron 100. <br> George Best",
+  "El lunes quieres cambiarlos a todos, el miércoles crees que se pueden salvar dos o tres, \ el viernes piensas que puedes recuperar a cinco o seis y el domingo juegan los mismo once cabrones de siempre. <br>  J.B Toshack" ,
+  "La prensa es muy mentirosa. \ Dicen que me he acostado con 200 mujeres, \ pero solo fueron 100. \ George Best",
 ];
 
 // ── AVATARES — 12 personajes con imágenes animadas ────────────

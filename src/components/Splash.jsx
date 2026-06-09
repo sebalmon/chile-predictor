@@ -95,7 +95,7 @@ export default function Splash({ onFin }) {
         <div className="splash-texto-final">
           <p>©1995 KONAMIGOS</p>
           <p>TODOS LOS DERECHOS RESERVADOS A</p>
-          <p>TU JUEGO FAVORITO</p>
+          <p>TU APPWEB FAVORITA</p>
         </div>
       )}
 
