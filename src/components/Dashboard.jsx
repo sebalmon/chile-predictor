@@ -1,4 +1,4 @@
-// src/components/Dashboard.jsx  — v3
+// src/components/Dashboard.jsx  — v3 (Modificado)
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, orderBy, query, where, limit } from "firebase/firestore";
 import { signOut } from "firebase/auth";
@@ -32,6 +32,9 @@ export default function Dashboard() {
   const [usuariosRanking, setUsuariosRanking] = useState([]);
   const [podioAyer, setPodioAyer]         = useState([]);
   const [cargando, setCargando]           = useState(true);
+  
+  // Estado para controlar la apertura manual del tutorial
+  const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
   const hoy  = hoyStr();
   const ayer = ayerStr();
@@ -71,7 +74,7 @@ export default function Dashboard() {
   if (pantalla === PANTALLAS.RANKING) return (
     <WithShell userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
       onLogout={handleLogout} pantalla={pantalla} setPantalla={setPantalla}
-      esAdmin={esAdmin} diaLabel={diaLabel}>
+      esAdmin={esAdmin} diaLabel={diaLabel} mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
       <Ranking onVolver={() => setPantalla(PANTALLAS.INICIO)} />
     </WithShell>
   );
@@ -79,7 +82,7 @@ export default function Dashboard() {
   if (pantalla === PANTALLAS.PERFIL) return (
     <WithShell userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
       onLogout={handleLogout} pantalla={pantalla} setPantalla={setPantalla}
-      esAdmin={esAdmin} diaLabel={diaLabel}>
+      esAdmin={esAdmin} diaLabel={diaLabel} mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
       <Perfil onVolver={() => setPantalla(PANTALLAS.INICIO)} />
     </WithShell>
   );
@@ -87,7 +90,7 @@ export default function Dashboard() {
   if (pantalla === PANTALLAS.ADMIN) return (
     <WithShell userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
       onLogout={handleLogout} pantalla={pantalla} setPantalla={setPantalla}
-      esAdmin={esAdmin} diaLabel={diaLabel}>
+      esAdmin={esAdmin} diaLabel={diaLabel} mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
       <AdminPanel onVolver={() => setPantalla(PANTALLAS.INICIO)} />
     </WithShell>
   );
@@ -95,7 +98,7 @@ export default function Dashboard() {
   if (pantalla === PANTALLAS.PARTIDOS) return (
     <WithShell userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
       onLogout={handleLogout} pantalla={pantalla} setPantalla={setPantalla}
-      esAdmin={esAdmin} diaLabel={diaLabel}>
+      esAdmin={esAdmin} diaLabel={diaLabel} mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
       <TabPartidos />
     </WithShell>
   );
@@ -104,7 +107,7 @@ export default function Dashboard() {
   return (
     <WithShell userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
       onLogout={handleLogout} pantalla={pantalla} setPantalla={setPantalla}
-      esAdmin={esAdmin} diaLabel={diaLabel}>
+      esAdmin={esAdmin} diaLabel={diaLabel} mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
 
       <div className="contenedor dashboard-wrapper">
         {cargando ? (
@@ -146,7 +149,7 @@ export default function Dashboard() {
                 </tbody>
               </table>
               <button className="btn-pixel btn-gris w-full"
-                style={{marginTop:"12px",fontSize:"7px"}}
+                style={{marginTop:"12px",fontSize:"7px"))}
                 onClick={() => setPantalla(PANTALLAS.RANKING)}>
                 VER RANKING COMPLETO →
               </button>
@@ -155,6 +158,22 @@ export default function Dashboard() {
             {/* SISTEMA DE PUNTUACIÓN */}
             <div className="seccion-titulo">📋 SISTEMA DE PUNTUACIÓN</div>
             <SistemaPuntuacion />
+
+            {/* BOTÓN REPASAR TUTORIAL */}
+            <div style={{ marginTop: "8px", marginBottom: "24px" }}>
+              <button 
+                className="btn-pixel btn-gris w-full"
+                style={{ 
+                  fontSize: "7px", 
+                  padding: "10px", 
+                  borderColor: "var(--amarillo)",
+                  color: "var(--amarillo)" 
+                }}
+                onClick={() => setMostrarTutorial(true)}
+              >
+                📖 LEER TUTORIAL DE INICIO OTRA VEZ
+              </button>
+            </div>
           </>
         )}
       </div>
@@ -219,10 +238,11 @@ function SistemaPuntuacion() {
 
 // ── Shell (topbar + menu + modales) ──────────────────────────
 function WithShell({ children, userProfile, onPerfil, onLogout,
-  pantalla, setPantalla, esAdmin, diaLabel }) {
+  pantalla, setPantalla, esAdmin, diaLabel, mostrarTutorial, setMostrarTutorial }) {
   return (
     <>
-      <OnboardingModal />
+      {/* Pasamos los estados del botón manual aquí */}
+      <OnboardingModal isOpen={mostrarTutorial ? true : undefined} onClose={() => setMostrarTutorial(false)} />
       <NotificacionCartas />
       <AvisoAdmin />
 
@@ -260,7 +280,7 @@ function TopBar({ userProfile, onPerfil, onLogout, diaLabel }) {
 
 function MenuInferior({ pantalla, setPantalla, esAdmin }) {
   const items = [
-    { id: PANTALLAS.INICIO,   label:"INICIO",   icono:"🏠" },
+    { id: PANTALLAS.INICIO,   label:"INICIO",  icono:"🏠" },
     { id: PANTALLAS.PARTIDOS, label:"PARTIDOS",  icono:"⚽" },
     { id: PANTALLAS.RANKING,  label:"RANKING",   icono:"📊" },
     { id: PANTALLAS.PERFIL,   label:"PERFIL",    icono:"👤" },

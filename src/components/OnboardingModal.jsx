@@ -1,4 +1,4 @@
-// src/components/OnboardingModal.jsx  — v3
+// src/components/OnboardingModal.jsx  — v3 (Modificado)
 import React, { useEffect, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -6,21 +6,40 @@ import { useAuth } from "../contexts/AuthContext";
 
 const LOCAL_KEY = "cp8b_onboarding_visto";
 
-export default function OnboardingModal() {
+export default function OnboardingModal({ isOpen, onClose }) {
   const { firebaseUser, userProfile, refreshProfile } = useAuth();
   const [visible, setVisible] = useState(false);
   const [paso, setPaso]       = useState(0);
 
+  // Modo controlado (Botón manual) vs Modo automático (Primera vez)
+  const esControlado = isOpen !== undefined;
+  const mostrarModal = esControlado ? isOpen : visible;
+
   useEffect(() => {
+    // Si es controlado externamente, reiniciamos el paso al abrirse y no evaluamos el auto-open
+    if (esControlado) {
+      if (isOpen) setPaso(0);
+      return;
+    }
+
     const yaVioLocal     = localStorage.getItem(LOCAL_KEY);
     const yaVioFirestore = userProfile?.onboardingVisto;
     if (!yaVioLocal && !yaVioFirestore) {
-      const t = setTimeout(() => setVisible(true), 600);
+      const t = setTimeout(() => {
+        setPaso(0);
+        setVisible(true);
+      }, 600);
       return () => clearTimeout(t);
     }
-  }, [userProfile]);
+  }, [userProfile, isOpen, esControlado]);
 
   const handleCerrar = async () => {
+    if (esControlado) {
+      if (onClose) onClose();
+      return;
+    }
+
+    // Comportamiento automático la primera vez
     setVisible(false);
     localStorage.setItem(LOCAL_KEY, "1");
     if (firebaseUser) {
@@ -31,7 +50,7 @@ export default function OnboardingModal() {
     }
   };
 
-  if (!visible) return null;
+  if (!mostrarModal) return null;
 
   const pasos = [
     {
@@ -106,9 +125,14 @@ export default function OnboardingModal() {
           <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "5px" }}>
             {[
               { pts:"+2", desc:"Acertar ganador en 90 min" },
-              { pts:"+3", desc:"Ganador + diferencia (90 min)" },
-              { pts:"+2/+3", desc:"Acertar Alargue + diferencia" },
-              { pts:"+2/+3/+4", desc:"Acertar Penales (exacto da +4)" },
+              { pts:"+3", desc:"Ganador + diferencia en 90 min" },
+              { pts:"+2", desc:"Acertar que se define en Alargue" },
+              { pts:"+3", desc:"Alargue + diferencia en el alargue" },
+              { pts:"+2", desc:"Acertar que se define en Penales" },
+              { pts:"+3", desc:"Penales + quién gana la tanda" },
+              { pts:"+4", desc:"Penales + diferencia exacta de la tanda" },
+              { pts:"+2", desc:"Pregunta del día correcta" },
+              { pts:"+3", desc:"Ganador del día (más puntos)" },
             ].map((r,i) => (
               <div key={i} style={{ display:"flex", justifyContent:"space-between",
                 padding:"5px 8px", border:"1px solid var(--verde-campo)",
@@ -241,7 +265,7 @@ export default function OnboardingModal() {
             <button className="btn-pixel btn-amarillo w-full"
               style={{ fontSize: "8px" }}
               onClick={handleCerrar}>
-              ✅ ¡ENTENDIDO! JUGAR
+              {esControlado ? "✕ CERRAR TUTORIAL" : "✅ ¡ENTENDIDO! JUGAR"}
             </button>
           )}
         </div>
@@ -253,7 +277,7 @@ export default function OnboardingModal() {
             fontFamily: "'Press Start 2P', monospace",
             cursor: "pointer", textAlign: "center",
           }}>
-            Saltar intro →
+            {esControlado ? "Cerrar tutorial ✕" : "Saltar intro →"}
           </button>
         )}
       </div>
