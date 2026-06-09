@@ -126,7 +126,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
               ❌ <span style={{ color: "var(--gris-claro)" }}>Si olvidas un día:</span> No te preocupes, no quedas eliminado. Sigues participando activamente con tu puntaje acumulado, pero no sumarás puntos por esa jornada en blanco.
             </p>
             <p style={{ fontSize: "6.5px", lineHeight: 2, margin: 0 }}>
-              🏆 <span style={{ color: "var(--verde-claro)" }}>Ranking continuo:</span> Esta es una competencia continua por puntos. No hay cortes drásticos: acumulas todo el puntaje posible hasta el final del Mundial para ganar.
+              🏆 <span style={{ color: "var(--verde-claro)" }}>Ranking continuo:</span> Esta es una competencia continua por puntos hasta el final del mundial. No hay cortes drásticos: acumulas todo el puntaje posible hasta el final del Mundial para ganar.
             </p>
           </div>
         </>
