@@ -83,6 +83,7 @@ export default function FraseCinema({ onTerminar }) {
           lineHeight: 2.4,
           letterSpacing: "1px",
           textShadow: "0 0 20px rgba(244,208,63,0.4)",
+          whiteSpace: "pre-line",
         }}>
           "{frase}"
         </p>
