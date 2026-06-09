@@ -87,7 +87,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
           <p style={{ lineHeight: 2.2 }}>
             En la pestaña <span style={{ color: "var(--amarillo)" }}>PARTIDOS</span> encontrarás
             todos los encuentros del día. Tienes hasta <span style={{ color: "var(--rojo-chile)" }}>
-            1 hora antes</span> del inicio para guardar tu pronóstico.
+            1 segundo antes</span> del inicio para guardar tu pronóstico.
           </p>
           <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
             {[
