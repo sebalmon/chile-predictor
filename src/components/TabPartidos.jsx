@@ -49,7 +49,7 @@ if (hoyDate < fechaInicioMundial) {
       local: { nombre: "México", bandera: "🇲🇽" },
       visitante: { nombre: "Sudáfrica", bandera: "🇿🇦" },
       fase: "grupos",
-      estaDestacado: true,
+      estaDestacado: false,
       resultado: null,
     },
     {
@@ -59,7 +59,7 @@ if (hoyDate < fechaInicioMundial) {
       local: { nombre: "Corea del Sur", bandera: "🇰🇷" },
       visitante: { nombre: "República Checa", bandera: "🇨🇿" },
       fase: "grupos",
-      estaDestacado: false,
+      estaDestacado: true,
       resultado: null,
     },
   ];
