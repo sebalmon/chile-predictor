@@ -1,11 +1,10 @@
-// src/components/Dashboard.jsx  — v3 (Modificado)
+// src/components/Dashboard.jsx  — v3 (Corregido)
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, orderBy, query, where, limit } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { hoyStr, ayerStr, diaNumero } from "../utils/helpers";
-import { FASES_ELIMINATORIAS } from "../data/sampleData";
 
 import PodioF1            from "./PodioF1";
 import Ranking            from "./Ranking";
@@ -149,7 +148,7 @@ export default function Dashboard() {
                 </tbody>
               </table>
               <button className="btn-pixel btn-gris w-full"
-                style={{marginTop:"12px",fontSize:"7px"))}
+                style={{marginTop:"12px",fontSize:"7px"}}
                 onClick={() => setPantalla(PANTALLAS.RANKING)}>
                 VER RANKING COMPLETO →
               </button>
