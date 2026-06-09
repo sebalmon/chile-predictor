@@ -79,7 +79,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
       ),
     },
     {
-      icono: "⚽",
+      icono: "🔮",
       titulo: "CÓMO PREDECIR",
       color: "var(--verde-claro)",
       contenido: (
@@ -89,18 +89,6 @@ export default function OnboardingModal({ isOpen, onClose }) {
             todos los encuentros del día. Tienes hasta <span style={{ color: "var(--rojo-chile)" }}>
             1 segundo antes</span> del inicio de cada partido para guardar tu pronóstico.
           </p>
-
-          <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
-            <p style={{ fontSize: "6.5px", lineHeight: 1.8, margin: 0 }}>
-              📅 <span style={{ color: "var(--amarillo)" }}>Pronósticos diarios:</span> No se pueden ingresar todos los resultados del Mundial a la vez; se habilitan solo los partidos del día en curso.
-            </p>
-            <p style={{ fontSize: "6.5px", lineHeight: 1.8, margin: 0 }}>
-              ❌ <span style={{ color: "var(--gris-claro)" }}>Si olvidas un día:</span> No quedas eliminado. Sigues participando con tu puntaje acumulado, pero no sumarás puntos por esa jornada.
-            </p>
-            <p style={{ fontSize: "6.5px", lineHeight: 1.8, margin: 0 }}>
-              🏆 <span style={{ color: "var(--verde-claro)" }}>Ranking general:</span> Es una competencia continua por puntos. Quien acumule la mayor puntuación al final del Mundial será el ganador.
-            </p>
-          </div>
 
           <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
             {[
@@ -121,6 +109,26 @@ export default function OnboardingModal({ isOpen, onClose }) {
             💡 Cuando completes TODOS los pronósticos del día, aparecerá automáticamente
             la <span style={{ color: "var(--amarillo)" }}>Pregunta del Día</span> (+2 pts).
           </p>
+        </>
+      ),
+    },
+    {
+      icono: "📅",
+      titulo: "SISTEMA DE LA POLLA",
+      color: "var(--verde-claro)",
+      contenido: (
+        <>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
+            <p style={{ fontSize: "6.5px", lineHeight: 2, margin: 0 }}>
+              📅 <span style={{ color: "var(--amarillo)" }}>Pronósticos diarios:</span> Esta polla se juega día a día. No se pueden ingresar todos los resultados del Mundial a la vez; se habilitan solo los partidos de la jornada en curso.
+            </p>
+            <p style={{ fontSize: "6.5px", lineHeight: 2, margin: 0 }}>
+              ❌ <span style={{ color: "var(--gris-claro)" }}>Si olvidas un día:</span> No te preocupes, no quedas eliminado. Sigues participando activamente con tu puntaje acumulado, pero no sumarás puntos por esa jornada en blanco.
+            </p>
+            <p style={{ fontSize: "6.5px", lineHeight: 2, margin: 0 }}>
+              🏆 <span style={{ color: "var(--verde-claro)" }}>Ranking continuo:</span> Esta es una competencia continua por puntos. No hay cortes drásticos: acumulas todo el puntaje posible hasta el final del Mundial para ganar.
+            </p>
+          </div>
         </>
       ),
     },
@@ -186,7 +194,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
         </>
       ),
     },
-        {
+    {
       icono: "🃏",
       titulo: "CARTAS COLECCIONABLES",
       color: "var(--amarillo)",
