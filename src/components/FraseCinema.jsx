@@ -1,15 +1,12 @@
 // src/components/FraseCinema.jsx
 // ─────────────────────────────────────────────────────────────
 // Pantalla cinematográfica de la frase del día.
-// Se muestra UNA VEZ POR DÍA, justo después del login
-// (antes del Dashboard). Fade-in → espera → fade-out → callback.
+// MODIFICADO: Se muestra SIEMPRE al iniciar/recargar la app.
+// Tiempos extendidos para una mayor duración en pantalla.
 // ─────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 import { FRASES_DEL_DIA } from "../data/sampleData";
 import { hoyStr } from "../utils/helpers";
-
-// LocalStorage key: guarda la fecha en que se vio la frase
-const LS_KEY = "cp8b_frase_fecha";
 
 // Elige la frase del día de forma determinista según la fecha
 function getFraseDelDia() {
@@ -22,14 +19,9 @@ function getFraseDelDia() {
   return FRASES_DEL_DIA[idx];
 }
 
-// Verifica si ya se mostró hoy
+// Forzamos a que siempre devuelva falso para que la App no se salte este componente
 export function fraseCinemaYaVistahoy() {
-  return localStorage.getItem(LS_KEY) === hoyStr();
-}
-
-// Marca que ya se mostró hoy
-function marcarVistaHoy() {
-  localStorage.setItem(LS_KEY, hoyStr());
+  return false; 
 }
 
 // ── Componente ────────────────────────────────────────────────
@@ -38,16 +30,16 @@ export default function FraseCinema({ onTerminar }) {
   const frase = getFraseDelDia();
 
   useEffect(() => {
-    // 0.8s fade-in → 3.5s visible → 0.8s fade-out → callback
-    const t1 = setTimeout(() => setFase("visible"),  800);
-    const t2 = setTimeout(() => setFase("fadeout"), 4300);
+    // NUEVA CRONOLOGÍA EXTENDIDA:
+    // 0.8s fade-in → 7.0s visible (Dura el doble) → 0.8s fade-out → callback final
+    const t1 = setTimeout(() => setFase("visible"), 800);
+    const t2 = setTimeout(() => setFase("fadeout"), 7800); // 800ms + 7000ms
     const t3 = setTimeout(() => {
-      marcarVistaHoy();
       onTerminar();
-    }, 5100);
+    }, 8600); // 7800ms + 800ms de fadeout
 
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, []);
+  }, [onTerminar]);
 
   const opacity =
     fase === "fadein"   ? 0   :
@@ -64,9 +56,10 @@ export default function FraseCinema({ onTerminar }) {
         justifyContent: "center",
         zIndex: 9999,
         padding: "32px",
+        cursor: "pointer"
       }}
-      // Saltar al tocar
-      onClick={() => { marcarVistaHoy(); onTerminar(); }}
+      // Saltar al tocar en cualquier momento
+      onClick={onTerminar}
     >
       <div
         style={{
