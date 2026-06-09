@@ -33,10 +33,10 @@ export default function FraseCinema({ onTerminar }) {
     // NUEVA CRONOLOGÍA EXTENDIDA:
     // 0.8s fade-in → 7.0s visible (Dura el doble) → 0.8s fade-out → callback final
     const t1 = setTimeout(() => setFase("visible"), 800);
-    const t2 = setTimeout(() => setFase("fadeout"), 7800); // 800ms + 7000ms
+    const t2 = setTimeout(() => setFase("fadeout"), 8800); // 800ms + 7000ms
     const t3 = setTimeout(() => {
       onTerminar();
-    }, 8600); // 7800ms + 800ms de fadeout
+    }, 9600); // 7800ms + 800ms de fadeout
 
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onTerminar]);
