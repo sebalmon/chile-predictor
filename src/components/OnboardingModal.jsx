@@ -146,6 +146,33 @@ export default function OnboardingModal({ isOpen, onClose }) {
       ),
     },
     {
+      icono: "🏆",
+      titulo: "EL PODIO Y EL RANKING",
+      color: "var(--amarillo)",
+      contenido: (
+        <>
+          <p style={{ lineHeight: 2.2 }}>
+            Cada día se genera un <span style={{ color: "var(--amarillo)" }}>Podio</span> con los
+            mejores jugadores de ese día. El <span style={{ color: "var(--amarillo)" }}>ganador del día</span>{" "}
+            obtiene <span style={{ color: "var(--verde-claro)" }}>+3 puntos extra</span>.
+          </p>
+          <div style={{ marginTop: "12px", padding: "12px",
+            border: "2px solid var(--amarillo)", background: "rgba(244,208,63,0.08)", textAlign:"center" }}>
+            <span style={{ fontSize: "24px" }}>🥇🥈🥉</span>
+            <p style={{ marginTop: "8px", fontSize: "6px", color: "var(--amarillo)", lineHeight: 2 }}>
+              Si empatas en puntaje con otros jugadores,<br/>
+              compartes el mismo escalón del podio.<br/>
+              ¡Todos reciben carta!
+            </p>
+          </div>
+          <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginTop: "10px", lineHeight: 2 }}>
+            Ve a la pestaña <span style={{ color: "var(--blanco)" }}>INICIO</span> para ver
+            el podio del día anterior y el ranking general actualizado.
+          </p>
+        </>
+      ),
+    },
+        {
       icono: "🃏",
       titulo: "CARTAS COLECCIONABLES",
       color: "var(--amarillo)",
@@ -174,33 +201,6 @@ export default function OnboardingModal({ isOpen, onClose }) {
           <p style={{ fontSize: "6px", color:"var(--gris-claro)", marginTop:"10px", lineHeight: 2 }}>
             ✨ La carta multiplica tus puntos si aciertas <strong style={{color:"var(--amarillo)"}}>algo</strong> en
             el partido. Si no aciertas nada, la carta se consume igual. Las puedes ocupar en cualquier partido.
-          </p>
-        </>
-      ),
-    },
-    {
-      icono: "🏆",
-      titulo: "EL PODIO Y EL RANKING",
-      color: "var(--amarillo)",
-      contenido: (
-        <>
-          <p style={{ lineHeight: 2.2 }}>
-            Cada día se genera un <span style={{ color: "var(--amarillo)" }}>Podio</span> con los
-            mejores jugadores de ese día. El <span style={{ color: "var(--amarillo)" }}>ganador del día</span>{" "}
-            obtiene <span style={{ color: "var(--verde-claro)" }}>+3 puntos extra</span>.
-          </p>
-          <div style={{ marginTop: "12px", padding: "12px",
-            border: "2px solid var(--amarillo)", background: "rgba(244,208,63,0.08)", textAlign:"center" }}>
-            <span style={{ fontSize: "24px" }}>🥇🥈🥉</span>
-            <p style={{ marginTop: "8px", fontSize: "6px", color: "var(--amarillo)", lineHeight: 2 }}>
-              Si empatas en puntaje con otros jugadores,<br/>
-              compartes el mismo escalón del podio.<br/>
-              ¡Todos reciben carta!
-            </p>
-          </div>
-          <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginTop: "10px", lineHeight: 2 }}>
-            Ve a la pestaña <span style={{ color: "var(--blanco)" }}>INICIO</span> para ver
-            el podio del día anterior y el ranking general actualizado.
           </p>
         </>
       ),
