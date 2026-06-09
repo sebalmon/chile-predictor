@@ -152,7 +152,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
       contenido: (
         <>
           <p style={{ lineHeight: 2.2 }}>
-            Los <span style={{ color: "var(--amarillo)" }}>3 mejores jugadores del día</span> reciben
+            Todos <span style={{ color: "var(--amarillo)" }}>los que se suben al podio en el día</span> reciben
             Cartas Coleccionables como premio. Úsalas en tus partidos favoritos para
             <span style={{ color: "var(--verde-claro)" }}> multiplicar tus puntos</span>.
           </p>
@@ -173,7 +173,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
           </div>
           <p style={{ fontSize: "6px", color:"var(--gris-claro)", marginTop:"10px", lineHeight: 2 }}>
             ✨ La carta multiplica tus puntos si aciertas <strong style={{color:"var(--amarillo)"}}>algo</strong> en
-            el partido. Si no aciertas nada, la carta se consume igual.
+            el partido. Si no aciertas nada, la carta se consume igual. Las puedes ocupar en cualquier partido.
           </p>
         </>
       ),
@@ -195,7 +195,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
             <p style={{ marginTop: "8px", fontSize: "6px", color: "var(--amarillo)", lineHeight: 2 }}>
               Si empatas en puntaje con otros jugadores,<br/>
               compartes el mismo escalón del podio.<br/>
-              ¡Todos reciben la misma carta!
+              ¡Todos reciben carta!
             </p>
           </div>
           <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginTop: "10px", lineHeight: 2 }}>
