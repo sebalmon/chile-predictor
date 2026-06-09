@@ -87,9 +87,22 @@ export default function OnboardingModal({ isOpen, onClose }) {
           <p style={{ lineHeight: 2.2 }}>
             En la pestaña <span style={{ color: "var(--amarillo)" }}>PARTIDOS</span> encontrarás
             todos los encuentros del día. Tienes hasta <span style={{ color: "var(--rojo-chile)" }}>
-            1 segundo antes</span> del inicio para guardar tu pronóstico.
+            1 segundo antes</span> del inicio de cada partido para guardar tu pronóstico.
           </p>
-          <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+
+          <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <p style={{ fontSize: "6.5px", lineHeight: 1.8, margin: 0 }}>
+              📅 <span style={{ color: "var(--amarillo)" }}>Pronósticos diarios:</span> No se pueden ingresar todos los resultados del Mundial a la vez; se habilitan solo los partidos del día en curso.
+            </p>
+            <p style={{ fontSize: "6.5px", lineHeight: 1.8, margin: 0 }}>
+              ❌ <span style={{ color: "var(--gris-claro)" }}>Si olvidas un día:</span> No quedas eliminado. Sigues participando con tu puntaje acumulado, pero no sumarás puntos por esa jornada.
+            </p>
+            <p style={{ fontSize: "6.5px", lineHeight: 1.8, margin: 0 }}>
+              🏆 <span style={{ color: "var(--verde-claro)" }}>Ranking general:</span> Es una competencia continua por puntos. Quien acumule la mayor puntuación al final del Mundial será el ganador.
+            </p>
+          </div>
+
+          <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
             {[
               { pts: "+1 / +2", desc: "Acertar ganador y diferencia (grupos)" },
               { pts: "+3",      desc: "Resultado exacto en partido destacado ⭐" },
@@ -103,7 +116,8 @@ export default function OnboardingModal({ isOpen, onClose }) {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: "6px", color: "var(--verde-claro)", marginTop: "10px", lineHeight: 2 }}>
+
+          <p style={{ fontSize: "6px", color: "var(--verde-claro)", marginTop: "12px", lineHeight: 2 }}>
             💡 Cuando completes TODOS los pronósticos del día, aparecerá automáticamente
             la <span style={{ color: "var(--amarillo)" }}>Pregunta del Día</span> (+2 pts).
           </p>
