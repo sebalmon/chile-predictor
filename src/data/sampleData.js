@@ -47,7 +47,7 @@ export const PREGUNTAS_EJEMPLO = [
 // ── FRASES DEL DÍA ─────────────────────────────────────────────
 // Una por cada día del mundial (o más); se rotan cíclicamente.
 export const FRASES_DEL_DIA = [
-  "El lunes quieres cambiarlos a todos\nel viernes piensas que puedes recuperar a cinco o seis\ny el domingo juegan los mismos once cabrones de siempre.\n\nJ.B Toshack",
+  "El lunes\nquieres cambiarlos a todos\nel viernes piensas\nque puedes recuperar a cinco o seis\ny el domingo juegan los mismos\nonce cabrones de siempre.\n\nJ.B Toshack",
   "La prensa es muy mentirosa.\nDicen que me he acostado con 200 mujeres, pero solo fueron 100.\n\n George Best",
   "El fútbol es un deporte que inventaron los ingleses,\njuegan once contra once, y siempre gana Alemania.\n\nGary Lineker",
   "Dios estaba de nuestro lado,\npero el árbitro era francés.\n\nHristo Stoichkov",
