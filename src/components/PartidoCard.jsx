@@ -120,7 +120,7 @@ export default function PartidoCard({ partido }) {
     fase = "grupos", estaDestacado, resultado,
   } = partido;
 
-  const abierto = partidoAbierto(fecha, horaInicio);
+  const abierto = partidoAbierto(partido);
   const esEliminatoria = FASES_ELIMINATORIAS.includes(fase);
   const tieneResultado = resultado !== null && resultado !== undefined;
 

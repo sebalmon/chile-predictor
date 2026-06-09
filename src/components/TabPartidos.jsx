@@ -105,8 +105,8 @@ if (hoyDate < fechaInicioMundial) {
   const verificarPrediccionesTodas = async () => {
     if (!firebaseUser) return;
     const partidosAbiertos = partidos.filter(
-      (p) => !p.resultado && partidoAbierto(p.fecha, p.horaInicio)
-    );
+    (p) => !p.resultado && partidoAbierto(p)
+     );
     if (partidosAbiertos.length === 0) return;
 
     const nuevasGuardadas = new Set();
@@ -134,8 +134,8 @@ if (hoyDate < fechaInicioMundial) {
 
   const todosPredecidos = (() => {
     const abiertos = partidos.filter(
-      (p) => !p.resultado && partidoAbierto(p.fecha, p.horaInicio)
-    );
+  (p) => !p.resultado && partidoAbierto(p)
+   );
     return abiertos.length > 0 && abiertos.every((p) => prediccionesGuardadas.has(p.id));
   })();
 
@@ -209,7 +209,7 @@ if (hoyDate < fechaInicioMundial) {
         )}
 
         {/* Indicador de progreso */}
-        {partidos.filter(p => !p.resultado && partidoAbierto(p.fecha,p.horaInicio)).length > 0 && (
+        {partidos.filter(p => !p.resultado && partidoAbierto(p)).length > 0 && (
           <div style={{
             padding:"8px 12px", marginBottom:"12px",
             border:"2px solid var(--verde-campo)",

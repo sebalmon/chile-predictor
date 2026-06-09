@@ -38,12 +38,10 @@ export function diaNumero() {
   return diff < 0 ? 0 : diff + 1;
 }
 
-export function partidoAbierto(fecha, horaInicio) {
-  const [y,m,d]   = fecha.split("-").map(Number);
-  const [h,min]   = horaInicio.split(":").map(Number);
-  const inicio    = new Date(y, m-1, d, h, min, 0);
-  const cierre    = new Date(inicio.getTime() - 3600000);
-  return new Date() < cierre;
+export function partidoAbierto(partido) {
+  if (!partido || !partido.cierre) return true; // si no hay cierre, asumir abierto
+  const cierreDate = partido.cierre.toDate(); // convierte timestamp de Firestore a Date
+  return new Date() < cierreDate;
 }
 
 // ──────────────────────────────────────────────────────────────
