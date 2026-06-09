@@ -47,18 +47,8 @@ export const PREGUNTAS_EJEMPLO = [
 // ── FRASES DEL DÍA ─────────────────────────────────────────────
 // Una por cada día del mundial (o más); se rotan cíclicamente.
 export const FRASES_DEL_DIA = [
-  "La pelota no se mancha... ¡pero tus predicciones sí!",
-  "El que no arriesga, no gana. ¡Predice con el corazón!",
-  "En el fútbol y en la vida, nadie sabe nada.",
-  "Hay dos tipos de personas: las que ven el partido y las que lo predicen.",
-  "¡Arriba Chile! Aunque perdamos la polla...",
-  "El fútbol es la única religión que no tiene ateos en los penales.",
-  "Predecir el futuro es fácil. Lo difícil es acertar.",
-  "Un alargue a tiempo vale más que mil certezas en grupos.",
-  "El que madruga, gana... o al menos predice primero.",
-  "El VAR no puede revisar tus predicciones. Aprovecha.",
-  "Dicen que el fútbol es impredecible. Nosotros lo ponemos a prueba.",
-  "Sueña con el resultado exacto. Predice con la mente fría.",
+  "El lunes quieres cambiarlos a todos, el miércoles crees que se pueden salvar dos o tres, <br> el viernes piensas que puedes recuperar a cinco o seis y el domingo juegan los mismo once cabrones de siempre. <br>  J.B Toshack" ,
+  "La prensa es muy mentirosa. Dicen que me he acostado con 200 mujeres, pero solo fueron 100. <br> George Best",
 ];
 
 // ── AVATARES — 12 personajes con imágenes animadas ────────────
