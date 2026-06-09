@@ -34,6 +34,39 @@ export default function TabPartidos() {
 
   const cargarDatos = async () => {
     setCargando(true);
+    // Fecha límite: 11 de junio de 2026
+const fechaInicioMundial = new Date("2026-06-11T00:00:00");
+const hoyDate = new Date();
+hoyDate.setHours(0,0,0,0);
+
+if (hoyDate < fechaInicioMundial) {
+  // Antes del mundial: mostrar los dos primeros partidos del día 11
+  const dosPrimerosPartidos = [
+    {
+      id: "partido_001",  // Asegúrate que este ID exista en Firestore o usa uno temporal
+      fecha: "2026-06-11",
+      horaInicio: "15:00",
+      local: { nombre: "México", bandera: "🇲🇽" },
+      visitante: { nombre: "Sudáfrica", bandera: "🇿🇦" },
+      fase: "grupos",
+      estaDestacado: true,
+      resultado: null,
+    },
+    {
+      id: "partido_002",
+      fecha: "2026-06-11",
+      horaInicio: "22:00",
+      local: { nombre: "Corea del Sur", bandera: "🇰🇷" },
+      visitante: { nombre: "República Checa", bandera: "🇨🇿" },
+      fase: "grupos",
+      estaDestacado: false,
+      resultado: null,
+    },
+  ];
+  setPartidos(dosPrimerosPartidos);
+  setCargando(false);
+  return; // Salimos de la función, no seguimos a Firestore
+}
     try {
       // Partidos
       let lista = [];
