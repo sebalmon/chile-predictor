@@ -819,7 +819,7 @@ h3 { font-size: 10px; }
 .splash-container-unificado {
   position: relative;
   width: 100vw;
-  height: 100vh;
+  height: 100vh; 
   overflow: hidden;
   background-color: rgb(225, 225, 225); /* fondo de seguridad mientras cargan imágenes */
 }
@@ -912,4 +912,161 @@ h3 { font-size: 10px; }
   line-height: 1.6;
   pointer-events: none;
   padding: 0 15px;
+}
+
+/* ── PODIO ESTILO FÓRMULA 1 ── */
+.podio-f1-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 6px;
+  margin: 20px 0;
+  padding-bottom: 10px;
+  border-bottom: 4px dashed var(--gris);
+}
+
+.podio-escalon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 110px;
+}
+
+.podio-avatares-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  min-height: 52px;
+}
+
+.podio-jugador-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.podio-jugador-name {
+  font-size: 5px;
+  color: var(--blanco);
+  background: var(--negro);
+  padding: 2px;
+  border: 1px solid var(--gris);
+  margin-top: 2px;
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podio-bloque-fisico {
+  width: 100%;
+  border: 4px solid var(--negro);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Press Start 2P', monospace;
+  box-shadow: inset -4px -4px 0px rgba(0,0,0,0.2);
+}
+
+.podio-bloque-numero {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--negro);
+}
+
+/* ── ANIMACIÓN INDIVIDUAL DE 3 FOTOGRAMAS POR AVATAR ── */
+.avatar-pixel-animado {
+  width: 42px;
+  height: 42px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+
+.avatar-pixel-animado.pequeno {
+  width: 24px;
+  height: 24px;
+}
+
+/* Clases dinámicas asignadas según el avatar del usuario */
+.anim-chancho-lorenzo { animation: play-chancho-lorenzo 0.6s step-end infinite; }
+.anim-azkargorta { animation: play-azkargorta 0.6s step-end infinite; }
+.anim-chinquihuin { animation: play-chinquihuin 0.6s step-end infinite; }
+.anim-julio-martinez { animation: play-julio-martinez 0.6s step-end infinite; }
+.anim-caszely { animation: play-caszely 0.6s step-end infinite; }
+.anim-dr-orozco { animation: play-dr-orozco 0.6s step-end infinite; }
+.anim-peter-veneno { animation: play-peter-veneno 0.6s step-end infinite; }
+.anim-bielsa { animation: play-bielsa 0.6s step-end infinite; }
+.anim-carcuro { animation: play-carcuro 0.6s step-end infinite; }
+.anim-el-sapo { animation: play-el-sapo 0.6s step-end infinite; }
+.anim-el-hombre-del-maletin { animation: play-el-hombre-del-maletin 0.6s step-end infinite; }
+.anim-ff17 { animation: play-ff17 0.6s step-end infinite; }
+
+/* Keyframes individuales que alternan las imágenes en intervalos exactos de 0.2s */
+@keyframes play-chancho-lorenzo {
+  0% { background-image: url('/avatares/chancho-lorenzo-1.png'); }
+  33.3% { background-image: url('/avatares/chancho-lorenzo-2.png'); }
+  66.6% { background-image: url('/avatares/chancho-lorenzo-3.png'); }
+}
+@keyframes play-azkargorta {
+  0% { background-image: url('/avatares/azkargorta-1.png'); }
+  33.3% { background-image: url('/avatares/azkargorta-2.png'); }
+  66.6% { background-image: url('/avatares/azkargorta-3.png'); }
+}
+@keyframes play-chinquihuin {
+  0% { background-image: url('/avatares/chinquihuin-1.png'); }
+  33.3% { background-image: url('/avatares/chinquihuin-2.png'); }
+  66.6% { background-image: url('/avatares/chinquihuin-3.png'); }
+}
+@keyframes play-julio-martinez {
+  0% { background-image: url('/avatares/julio-martinez-1.png'); }
+  33.3% { background-image: url('/avatares/julio-martinez-2.png'); }
+  66.6% { background-image: url('/avatares/julio-martinez-3.png'); }
+}
+@keyframes play-caszely {
+  0% { background-image: url('/avatares/caszely-1.png'); }
+  33.3% { background-image: url('/avatares/caszely-2.png'); }
+  66.6% { background-image: url('/avatares/caszely-3.png'); }
+}
+@keyframes play-dr-orozco {
+  0% { background-image: url('/avatares/dr-orozco-1.png'); }
+  33.3% { background-image: url('/avatares/dr-orozco-2.png'); }
+  66.6% { background-image: url('/avatares/dr-orozco-3.png'); }
+}
+@keyframes play-peter-veneno {
+  0% { background-image: url('/avatares/peter-veneno-1.png'); }
+  33.3% { background-image: url('/avatares/peter-veneno-2.png'); }
+  66.6% { background-image: url('/avatares/peter-veneno-3.png'); }
+}
+@keyframes play-bielsa {
+  0% { background-image: url('/avatares/bielsa-1.png'); }
+  33.3% { background-image: url('/avatares/bielsa-2.png'); }
+  66.6% { background-image: url('/avatares/bielsa-3.png'); }
+}
+@keyframes play-carcuro {
+  0% { background-image: url('/avatares/carcuro-1.png'); }
+  33.3% { background-image: url('/avatares/carcuro-2.png'); }
+  66.6% { background-image: url('/avatares/carcuro-3.png'); }
+}
+@keyframes play-el-sapo {
+  0% { background-image: url('/avatares/el-sapo-1.png'); }
+  33.3% { background-image: url('/avatares/el-sapo-2.png'); }
+  66.6% { background-image: url('/avatares/el-sapo-3.png'); }
+}
+@keyframes play-el-hombre-del-maletin {
+  0% { background-image: url('/avatares/el-hombre-del-maletin-1.png'); }
+  33.3% { background-image: url('/avatares/el-hombre-del-maletin-2.png'); }
+  66.6% { background-image: url('/avatares/el-hombre-del-maletin-3.png'); }
+}
+@keyframes play-ff17 {
+  0% { background-image: url('/avatares/ff17-1.png'); }
+  33.3% { background-image: url('/avatares/ff17-2.png'); }
+  66.6% { background-image: url('/avatares/ff17-3.png'); }
 }
