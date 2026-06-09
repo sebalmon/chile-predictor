@@ -1,58 +1,64 @@
-// ============================================================
-// REGLAS DE SEGURIDAD FIRESTORE
-// Pégalas en: Firebase Console > Firestore > Reglas
-// ============================================================
+// firestore.rules  — v3
+// Actualizado para soportar cartasDelUsuario, config/avisoAdmin
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ── Usuarios ────────────────────────────────────────────
-    // Cualquier usuario autenticado puede leer perfiles (para ranking)
-    // Solo el propio usuario puede escribir su perfil
     match /usuarios/{uid} {
-      allow read: if request.auth != null;
+      allow read:   if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == uid;
       allow update: if request.auth != null && request.auth.uid == uid;
-      allow delete: if false; // nadie puede borrar perfiles
+      allow delete: if false;
     }
 
     // ── Predicciones ────────────────────────────────────────
-    // El ID del documento es: uid_partidoId
-    // Solo el propio usuario puede leer y escribir sus predicciones
     match /predicciones/{docId} {
-      allow read: if request.auth != null &&
-        resource.data.uid == request.auth.uid;
-      allow write: if request.auth != null &&
-        request.resource.data.uid == request.auth.uid;
+      allow read:  if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if request.auth != null && request.resource.data.uid == request.auth.uid;
     }
 
     // ── Respuestas a preguntas ───────────────────────────────
-    // El ID del documento es: uid_preguntaId
     match /respuestas/{docId} {
-      allow read: if request.auth != null &&
-        resource.data.uid == request.auth.uid;
-      allow write: if request.auth != null &&
-        request.resource.data.uid == request.auth.uid;
+      allow read:  if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if request.auth != null && request.resource.data.uid == request.auth.uid;
     }
 
     // ── Partidos (solo lectura para usuarios) ────────────────
-    // Solo admin (tú) puede escribir desde Firebase Console
     match /partidos/{docId} {
-      allow read: if request.auth != null;
-      allow write: if false; // solo desde Firebase Console
+      allow read:  if request.auth != null;
+      allow write: if false;
     }
 
-    // ── Preguntas del día (solo lectura) ─────────────────────
+    // ── Preguntas del día ─────────────────────────────────────
     match /preguntas/{docId} {
-      allow read: if request.auth != null;
+      allow read:  if request.auth != null;
       allow write: if false;
     }
 
     // ── Puntos del día (para podio) ──────────────────────────
     match /puntosDelDia/{docId} {
-      allow read: if request.auth != null;
-      allow write: if false; // solo admin
+      allow read:  if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── Cartas del usuario (notificaciones de podio) ─────────
+    // El usuario solo puede leer sus propias cartas y marcarlas como vistas
+    match /cartasDelUsuario/{docId} {
+      allow read:   if request.auth != null && resource.data.uid == request.auth.uid;
+      // Solo puede actualizar el campo "visto" (para cerrar el modal)
+      allow update: if request.auth != null
+                    && resource.data.uid == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["visto"]);
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    // ── Configuración global (avisos del admin) ──────────────
+    match /config/{docId} {
+      allow read:  if request.auth != null;
+      allow write: if false;   // solo admin via consola Firebase o Cloud Functions
     }
   }
 }

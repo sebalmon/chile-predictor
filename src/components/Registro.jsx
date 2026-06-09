@@ -50,7 +50,7 @@ export default function Registro() {
         nickname: nickname,
         nicknameLower: nicknameNorm,
         avatarId: avatarId,
-        avatarEmoji: avatarElegido.emoji,
+        avatarSlug: avatarElegido.slug,   // ← NUEVO
         avatarNombre: avatarElegido.nombre,
         puntosTotal: 0,
         cartasDesbloqueadas: [],
@@ -108,7 +108,12 @@ export default function Registro() {
                 onClick={() => setAvatarId(av.id)}
                 type="button"
               >
-                <span>{av.emoji}</span>
+                <img
+                  src={`/avatares/${av.slug}-1.png`}
+                  alt={av.nombre}
+                  style={{ width: "40px", height: "40px", imageRendering: "pixelated" }}
+                  onError={(e) => { e.target.style.display="none"; }}
+                />
                 <span className="avatar-opcion-nombre">{av.nombre}</span>
               </button>
             ))}

@@ -1,24 +1,20 @@
+// src/components/OnboardingModal.jsx  — v3
 import React, { useEffect, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 
-// Clave en localStorage para saber si ya vio el onboarding
-// (Complementado con flag en Firestore para persistencia cross-device)
 const LOCAL_KEY = "cp8b_onboarding_visto";
 
 export default function OnboardingModal() {
   const { firebaseUser, userProfile, refreshProfile } = useAuth();
   const [visible, setVisible] = useState(false);
-  const [paso, setPaso] = useState(0);
+  const [paso, setPaso]       = useState(0);
 
   useEffect(() => {
-    // Mostrar si el usuario NO ha visto el onboarding todavía
-    const yaVioLocal = localStorage.getItem(LOCAL_KEY);
+    const yaVioLocal     = localStorage.getItem(LOCAL_KEY);
     const yaVioFirestore = userProfile?.onboardingVisto;
-
     if (!yaVioLocal && !yaVioFirestore) {
-      // Pequeño delay para que la UI cargue primero
       const t = setTimeout(() => setVisible(true), 600);
       return () => clearTimeout(t);
     }
@@ -27,16 +23,11 @@ export default function OnboardingModal() {
   const handleCerrar = async () => {
     setVisible(false);
     localStorage.setItem(LOCAL_KEY, "1");
-    // Marcar en Firestore para persistencia en otros dispositivos
     if (firebaseUser) {
       try {
-        await updateDoc(doc(db, "usuarios", firebaseUser.uid), {
-          onboardingVisto: true,
-        });
+        await updateDoc(doc(db, "usuarios", firebaseUser.uid), { onboardingVisto: true });
         await refreshProfile();
-      } catch (e) {
-        // No crítico si falla
-      }
+      } catch(_) {}
     }
   };
 
@@ -50,18 +41,53 @@ export default function OnboardingModal() {
       contenido: (
         <>
           <p style={{ lineHeight: 2.2 }}>
-            <span style={{ color: "var(--amarillo)" }}>Chile Predictor 8-Bit</span> es un
-            sistema de ranking por puntos. Pronostica los partidos diarios mediante
-            3 formatos de apuesta y escala en la tabla de posiciones.
+            <span style={{ color: "var(--amarillo)" }}>International Superstar Polla</span> es
+            un sistema de ranking por puntos. Pronostica los partidos del Mundial 2026
+            y escala en la tabla de posiciones.
           </p>
-          <div style={{ marginTop: "12px", padding: "10px", border: "2px solid var(--verde-campo)", background: "rgba(82,183,136,0.1)" }}>
-            <p style={{ fontSize: "6px", color: "var(--verde-claro)" }}>📊 FORMATO DE APUESTAS:</p>
-            <p style={{ marginTop: "6px", fontSize: "6px", color: "var(--gris-claro)", lineHeight: 2 }}>
-              🟢 Ganador del partido (1-2 pts)<br/>
-              🟡 Marcador exacto en partidos destacados (3 pts)<br/>
-              🔴 Alargues y penales en fases finales (hasta 4 pts)
-            </p>
+          <div style={{ marginTop: "12px", padding: "10px",
+            border: "2px solid var(--verde-campo)", background: "rgba(82,183,136,0.1)" }}>
+            <p style={{ fontSize: "6px", color: "var(--verde-claro)" }}>🗂 PESTAÑAS DE LA APP:</p>
+            <div style={{ marginTop: "6px", fontSize: "6px",
+              color: "var(--gris-claro)", lineHeight: 2 }}>
+              <p>🏠 <span style={{ color: "var(--blanco)" }}>INICIO</span> — Podio, ranking y puntuación</p>
+              <p>⚽ <span style={{ color: "var(--blanco)" }}>PARTIDOS</span> — Tus pronósticos del día</p>
+              <p>📊 <span style={{ color: "var(--blanco)" }}>RANKING</span> — Tabla completa</p>
+              <p>👤 <span style={{ color: "var(--blanco)" }}>PERFIL</span> — Tus cartas y estadísticas</p>
+            </div>
           </div>
+        </>
+      ),
+    },
+    {
+      icono: "⚽",
+      titulo: "CÓMO PREDECIR",
+      color: "var(--verde-claro)",
+      contenido: (
+        <>
+          <p style={{ lineHeight: 2.2 }}>
+            En la pestaña <span style={{ color: "var(--amarillo)" }}>PARTIDOS</span> encontrarás
+            todos los encuentros del día. Tienes hasta <span style={{ color: "var(--rojo-chile)" }}>
+            1 hora antes</span> del inicio para guardar tu pronóstico.
+          </p>
+          <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+            {[
+              { pts: "+1 / +2", desc: "Acertar ganador y diferencia (grupos)" },
+              { pts: "+3",      desc: "Resultado exacto en partido destacado ⭐" },
+              { pts: "+2 / +4", desc: "Alargues y penales en fases finales" },
+            ].map((r,i) => (
+              <div key={i} style={{ display:"flex", justifyContent:"space-between",
+                padding:"6px 8px", border:"1px solid var(--verde-campo)",
+                fontSize:"6px", background:"rgba(0,0,0,0.3)" }}>
+                <span style={{ color: "var(--gris-claro)" }}>{r.desc}</span>
+                <span style={{ color: "var(--amarillo)" }}>{r.pts}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: "6px", color: "var(--verde-claro)", marginTop: "10px", lineHeight: 2 }}>
+            💡 Cuando completes TODOS los pronósticos del día, aparecerá automáticamente
+            la <span style={{ color: "var(--amarillo)" }}>Pregunta del Día</span> (+2 pts).
+          </p>
         </>
       ),
     },
@@ -72,91 +98,85 @@ export default function OnboardingModal() {
       contenido: (
         <>
           <p style={{ lineHeight: 2.2 }}>
-            ¡A partir de los <span style={{ color: "var(--rojo-chile)" }}>Dieciseisavos de Final</span> los
-            partidos son a muere-muere! Las predicciones incluyen <span style={{ color: "var(--amarillo)" }}>Alargues</span> y{" "}
-            <span style={{ color: "var(--amarillo)" }}>Penales</span>, otorgando puntajes mucho más elevados.
+            Desde los <span style={{ color: "var(--rojo-chile)" }}>Dieciseisavos</span> en
+            adelante los partidos son a <strong>muere-muere</strong>. Además de predecir al
+            ganador, puedes apostar por <span style={{ color: "var(--amarillo)" }}>Alargue</span> o{" "}
+            <span style={{ color: "var(--amarillo)" }}>Penales</span> para ganar más puntos.
           </p>
-          <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "5px" }}>
             {[
-              { label: "Acertar ganador (90 min)", pts: "+2 pts" },
-              { label: "Ganador + diferencia (90 min)", pts: "+3 pts" },
-              { label: "Acertar Alargue + diferencia", pts: "+3 pts" },
-              { label: "Acertar Penales + ganador tanda", pts: "+3 pts" },
-              { label: "Penales + diferencia exacta tanda", pts: "+4 pts" },
-            ].map((item, i) => (
-              <div key={i} style={{
-                display: "flex", justifyContent: "space-between",
-                padding: "6px 8px", border: "1px solid var(--verde-campo)",
-                fontSize: "6px", background: "rgba(0,0,0,0.3)",
-              }}>
-                <span style={{ color: "var(--gris-claro)" }}>{item.label}</span>
-                <span style={{ color: "var(--amarillo)" }}>{item.pts}</span>
+              { pts:"+2", desc:"Acertar ganador en 90 min" },
+              { pts:"+3", desc:"Ganador + diferencia (90 min)" },
+              { pts:"+2/+3", desc:"Acertar Alargue + diferencia" },
+              { pts:"+2/+3/+4", desc:"Acertar Penales (exacto da +4)" },
+            ].map((r,i) => (
+              <div key={i} style={{ display:"flex", justifyContent:"space-between",
+                padding:"5px 8px", border:"1px solid var(--verde-campo)",
+                fontSize:"6px", background:"rgba(0,0,0,0.3)" }}>
+                <span style={{ color:"var(--gris-claro)" }}>{r.desc}</span>
+                <span style={{ color:"var(--amarillo)" }}>{r.pts}</span>
               </div>
             ))}
-          </div>
-        </>
-      ),
-    },
-    {
-      icono: "❓",
-      titulo: "TRIVIA DIARIA",
-      color: "var(--amarillo)",
-      contenido: (
-        <>
-          <p style={{ lineHeight: 2.2 }}>
-            Cada día hay una <span style={{ color: "var(--amarillo)" }}>Pregunta del Día</span> disponible
-            hasta el cierre de las predicciones. Responderla correctamente te entrega{" "}
-            <span style={{ color: "var(--verde-claro)" }}>+2 puntos cruciales</span> que pueden
-            definir el ranking.
-          </p>
-          <div style={{
-            marginTop: "14px", padding: "12px",
-            border: "2px solid var(--amarillo)", background: "rgba(244,208,63,0.08)",
-            textAlign: "center",
-          }}>
-            <span style={{ fontSize: "24px" }}>💡</span>
-            <p style={{ marginTop: "8px", fontSize: "6px", color: "var(--amarillo)", lineHeight: 2 }}>
-              No olvides responder ANTES de que<br/>
-              cierren las votaciones del día.<br/>
-              ¡Los puntos no se recuperan!
-            </p>
           </div>
         </>
       ),
     },
     {
       icono: "🃏",
-      titulo: "CARTAS Y PODIO",
+      titulo: "CARTAS COLECCIONABLES",
       color: "var(--amarillo)",
       contenido: (
         <>
           <p style={{ lineHeight: 2.2 }}>
-            Los <span style={{ color: "var(--amarillo)" }}>3 mejores jugadores del día</span> suben
-            al podio diario y reciben <span style={{ color: "var(--verde-claro)" }}>Cartas Coleccionables</span>{" "}
-            únicas como premio. ¡Además, el ganador del día obtiene{" "}
-            <span style={{ color: "var(--rojo-chile)" }}>+3 puntos extra</span>!
+            Los <span style={{ color: "var(--amarillo)" }}>3 mejores jugadores del día</span> reciben
+            Cartas Coleccionables como premio. Úsalas en tus partidos favoritos para
+            <span style={{ color: "var(--verde-claro)" }}> multiplicar tus puntos</span>.
           </p>
-          <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ marginTop: "10px", display:"flex", flexDirection:"column", gap:"8px" }}>
             {[
-              { emoji: "⚽🔮", label: "Cartas Comunes (x2)", color: "var(--verde-claro)", desc: "Podio 2° y 3° lugar" },
-              { emoji: "👑🔥", label: "Cartas Raras (x3)", color: "var(--amarillo)", desc: "Podio 1° lugar" },
-              { emoji: "🏆⭐", label: "Cartas Legendarias (x4)", color: "var(--rojo-chile)", desc: "Logros especiales" },
-            ].map((c, i) => (
-              <div key={i} style={{
-                padding: "8px 10px", border: `2px solid ${c.color}`,
-                background: "rgba(0,0,0,0.3)", display: "flex",
-                justifyContent: "space-between", alignItems: "center",
-              }}>
+              { em:"🏆⭐", label:"Legendarias (×4)", color:"var(--rojo-chile)", desc:"1° del podio del día" },
+              { em:"👑🔥", label:"Raras (×3)",        color:"var(--amarillo)",  desc:"2° del podio del día" },
+              { em:"⚽🔮", label:"Comunes (×2)",       color:"var(--verde-claro)", desc:"3° del podio del día" },
+            ].map((c,i)=>(
+              <div key={i} style={{ padding:"8px 10px", border:`2px solid ${c.color}`,
+                background:"rgba(0,0,0,0.3)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
-                  <span style={{ fontSize: "7px", color: c.color }}>{c.emoji} {c.label}</span>
-                  <p style={{ fontSize: "5px", color: "var(--gris-claro)", marginTop: "3px" }}>{c.desc}</p>
+                  <span style={{ fontSize:"7px", color:c.color }}>{c.em} {c.label}</span>
+                  <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"3px" }}>{c.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-          <p style={{ marginTop: "10px", fontSize: "6px", color: "var(--gris-claro)", lineHeight: 2 }}>
-            Adjunta cartas a tus predicciones favoritas para{" "}
-            <span style={{ color: "var(--amarillo)" }}>multiplicar tus puntos</span> si aciertas todo.
+          <p style={{ fontSize: "6px", color:"var(--gris-claro)", marginTop:"10px", lineHeight: 2 }}>
+            ✨ La carta multiplica tus puntos si aciertas <strong style={{color:"var(--amarillo)"}}>algo</strong> en
+            el partido. Si no aciertas nada, la carta se consume igual.
+          </p>
+        </>
+      ),
+    },
+    {
+      icono: "🏆",
+      titulo: "EL PODIO Y EL RANKING",
+      color: "var(--amarillo)",
+      contenido: (
+        <>
+          <p style={{ lineHeight: 2.2 }}>
+            Cada día se genera un <span style={{ color: "var(--amarillo)" }}>Podio</span> con los
+            mejores jugadores de ese día. El <span style={{ color: "var(--amarillo)" }}>ganador del día</span>{" "}
+            obtiene <span style={{ color: "var(--verde-claro)" }}>+3 puntos extra</span>.
+          </p>
+          <div style={{ marginTop: "12px", padding: "12px",
+            border: "2px solid var(--amarillo)", background: "rgba(244,208,63,0.08)", textAlign:"center" }}>
+            <span style={{ fontSize: "24px" }}>🥇🥈🥉</span>
+            <p style={{ marginTop: "8px", fontSize: "6px", color: "var(--amarillo)", lineHeight: 2 }}>
+              Si empatas en puntaje con otros jugadores,<br/>
+              compartes el mismo escalón del podio.<br/>
+              ¡Todos reciben la misma carta!
+            </p>
+          </div>
+          <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginTop: "10px", lineHeight: 2 }}>
+            Ve a la pestaña <span style={{ color: "var(--blanco)" }}>INICIO</span> para ver
+            el podio del día anterior y el ranking general actualizado.
           </p>
         </>
       ),
@@ -164,32 +184,23 @@ export default function OnboardingModal() {
   ];
 
   const pasoActual = pasos[paso];
-  const esUltimo = paso === pasos.length - 1;
+  const esUltimo   = paso === pasos.length - 1;
 
   return (
     <div style={{
       position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.92)",
-      zIndex: 1000,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "20px",
+      background: "rgba(0,0,0,0.92)", zIndex: 1000,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
     }}>
       <div style={{
         background: "var(--negro)",
         border: `4px solid ${pasoActual.color}`,
         boxShadow: `6px 6px 0 ${pasoActual.color}44`,
-        padding: "24px 20px",
-        maxWidth: "400px",
-        width: "100%",
-        maxHeight: "90vh",
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
+        padding: "24px 20px", maxWidth: "400px", width: "100%",
+        maxHeight: "90vh", overflowY: "auto",
+        display: "flex", flexDirection: "column", gap: "16px",
       }}>
-        {/* Encabezado */}
+        {/* Header */}
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: "36px", marginBottom: "8px" }}>{pasoActual.icono}</div>
           <h2 style={{ color: pasoActual.color, fontSize: "11px" }}>{pasoActual.titulo}</h2>
@@ -198,16 +209,11 @@ export default function OnboardingModal() {
         {/* Indicador de pasos */}
         <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
           {pasos.map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: i === paso ? "20px" : "8px",
-                height: "8px",
-                background: i === paso ? pasoActual.color : "var(--gris)",
-                border: "2px solid var(--negro)",
-                transition: "width 0.2s",
-              }}
-            />
+            <div key={i} style={{
+              width: i === paso ? "20px" : "8px", height: "8px",
+              background: i === paso ? pasoActual.color : "var(--gris)",
+              border: "2px solid var(--negro)", transition: "width 0.2s",
+            }} />
           ))}
         </div>
 
@@ -216,50 +222,37 @@ export default function OnboardingModal() {
           {pasoActual.contenido}
         </div>
 
-        {/* Botones de navegación */}
+        {/* Navegación */}
         <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
           {paso > 0 && (
-            <button
-              className="btn-pixel btn-gris"
+            <button className="btn-pixel btn-gris"
               style={{ fontSize: "7px", flex: "0 0 auto" }}
-              onClick={() => setPaso((p) => p - 1)}
-            >
+              onClick={() => setPaso((p) => p - 1)}>
               ← ATRÁS
             </button>
           )}
           {!esUltimo ? (
-            <button
-              className="btn-pixel btn-verde w-full"
+            <button className="btn-pixel btn-verde w-full"
               style={{ fontSize: "7px" }}
-              onClick={() => setPaso((p) => p + 1)}
-            >
+              onClick={() => setPaso((p) => p + 1)}>
               SIGUIENTE →
             </button>
           ) : (
-            <button
-              className="btn-pixel btn-amarillo w-full"
+            <button className="btn-pixel btn-amarillo w-full"
               style={{ fontSize: "8px" }}
-              onClick={handleCerrar}
-            >
+              onClick={handleCerrar}>
               ✅ ¡ENTENDIDO! JUGAR
             </button>
           )}
         </div>
 
-        {/* Skip */}
         {!esUltimo && (
-          <button
-            onClick={handleCerrar}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--gris)",
-              fontSize: "6px",
-              fontFamily: "'Press Start 2P', monospace",
-              cursor: "pointer",
-              textAlign: "center",
-            }}
-          >
+          <button onClick={handleCerrar} style={{
+            background: "none", border: "none",
+            color: "var(--gris)", fontSize: "6px",
+            fontFamily: "'Press Start 2P', monospace",
+            cursor: "pointer", textAlign: "center",
+          }}>
             Saltar intro →
           </button>
         )}

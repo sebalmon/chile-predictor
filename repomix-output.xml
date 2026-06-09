@@ -1,0 +1,5082 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+eslint.config.js
+firestore.rules
+index.html
+package.json
+public/favicon.svg
+public/icons.svg
+public/inicio1.jpg
+public/inicio2.png
+public/inicio3.png
+public/inicio3b.png
+public/inicio4.jpg
+README.md
+src/App.css
+src/App.jsx
+src/assets/hero.png
+src/assets/react.svg
+src/assets/vite.svg
+src/components/AdminPanel.jsx
+src/components/Dashboard.jsx
+src/components/Login.jsx
+src/components/OnboardingModal.jsx
+src/components/PartidoCard.jsx
+src/components/Perfil.jsx
+src/components/PreguntaCard.jsx
+src/components/Ranking.jsx
+src/components/Registro.jsx
+src/components/Splash.jsx
+src/contexts/AuthContext.jsx
+src/data/sampleData.js
+src/firebase.js
+src/index.css
+src/main.jsx
+src/styles/global.css
+src/utils/helpers.js
+vite.config.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="eslint.config.js">
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+])
+</file>
+
+<file path="firestore.rules">
+// ============================================================
+// REGLAS DE SEGURIDAD FIRESTORE
+// Pégalas en: Firebase Console > Firestore > Reglas
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Usuarios ────────────────────────────────────────────
+    // Cualquier usuario autenticado puede leer perfiles (para ranking)
+    // Solo el propio usuario puede escribir su perfil
+    match /usuarios/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false; // nadie puede borrar perfiles
+    }
+
+    // ── Predicciones ────────────────────────────────────────
+    // El ID del documento es: uid_partidoId
+    // Solo el propio usuario puede leer y escribir sus predicciones
+    match /predicciones/{docId} {
+      allow read: if request.auth != null &&
+        resource.data.uid == request.auth.uid;
+      allow write: if request.auth != null &&
+        request.resource.data.uid == request.auth.uid;
+    }
+
+    // ── Respuestas a preguntas ───────────────────────────────
+    // El ID del documento es: uid_preguntaId
+    match /respuestas/{docId} {
+      allow read: if request.auth != null &&
+        resource.data.uid == request.auth.uid;
+      allow write: if request.auth != null &&
+        request.resource.data.uid == request.auth.uid;
+    }
+
+    // ── Partidos (solo lectura para usuarios) ────────────────
+    // Solo admin (tú) puede escribir desde Firebase Console
+    match /partidos/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false; // solo desde Firebase Console
+    }
+
+    // ── Preguntas del día (solo lectura) ─────────────────────
+    match /preguntas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── Puntos del día (para podio) ──────────────────────────
+    match /puntosDelDia/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false; // solo admin
+    }
+  }
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "chile-predictor",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "firebase": "^10.14.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.17.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.2.0"
+  }
+}
+</file>
+
+<file path="public/favicon.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" fill="none" viewBox="0 0 48 46"><path fill="#863bff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" style="fill:#863bff;fill:color(display-p3 .5252 .23 1);fill-opacity:1"/><mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" style="fill:#000;fill-opacity:1"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#ede6ff" rx="10.399" ry="29.851" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -39.328 7.883)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#7e14ff" rx="5.508" ry="30.487" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -25.913 -14.639)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -32.644 -3.334)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -34.34 30.47)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#ede6ff" rx="14.072" ry="22.078" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="rotate(93.35 24.506 48.493)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx=".387" cy="8.972" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(39.51 .387 8.972)"/></g><g filter="url(#k)"><ellipse cx="47.523" cy="-6.092" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 47.523 -6.092)"/></g><g filter="url(#l)"><ellipse cx="41.412" cy="6.333" fill="#47bfff" rx="5.971" ry="9.665" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 41.412 6.333)"/></g><g filter="url(#m)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#n)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#o)"><ellipse cx="35.651" cy="29.907" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 35.651 29.907)"/></g><g filter="url(#p)"><ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 38.418 32.4)"/></g></g><defs><filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-43.513" y="21.178" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="15.756" y="-17.901" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-27.636" y="-22.853" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="20.116" y="-38.415" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="24.641" y="-11.323" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="8.244" y="-2.416" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="18.713" y="10.588" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter></defs></svg>
+</file>
+
+<file path="public/icons.svg">
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="bluesky-icon" viewBox="0 0 16 17">
+    <g clip-path="url(#bluesky-clip)"><path fill="#08060d" d="M7.75 7.735c-.693-1.348-2.58-3.86-4.334-5.097-1.68-1.187-2.32-.981-2.74-.79C.188 2.065.1 2.812.1 3.251s.241 3.602.398 4.13c.52 1.744 2.367 2.333 4.07 2.145-2.495.37-4.71 1.278-1.805 4.512 3.196 3.309 4.38-.71 4.987-2.746.608 2.036 1.307 5.91 4.93 2.746 2.72-2.746.747-4.143-1.747-4.512 1.702.189 3.55-.4 4.07-2.145.156-.528.397-3.691.397-4.13s-.088-1.186-.575-1.406c-.42-.19-1.06-.395-2.741.79-1.755 1.24-3.64 3.752-4.334 5.099"/></g>
+    <defs><clipPath id="bluesky-clip"><path fill="#fff" d="M.1.85h15.3v15.3H.1z"/></clipPath></defs>
+  </symbol>
+  <symbol id="discord-icon" viewBox="0 0 20 19">
+    <path fill="#08060d" d="M16.224 3.768a14.5 14.5 0 0 0-3.67-1.153c-.158.286-.343.67-.47.976a13.5 13.5 0 0 0-4.067 0c-.128-.306-.317-.69-.476-.976A14.4 14.4 0 0 0 3.868 3.77C1.546 7.28.916 10.703 1.231 14.077a14.7 14.7 0 0 0 4.5 2.306q.545-.748.965-1.587a9.5 9.5 0 0 1-1.518-.74q.191-.14.372-.293c2.927 1.369 6.107 1.369 8.999 0q.183.152.372.294-.723.437-1.52.74.418.838.963 1.588a14.6 14.6 0 0 0 4.504-2.308c.37-3.911-.63-7.302-2.644-10.309m-9.13 8.234c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.894 0 1.614.82 1.599 1.82.001 1-.705 1.82-1.6 1.82m5.91 0c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.893 0 1.614.82 1.599 1.82 0 1-.706 1.82-1.6 1.82"/>
+  </symbol>
+  <symbol id="documentation-icon" viewBox="0 0 21 20">
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="m15.5 13.333 1.533 1.322c.645.555.967.833.967 1.178s-.322.623-.967 1.179L15.5 18.333m-3.333-5-1.534 1.322c-.644.555-.966.833-.966 1.178s.322.623.966 1.179l1.534 1.321"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M17.167 10.836v-4.32c0-1.41 0-2.117-.224-2.68-.359-.906-1.118-1.621-2.08-1.96-.599-.21-1.349-.21-2.848-.21-2.623 0-3.935 0-4.983.369-1.684.591-3.013 1.842-3.641 3.428C3 6.449 3 7.684 3 10.154v2.122c0 2.558 0 3.838.706 4.726q.306.383.713.671c.76.536 1.79.64 3.581.66"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M3 10a2.78 2.78 0 0 1 2.778-2.778c.555 0 1.209.097 1.748-.047.48-.129.854-.503.982-.982.145-.54.048-1.194.048-1.749a2.78 2.78 0 0 1 2.777-2.777"/>
+  </symbol>
+  <symbol id="github-icon" viewBox="0 0 19 19">
+    <path fill="#08060d" fill-rule="evenodd" d="M9.356 1.85C5.05 1.85 1.57 5.356 1.57 9.694a7.84 7.84 0 0 0 5.324 7.44c.387.079.528-.168.528-.376 0-.182-.013-.805-.013-1.454-2.165.467-2.616-.935-2.616-.935-.349-.91-.864-1.143-.864-1.143-.71-.48.051-.48.051-.48.787.051 1.2.805 1.2.805.695 1.194 1.817.857 2.268.649.064-.507.27-.857.49-1.052-1.728-.182-3.545-.857-3.545-3.87 0-.857.31-1.558.8-2.104-.078-.195-.349-1 .077-2.078 0 0 .657-.208 2.14.805a7.5 7.5 0 0 1 1.946-.26c.657 0 1.328.092 1.946.26 1.483-1.013 2.14-.805 2.14-.805.426 1.078.155 1.883.078 2.078.502.546.799 1.247.799 2.104 0 3.013-1.818 3.675-3.558 3.87.284.247.528.714.528 1.454 0 1.052-.012 1.896-.012 2.156 0 .208.142.455.528.377a7.84 7.84 0 0 0 5.324-7.441c.013-4.338-3.48-7.844-7.773-7.844" clip-rule="evenodd"/>
+  </symbol>
+  <symbol id="social-icon" viewBox="0 0 20 20">
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M12.5 6.667a4.167 4.167 0 1 0-8.334 0 4.167 4.167 0 0 0 8.334 0"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M2.5 16.667a5.833 5.833 0 0 1 8.75-5.053m3.837.474.513 1.035c.07.144.257.282.414.309l.93.155c.596.1.736.536.307.965l-.723.73a.64.64 0 0 0-.152.531l.207.903c.164.715-.213.991-.84.618l-.872-.52a.63.63 0 0 0-.577 0l-.872.52c-.624.373-1.003.094-.84-.618l.207-.903a.64.64 0 0 0-.152-.532l-.723-.729c-.426-.43-.289-.864.306-.964l.93-.156a.64.64 0 0 0 .412-.31l.513-1.034c.28-.562.735-.562 1.012 0"/>
+  </symbol>
+  <symbol id="x-icon" viewBox="0 0 19 19">
+    <path fill="#08060d" fill-rule="evenodd" d="M1.893 1.98c.052.072 1.245 1.769 2.653 3.77l2.892 4.114c.183.261.333.48.333.486s-.068.089-.152.183l-.522.593-.765.867-3.597 4.087c-.375.426-.734.834-.798.905a1 1 0 0 0-.118.148c0 .01.236.017.664.017h.663l.729-.83c.4-.457.796-.906.879-.999a692 692 0 0 0 1.794-2.038c.034-.037.301-.34.594-.675l.551-.624.345-.392a7 7 0 0 1 .34-.374c.006 0 .93 1.306 2.052 2.903l2.084 2.965.045.063h2.275c1.87 0 2.273-.003 2.266-.021-.008-.02-1.098-1.572-3.894-5.547-2.013-2.862-2.28-3.246-2.273-3.266.008-.019.282-.332 2.085-2.38l2-2.274 1.567-1.782c.022-.028-.016-.03-.65-.03h-.674l-.3.342a871 871 0 0 1-1.782 2.025c-.067.075-.405.458-.75.852a100 100 0 0 1-.803.91c-.148.172-.299.344-.99 1.127-.304.343-.32.358-.345.327-.015-.019-.904-1.282-1.976-2.808L6.365 1.85H1.8zm1.782.91 8.078 11.294c.772 1.08 1.413 1.973 1.425 1.984.016.017.241.02 1.05.017l1.03-.004-2.694-3.766L7.796 5.75 5.722 2.852l-1.039-.004-1.039-.004z" clip-rule="evenodd"/>
+  </symbol>
+</svg>
+</file>
+
+<file path="README.md">
+# ⚽ Chile Predictor 8-Bit — Guía Completa de Instalación
+
+## ESTRUCTURA DE ARCHIVOS
+
+```
+chile-predictor/
+├── public/
+│   └── favicon.svg
+├── src/
+│   ├── components/
+│   │   ├── Splash.jsx
+│   │   ├── Login.jsx
+│   │   ├── Registro.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── PartidoCard.jsx
+│   │   ├── PreguntaCard.jsx
+│   │   ├── Ranking.jsx
+│   │   └── Perfil.jsx
+│   ├── contexts/
+│   │   └── AuthContext.jsx
+│   ├── data/
+│   │   └── sampleData.js
+│   ├── styles/
+│   │   └── global.css
+│   ├── utils/
+│   │   └── helpers.js
+│   ├── firebase.js
+│   ├── App.jsx
+│   └── main.jsx
+├── firestore.rules
+├── index.html
+├── package.json
+└── vite.config.js
+```
+
+---
+
+## PASO 1 — CREAR PROYECTO FIREBASE
+
+### 1.1 Ir a Firebase Console
+1. Abre https://console.firebase.google.com/
+2. Haz clic en **"Agregar proyecto"**
+3. Nombre del proyecto: `chile-predictor` (o el que quieras)
+4. **Desactiva** Google Analytics (no es necesario)
+5. Haz clic en **"Crear proyecto"**
+
+### 1.2 Activar Authentication con Google
+1. En el menú izquierdo → **"Authentication"**
+2. Haz clic en **"Comenzar"**
+3. Pestaña **"Sign-in method"**
+4. Haz clic en **"Google"**
+5. Activa el interruptor (Enable)
+6. Pon tu email como correo de soporte del proyecto
+7. Haz clic en **"Guardar"**
+
+### 1.3 Crear base de datos Firestore
+1. En el menú izquierdo → **"Firestore Database"**
+2. Haz clic en **"Crear base de datos"**
+3. Selecciona **"Iniciar en modo de prueba"** (luego cambiarás las reglas)
+4. Elige la ubicación: **`us-central1`** (o la más cercana)
+5. Haz clic en **"Habilitar"**
+
+### 1.4 Obtener credenciales de la app
+1. En la página principal del proyecto → ícono `</>`  (Web)
+2. Nombre de la app: `chile-predictor-web`
+3. **NO** actives Firebase Hosting (usarás Vercel)
+4. Haz clic en **"Registrar app"**
+5. Copia el objeto `firebaseConfig` que aparece:
+
+```js
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "chile-predictor.firebaseapp.com",
+  projectId: "chile-predictor",
+  storageBucket: "chile-predictor.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
+```
+
+6. Pega esos valores en `src/firebase.js` reemplazando los `TU_...`
+
+### 1.5 Configurar reglas de Firestore
+1. En Firestore → pestaña **"Reglas"**
+2. Borra lo que hay y pega el contenido de `firestore.rules`
+3. Haz clic en **"Publicar"**
+
+### 1.6 Agregar dominio de Vercel a Auth (después del deploy)
+1. Ve a Authentication → Settings → **"Dominios autorizados"**
+2. Haz clic en **"Agregar dominio"**
+3. Escribe tu dominio de Vercel: `tu-app.vercel.app`
+4. También agrega `localhost` si no está (para pruebas locales)
+
+---
+
+## PASO 2 — INSTALAR Y PROBAR LOCALMENTE
+
+```bash
+# 1. Crea la carpeta del proyecto y entra en ella
+mkdir chile-predictor
+cd chile-predictor
+
+# 2. Copia todos los archivos (siguiendo la estructura de arriba)
+
+# 3. Instala dependencias
+npm install
+
+# 4. Ejecuta en modo desarrollo
+npm run dev
+
+# 5. Abre en el navegador: http://localhost:5173
+```
+
+**⚠ Si ves error de Firebase:** Verifica que las credenciales en `src/firebase.js` sean correctas.
+
+---
+
+## PASO 3 — SUBIR A GITHUB
+
+```bash
+# 1. Inicializa git (si no lo has hecho)
+git init
+
+# 2. Agrega todos los archivos
+git add .
+
+# 3. Primer commit
+git commit -m "Chile Predictor 8-bit - primera versión"
+
+# 4. Crea un repositorio en GitHub.com
+# Ve a github.com → New repository → Nombre: chile-predictor
+
+# 5. Conecta y sube
+git remote add origin https://github.com/TU_USUARIO/chile-predictor.git
+git branch -M main
+git push -u origin main
+```
+
+---
+
+## PASO 4 — DESPLEGAR EN VERCEL
+
+1. Ve a https://vercel.com/ e inicia sesión con GitHub
+2. Haz clic en **"New Project"**
+3. Importa el repositorio `chile-predictor`
+4. Configuración (Vercel lo detecta automáticamente):
+   - **Framework Preset:** Vite
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+5. Haz clic en **"Deploy"**
+6. Espera ~1 minuto. Vercel te da una URL como `chile-predictor.vercel.app`
+
+### Variables de entorno en Vercel (opcional pero recomendado)
+En vez de poner las credenciales directamente en firebase.js, puedes usar variables de entorno:
+
+1. En Vercel → Tu proyecto → **Settings → Environment Variables**
+2. Agrega cada variable:
+   - `VITE_FIREBASE_API_KEY` = tu apiKey
+   - `VITE_FIREBASE_AUTH_DOMAIN` = tu authDomain
+   - (etc. para cada valor)
+3. En `src/firebase.js` usa `import.meta.env.VITE_FIREBASE_API_KEY` en vez del valor directo
+
+---
+
+## PASO 5 — AGREGAR DATOS COMO ADMIN
+
+### Agregar partidos (en Firebase Console)
+1. Ve a Firestore → **"partidos"** → **"Agregar documento"**
+2. ID del documento: cualquier cosa (ej: `partido_001`)
+3. Campos:
+   ```
+   fecha: "2026-06-11"     (string)
+   horaInicio: "15:00"     (string, hora Santiago)
+   local: {
+     nombre: "Chile",
+     bandera: "🇨🇱"
+   }
+   visitante: {
+     nombre: "España",
+     bandera: "🇪🇸"
+   }
+   estaDestacado: true      (boolean)
+   resultado: null           (dejar en null hasta que se juegue)
+   ```
+
+### Ingresar resultado real (después del partido)
+1. Ve al documento del partido en Firestore
+2. Edita el campo `resultado`:
+   ```
+   resultado: {
+     golesLocal: 2,
+     golesVisitante: 1
+   }
+   ```
+3. ¡La app calculará los puntos automáticamente al leer este dato!
+
+### Agregar pregunta del día
+Colección: `preguntas`, nuevo documento:
+```
+fecha: "2026-06-11"
+texto: "¿Quién marcará el primer gol?"
+opciones: ["Alexis Sánchez", "Vidal", "Vargas", "Otro"]
+respuestaCorrecta: null   (llénalo después)
+```
+
+### Actualizar puntajes totales
+La app muestra `puntosTotal` del documento de usuario.
+Debes actualizarlo manualmente en Firestore (o escribir una Cloud Function).
+
+Forma manual:
+1. Ve a `usuarios` → encuentra al usuario
+2. Edita el campo `puntosTotal` con el nuevo valor
+
+### Actualizar podio del día anterior
+Colección: `puntosDelDia`, nuevo documento (ID: `uid_fecha`):
+```
+uid: "abc123..."
+fecha: "2026-06-11"
+nickname: "ElPibe10"
+avatarEmoji: "🦁"
+puntos: 8
+```
+
+---
+
+## SISTEMA DE PUNTUACIÓN — RESUMEN
+
+| Situación | Puntos |
+|-----------|--------|
+| Acertar ganador (partido normal) | +1 |
+| Acertar ganador + diferencia | +2 |
+| Resultado exacto (partido destacado ⭐) | +3 |
+| Solo ganador en partido destacado | +1 |
+| Pregunta del día correcta | +2 |
+| Ser el ganador del día (más puntos) | +3 extra |
+
+---
+
+## PREGUNTAS FRECUENTES
+
+**¿Puedo cambiar los emojis de avatares por imágenes?**
+Sí. En `src/data/sampleData.js`, en el array `AVATARES`, cambia el campo `emoji` por la URL de una imagen. Luego actualiza los componentes para usar `<img>` en vez de `<span>`.
+
+**¿Cómo cambio las frases del día?**
+Edita el array `FRASES_DEL_DIA` en `src/data/sampleData.js`.
+
+**¿Puedo tener más de 8 avatares?**
+Sí, agrega más objetos al array `AVATARES` en `sampleData.js`.
+
+**¿Cómo desbloqueo cartas coleccionables?**
+Manualmente desde Firebase Console: edita el campo `cartasDesbloqueadas` del usuario (es un array de IDs de carta, ej: `["c1", "c3"]`).
+
+**El login con Google no funciona en local**
+Asegúrate de que `localhost` esté en la lista de dominios autorizados en Firebase → Authentication → Settings.
+
+**Error "Missing or insufficient permissions"**
+Las reglas de Firestore no están bien configuradas. Pega el contenido de `firestore.rules` en la consola de Firebase.
+</file>
+
+<file path="src/App.css">
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
+</file>
+
+<file path="src/assets/react.svg">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+</file>
+
+<file path="src/assets/vite.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
+</file>
+
+<file path="src/components/AdminPanel.jsx">
+import React, { useState, useEffect } from "react";
+import {
+  collection, getDocs, query, orderBy, doc, updateDoc, where
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  procesarResultadoPartido,
+  calcularGanadorDelDia,
+  procesarPreguntaDelDia,
+} from "../utils/helpers";
+import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
+
+// ── IMPORTANTE: Define aquí los emails que son admin ──────────
+// Cámbialos por tu(s) email(s) real(es) de Google
+const ADMIN_EMAILS = [
+  "xtokesu@gmail.com",   // ← reemplaza con tu email real
+];
+
+export default function AdminPanel({ onVolver }) {
+  const { firebaseUser } = useAuth();
+
+  // Verificar que el usuario sea admin
+  const esAdmin = ADMIN_EMAILS.includes(firebaseUser?.email);
+
+  if (!esAdmin) {
+    return (
+      <div style={{ padding: "20px", textAlign: "center" }}>
+        <p style={{ color: "var(--rojo-chile)", fontSize: "8px" }}>
+          🔒 ACCESO DENEGADO
+        </p>
+        <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop: "16px" }}>
+          ← VOLVER
+        </button>
+      </div>
+    );
+  }
+
+  return <AdminPanelInterno onVolver={onVolver} />;
+}
+
+function AdminPanelInterno({ onVolver }) {
+  const [tab, setTab] = useState("partidos"); // "partidos" | "preguntas" | "dia"
+  const [partidos, setPartidos] = useState([]);
+  const [preguntas, setPreguntas] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [mensaje, setMensaje] = useState(null); // { tipo: "ok"|"error", texto }
+
+  useEffect(() => {
+    cargarDatos();
+  }, []);
+
+  const cargarDatos = async () => {
+    setCargando(true);
+    try {
+      const snapP = await getDocs(query(collection(db, "partidos"), orderBy("fecha")));
+      setPartidos(snapP.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+      const snapQ = await getDocs(query(collection(db, "preguntas"), orderBy("fecha")));
+      setPreguntas(snapQ.docs.map((d) => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const mostrarMensaje = (tipo, texto) => {
+    setMensaje({ tipo, texto });
+    setTimeout(() => setMensaje(null), 5000);
+  };
+
+  return (
+    <div style={{ padding: "16px 16px 80px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+        <button className="btn-pixel btn-gris" onClick={onVolver} style={{ fontSize: "7px", padding: "6px 10px" }}>
+          ← VOLVER
+        </button>
+        <h2 style={{ color: "var(--rojo-chile)", fontSize: "9px" }}>⚙ PANEL ADMIN</h2>
+      </div>
+
+      {mensaje && (
+        <div style={{
+          padding: "10px 14px", marginBottom: "14px", fontSize: "7px",
+          border: `2px solid ${mensaje.tipo === "ok" ? "var(--verde-claro)" : "var(--rojo-chile)"}`,
+          color: mensaje.tipo === "ok" ? "var(--verde-claro)" : "var(--rojo-chile)",
+          background: mensaje.tipo === "ok" ? "rgba(82,183,136,0.1)" : "rgba(214,40,40,0.1)",
+        }}>
+          {mensaje.tipo === "ok" ? "✅" : "❌"} {mensaje.texto}
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: "6px", marginBottom: "14px" }}>
+        {[
+          { id: "partidos", label: "⚽ PARTIDOS" },
+          { id: "preguntas", label: "❓ PREGUNTAS" },
+          { id: "dia", label: "🏆 CERRAR DÍA" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            className={`btn-pixel ${tab === t.id ? "btn-amarillo" : "btn-gris"}`}
+            style={{ fontSize: "6px", padding: "6px 10px", flex: 1 }}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {cargando ? (
+        <div style={{ textAlign: "center", padding: "30px", fontSize: "7px", color: "var(--verde-claro)" }}>
+          <span className="spinner">⚙</span><br /><br />CARGANDO...
+        </div>
+      ) : (
+        <>
+          {tab === "partidos" && (
+            <TabPartidos
+              partidos={partidos}
+              onActualizar={cargarDatos}
+              onMensaje={mostrarMensaje}
+            />
+          )}
+          {tab === "preguntas" && (
+            <TabPreguntas
+              preguntas={preguntas}
+              onActualizar={cargarDatos}
+              onMensaje={mostrarMensaje}
+            />
+          )}
+          {tab === "dia" && (
+            <TabCerrarDia onMensaje={mostrarMensaje} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Tab: Resultados de partidos ──────────────────────────────
+function TabPartidos({ partidos, onActualizar, onMensaje }) {
+  const [partidoSel, setPartidoSel] = useState(null);
+  const [procesando, setProcesando] = useState(false);
+
+  // Estado del formulario de resultado
+  const [golesLocal, setGolesLocal] = useState("");
+  const [golesVis, setGolesVis] = useState("");
+  const [definicion, setDefinicion] = useState("normal");
+  const [golesLocalAlargue, setGolesLocalAlargue] = useState("");
+  const [golesVisAlargue, setGolesVisAlargue] = useState("");
+  const [penalesLocal, setPenalesLocal] = useState("");
+  const [penalesVis, setPenalesVis] = useState("");
+  const [ganadorFinal, setGanadorFinal] = useState("");
+
+  const seleccionarPartido = (p) => {
+    setPartidoSel(p);
+    // Pre-rellenar si ya tiene resultado
+    if (p.resultado) {
+      const r = p.resultado;
+      setGolesLocal(String(r.golesLocal ?? ""));
+      setGolesVis(String(r.golesVisitante ?? ""));
+      setDefinicion(r.definicion || "normal");
+      setGolesLocalAlargue(String(r.golesLocalAlargue ?? ""));
+      setGolesVisAlargue(String(r.golesVisitanteAlargue ?? ""));
+      setPenalesLocal(String(r.penalesLocal ?? ""));
+      setPenalesVis(String(r.penalesVisitante ?? ""));
+      setGanadorFinal(r.ganadorFinal || "");
+    } else {
+      setGolesLocal(""); setGolesVis("");
+      setDefinicion("normal");
+      setGolesLocalAlargue(""); setGolesVisAlargue("");
+      setPenalesLocal(""); setPenalesVis("");
+      setGanadorFinal("");
+    }
+  };
+
+  const esEliminatoria = partidoSel && FASES_ELIMINATORIAS.includes(partidoSel.fase);
+
+  const handleGuardarResultado = async () => {
+    if (!partidoSel) return;
+    if (golesLocal === "" || golesVis === "") {
+      onMensaje("error", "Ingresa los goles de los 90 min.");
+      return;
+    }
+
+    setProcesando(true);
+    try {
+      const resultado = {
+        golesLocal: Number(golesLocal),
+        golesVisitante: Number(golesVis),
+        definicion: esEliminatoria ? definicion : "normal",
+      };
+
+      if (esEliminatoria && definicion !== "normal") {
+        resultado.golesLocalAlargue = Number(golesLocalAlargue || 0);
+        resultado.golesVisitanteAlargue = Number(golesVisAlargue || 0);
+        if (definicion === "penales") {
+          resultado.penalesLocal = Number(penalesLocal);
+          resultado.penalesVisitante = Number(penalesVis);
+        }
+        resultado.ganadorFinal = ganadorFinal;
+      } else if (!esEliminatoria) {
+        // Para grupos, el ganador se infiere de los goles
+        const gl = Number(golesLocal);
+        const gv = Number(golesVis);
+        resultado.ganadorFinal = gl > gv ? "local" : gv > gl ? "visitante" : "empate";
+      }
+
+      // 1. Guardar resultado en el partido
+      await updateDoc(doc(db, "partidos", partidoSel.id), { resultado });
+
+      // 2. Procesar predicciones automáticamente
+      const { procesados, errores } = await procesarResultadoPartido(
+        partidoSel.id,
+        resultado,
+        partidoSel.fase || "grupos",
+        partidoSel.estaDestacado || false,
+        partidoSel.fecha
+      );
+
+      onMensaje("ok",
+        `Resultado guardado. ${procesados} predicciones procesadas.${errores > 0 ? ` ${errores} errores.` : ""}`
+      );
+      onActualizar();
+      setPartidoSel(null);
+    } catch (e) {
+      console.error(e);
+      onMensaje("error", `Error: ${e.message}`);
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  return (
+    <div>
+      <p style={{ fontSize: "7px", color: "var(--amarillo)", marginBottom: "10px" }}>
+        Selecciona un partido para ingresar el resultado real.
+        El sistema calculará los puntos automáticamente.
+      </p>
+
+      {/* Lista de partidos */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "14px" }}>
+        {partidos.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => seleccionarPartido(p)}
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: "7px",
+              padding: "10px 12px",
+              border: `2px solid ${partidoSel?.id === p.id
+                ? "var(--amarillo)"
+                : p.resultado
+                  ? "var(--verde-campo)"
+                  : "var(--gris)"}`,
+              background: partidoSel?.id === p.id ? "rgba(244,208,63,0.1)" : "var(--negro)",
+              color: "var(--blanco)",
+              cursor: "pointer",
+              textAlign: "left",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <span>
+              {p.local?.bandera} vs {p.visitante?.bandera}{" "}
+              <span style={{ color: "var(--gris-claro)" }}>({p.fecha})</span>
+            </span>
+            {p.resultado ? (
+              <span style={{ color: "var(--verde-claro)" }}>
+                {p.resultado.golesLocal}-{p.resultado.golesVisitante} ✓
+              </span>
+            ) : (
+              <span style={{ color: "var(--gris)" }}>Pendiente</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Formulario de resultado */}
+      {partidoSel && (
+        <div className="caja-pixel" style={{ borderColor: "var(--amarillo)" }}>
+          <p style={{ fontSize: "8px", color: "var(--amarillo)", marginBottom: "12px" }}>
+            {partidoSel.local?.bandera} {partidoSel.local?.nombre} vs {partidoSel.visitante?.nombre} {partidoSel.visitante?.bandera}
+          </p>
+          {esEliminatoria && (
+            <p style={{ fontSize: "6px", color: "var(--rojo-chile)", marginBottom: "10px" }}>
+              💀 {FASE_LABELS[partidoSel.fase]}
+            </p>
+          )}
+
+          {/* Goles 90 min */}
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+            GOLES (90 MIN)
+          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+            <input type="number" min="0" max="20"
+              value={golesLocal} onChange={(e) => setGolesLocal(e.target.value)}
+              placeholder="0"
+              style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "14px", width: "50px", height: "50px", textAlign: "center", border: "3px solid var(--negro)", background: "var(--blanco)", color: "var(--negro)", outline: "none" }}
+            />
+            <span style={{ fontSize: "18px", color: "var(--amarillo)" }}>-</span>
+            <input type="number" min="0" max="20"
+              value={golesVis} onChange={(e) => setGolesVis(e.target.value)}
+              placeholder="0"
+              style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "14px", width: "50px", height: "50px", textAlign: "center", border: "3px solid var(--negro)", background: "var(--blanco)", color: "var(--negro)", outline: "none" }}
+            />
+          </div>
+
+          {/* Definición (solo eliminatorias) */}
+          {esEliminatoria && (
+            <div style={{ marginBottom: "12px" }}>
+              <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+                ¿CÓMO SE DEFINIÓ?
+              </p>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {["normal", "alargue", "penales"].map((d) => (
+                  <button
+                    key={d}
+                    className={`pred-btn ${definicion === d ? "seleccionado" : ""}`}
+                    onClick={() => setDefinicion(d)}
+                    style={{ flex: 1, fontSize: "6px" }}
+                  >
+                    {d === "normal" ? "90 MIN" : d === "alargue" ? "ALARGUE" : "PENALES"}
+                  </button>
+                ))}
+              </div>
+
+              {(definicion === "alargue" || definicion === "penales") && (
+                <div style={{ marginTop: "10px" }}>
+                  <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+                    GOLES EN ALARGUE
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                    <input type="number" min="0" max="10"
+                      value={golesLocalAlargue} onChange={(e) => setGolesLocalAlargue(e.target.value)}
+                      placeholder="0"
+                      style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "14px", width: "50px", height: "50px", textAlign: "center", border: "3px solid var(--negro)", background: "var(--blanco)", color: "var(--negro)", outline: "none" }}
+                    />
+                    <span style={{ color: "var(--amarillo)" }}>-</span>
+                    <input type="number" min="0" max="10"
+                      value={golesVisAlargue} onChange={(e) => setGolesVisAlargue(e.target.value)}
+                      placeholder="0"
+                      style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "14px", width: "50px", height: "50px", textAlign: "center", border: "3px solid var(--negro)", background: "var(--blanco)", color: "var(--negro)", outline: "none" }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {definicion === "penales" && (
+                <div style={{ marginTop: "4px" }}>
+                  <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+                    RESULTADO TANDA DE PENALES
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                    <input type="number" min="0" max="20"
+                      value={penalesLocal} onChange={(e) => setPenalesLocal(e.target.value)}
+                      placeholder="0"
+                      style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "14px", width: "50px", height: "50px", textAlign: "center", border: "3px solid var(--negro)", background: "var(--blanco)", color: "var(--negro)", outline: "none" }}
+                    />
+                    <span style={{ color: "var(--amarillo)" }}>-</span>
+                    <input type="number" min="0" max="20"
+                      value={penalesVis} onChange={(e) => setPenalesVis(e.target.value)}
+                      placeholder="0"
+                      style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "14px", width: "50px", height: "50px", textAlign: "center", border: "3px solid var(--negro)", background: "var(--blanco)", color: "var(--negro)", outline: "none" }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {definicion !== "normal" && (
+                <div style={{ marginTop: "4px" }}>
+                  <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+                    ¿QUIÉN GANÓ FINALMENTE?
+                  </p>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      className={`pred-btn ${ganadorFinal === "local" ? "seleccionado" : ""}`}
+                      onClick={() => setGanadorFinal("local")}
+                      style={{ flex: 1, fontSize: "7px" }}
+                    >
+                      {partidoSel.local?.bandera} {partidoSel.local?.nombre}
+                    </button>
+                    <button
+                      className={`pred-btn ${ganadorFinal === "visitante" ? "seleccionado" : ""}`}
+                      onClick={() => setGanadorFinal("visitante")}
+                      style={{ flex: 1, fontSize: "7px" }}
+                    >
+                      {partidoSel.visitante?.bandera} {partidoSel.visitante?.nombre}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            className="btn-pixel btn-rojo w-full"
+            style={{ marginTop: "12px", fontSize: "7px" }}
+            onClick={handleGuardarResultado}
+            disabled={procesando}
+          >
+            {procesando ? "⚙ PROCESANDO..." : "⚡ GUARDAR Y CALCULAR PUNTOS"}
+          </button>
+          <p style={{ fontSize: "5px", color: "var(--gris-claro)", marginTop: "8px", lineHeight: 2 }}>
+            ⚠ Esto guardará el resultado Y calculará automáticamente los puntos
+            de TODOS los participantes que hayan predicho este partido.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Tab: Preguntas del día ────────────────────────────────────
+function TabPreguntas({ preguntas, onActualizar, onMensaje }) {
+  const [pregSel, setPregSel] = useState(null);
+  const [respCorrecta, setRespCorrecta] = useState("");
+  const [procesando, setProcesando] = useState(false);
+
+  const handleProcesar = async () => {
+    if (!pregSel || !respCorrecta) return;
+    setProcesando(true);
+    try {
+      // 1. Guardar respuesta correcta en Firestore
+      await updateDoc(doc(db, "preguntas", pregSel.id), {
+        respuestaCorrecta: respCorrecta,
+      });
+
+      // 2. Procesar y dar puntos
+      const resultado = await procesarPreguntaDelDia(
+        pregSel.id, respCorrecta, pregSel.fecha
+      );
+
+      if (resultado.ok) {
+        onMensaje("ok", `Pregunta procesada. ${resultado.procesados} usuarios acertaron (+2 pts c/u).`);
+      } else {
+        onMensaje("error", `Error: ${resultado.error}`);
+      }
+      onActualizar();
+      setPregSel(null);
+    } catch (e) {
+      onMensaje("error", e.message);
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  return (
+    <div>
+      <p style={{ fontSize: "7px", color: "var(--amarillo)", marginBottom: "10px" }}>
+        Selecciona una pregunta, elige la respuesta correcta y el sistema
+        dará +2 pts automáticamente a quienes acertaron.
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "14px" }}>
+        {preguntas.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => { setPregSel(p); setRespCorrecta(p.respuestaCorrecta || ""); }}
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: "6px",
+              padding: "10px 12px",
+              border: `2px solid ${pregSel?.id === p.id ? "var(--amarillo)" : p.respuestaCorrecta ? "var(--verde-campo)" : "var(--gris)"}`,
+              background: pregSel?.id === p.id ? "rgba(244,208,63,0.1)" : "var(--negro)",
+              color: "var(--blanco)",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ marginBottom: "4px" }}>{p.fecha} — {p.texto?.slice(0, 40)}...</div>
+            {p.respuestaCorrecta && (
+              <span style={{ color: "var(--verde-claro)" }}>✓ Procesada: {p.respuestaCorrecta}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {pregSel && (
+        <div className="caja-pixel" style={{ borderColor: "var(--amarillo)" }}>
+          <p style={{ fontSize: "7px", color: "var(--amarillo)", marginBottom: "10px", lineHeight: 2 }}>
+            {pregSel.texto}
+          </p>
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "8px" }}>
+            RESPUESTA CORRECTA:
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+            {(pregSel.opciones || []).map((op, i) => (
+              <button
+                key={i}
+                className={`pred-btn ${respCorrecta === op ? "seleccionado" : ""}`}
+                onClick={() => setRespCorrecta(op)}
+                style={{ fontSize: "7px", padding: "8px" }}
+              >
+                {op}
+              </button>
+            ))}
+          </div>
+          <button
+            className="btn-pixel btn-rojo w-full"
+            style={{ fontSize: "7px" }}
+            onClick={handleProcesar}
+            disabled={!respCorrecta || procesando}
+          >
+            {procesando ? "⚙ PROCESANDO..." : "⚡ MARCAR CORRECTA Y DAR PUNTOS"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Tab: Cerrar día (ganador del día) ─────────────────────────
+function TabCerrarDia({ onMensaje }) {
+  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
+  const [procesando, setProcesando] = useState(false);
+
+  const handleCerrarDia = async () => {
+    setProcesando(true);
+    try {
+      const resultado = await calcularGanadorDelDia(fecha);
+      if (resultado.ok) {
+        onMensaje("ok",
+          `Día cerrado. Ganador: ${resultado.ganador} (+3 pts). Total jugadores: ${resultado.totalJugadores}`
+        );
+      } else {
+        onMensaje("error", resultado.mensaje || resultado.error);
+      }
+    } catch (e) {
+      onMensaje("error", e.message);
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  return (
+    <div>
+      <p style={{ fontSize: "7px", color: "var(--amarillo)", marginBottom: "14px", lineHeight: 2 }}>
+        Al cerrar el día se determina el ganador (jugador con más puntos
+        acumulados en puntosDelDia), se le otorgan <span style={{ color: "var(--verde-claro)" }}>+3 puntos bonus</span>,
+        y el podio queda listo para mostrarse al día siguiente.
+      </p>
+
+      <div className="caja-pixel" style={{ borderColor: "var(--rojo-chile)" }}>
+        <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "8px" }}>
+          FECHA DEL DÍA A CERRAR
+        </p>
+        <input
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+          style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "9px",
+            padding: "8px 12px",
+            border: "3px solid var(--negro)",
+            background: "var(--blanco)",
+            color: "var(--negro)",
+            width: "100%",
+            marginBottom: "14px",
+            outline: "none",
+          }}
+        />
+        <button
+          className="btn-pixel btn-rojo w-full"
+          style={{ fontSize: "7px" }}
+          onClick={handleCerrarDia}
+          disabled={procesando}
+        >
+          {procesando ? "⚙ PROCESANDO..." : "🏆 CALCULAR GANADOR DEL DÍA"}
+        </button>
+        <p style={{ fontSize: "5px", color: "var(--gris-claro)", marginTop: "10px", lineHeight: 2 }}>
+          ⚠ Ejecuta esto UNA SOLA VEZ al final del día, después de haber
+          procesado todos los partidos y la pregunta del día.
+          No se puede deshacer.
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/OnboardingModal.jsx">
+import React, { useEffect, useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+
+// Clave en localStorage para saber si ya vio el onboarding
+// (Complementado con flag en Firestore para persistencia cross-device)
+const LOCAL_KEY = "cp8b_onboarding_visto";
+
+export default function OnboardingModal() {
+  const { firebaseUser, userProfile, refreshProfile } = useAuth();
+  const [visible, setVisible] = useState(false);
+  const [paso, setPaso] = useState(0);
+
+  useEffect(() => {
+    // Mostrar si el usuario NO ha visto el onboarding todavía
+    const yaVioLocal = localStorage.getItem(LOCAL_KEY);
+    const yaVioFirestore = userProfile?.onboardingVisto;
+
+    if (!yaVioLocal && !yaVioFirestore) {
+      // Pequeño delay para que la UI cargue primero
+      const t = setTimeout(() => setVisible(true), 600);
+      return () => clearTimeout(t);
+    }
+  }, [userProfile]);
+
+  const handleCerrar = async () => {
+    setVisible(false);
+    localStorage.setItem(LOCAL_KEY, "1");
+    // Marcar en Firestore para persistencia en otros dispositivos
+    if (firebaseUser) {
+      try {
+        await updateDoc(doc(db, "usuarios", firebaseUser.uid), {
+          onboardingVisto: true,
+        });
+        await refreshProfile();
+      } catch (e) {
+        // No crítico si falla
+      }
+    }
+  };
+
+  if (!visible) return null;
+
+  const pasos = [
+    {
+      icono: "⚽",
+      titulo: "¡BIENVENIDO!",
+      color: "var(--verde-claro)",
+      contenido: (
+        <>
+          <p style={{ lineHeight: 2.2 }}>
+            <span style={{ color: "var(--amarillo)" }}>Chile Predictor 8-Bit</span> es un
+            sistema de ranking por puntos. Pronostica los partidos diarios mediante
+            3 formatos de apuesta y escala en la tabla de posiciones.
+          </p>
+          <div style={{ marginTop: "12px", padding: "10px", border: "2px solid var(--verde-campo)", background: "rgba(82,183,136,0.1)" }}>
+            <p style={{ fontSize: "6px", color: "var(--verde-claro)" }}>📊 FORMATO DE APUESTAS:</p>
+            <p style={{ marginTop: "6px", fontSize: "6px", color: "var(--gris-claro)", lineHeight: 2 }}>
+              🟢 Ganador del partido (1-2 pts)<br/>
+              🟡 Marcador exacto en partidos destacados (3 pts)<br/>
+              🔴 Alargues y penales en fases finales (hasta 4 pts)
+            </p>
+          </div>
+        </>
+      ),
+    },
+    {
+      icono: "💀",
+      titulo: "FASES FINALES",
+      color: "var(--rojo-chile)",
+      contenido: (
+        <>
+          <p style={{ lineHeight: 2.2 }}>
+            ¡A partir de los <span style={{ color: "var(--rojo-chile)" }}>Dieciseisavos de Final</span> los
+            partidos son a muere-muere! Las predicciones incluyen <span style={{ color: "var(--amarillo)" }}>Alargues</span> y{" "}
+            <span style={{ color: "var(--amarillo)" }}>Penales</span>, otorgando puntajes mucho más elevados.
+          </p>
+          <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
+            {[
+              { label: "Acertar ganador (90 min)", pts: "+2 pts" },
+              { label: "Ganador + diferencia (90 min)", pts: "+3 pts" },
+              { label: "Acertar Alargue + diferencia", pts: "+3 pts" },
+              { label: "Acertar Penales + ganador tanda", pts: "+3 pts" },
+              { label: "Penales + diferencia exacta tanda", pts: "+4 pts" },
+            ].map((item, i) => (
+              <div key={i} style={{
+                display: "flex", justifyContent: "space-between",
+                padding: "6px 8px", border: "1px solid var(--verde-campo)",
+                fontSize: "6px", background: "rgba(0,0,0,0.3)",
+              }}>
+                <span style={{ color: "var(--gris-claro)" }}>{item.label}</span>
+                <span style={{ color: "var(--amarillo)" }}>{item.pts}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      ),
+    },
+    {
+      icono: "❓",
+      titulo: "TRIVIA DIARIA",
+      color: "var(--amarillo)",
+      contenido: (
+        <>
+          <p style={{ lineHeight: 2.2 }}>
+            Cada día hay una <span style={{ color: "var(--amarillo)" }}>Pregunta del Día</span> disponible
+            hasta el cierre de las predicciones. Responderla correctamente te entrega{" "}
+            <span style={{ color: "var(--verde-claro)" }}>+2 puntos cruciales</span> que pueden
+            definir el ranking.
+          </p>
+          <div style={{
+            marginTop: "14px", padding: "12px",
+            border: "2px solid var(--amarillo)", background: "rgba(244,208,63,0.08)",
+            textAlign: "center",
+          }}>
+            <span style={{ fontSize: "24px" }}>💡</span>
+            <p style={{ marginTop: "8px", fontSize: "6px", color: "var(--amarillo)", lineHeight: 2 }}>
+              No olvides responder ANTES de que<br/>
+              cierren las votaciones del día.<br/>
+              ¡Los puntos no se recuperan!
+            </p>
+          </div>
+        </>
+      ),
+    },
+    {
+      icono: "🃏",
+      titulo: "CARTAS Y PODIO",
+      color: "var(--amarillo)",
+      contenido: (
+        <>
+          <p style={{ lineHeight: 2.2 }}>
+            Los <span style={{ color: "var(--amarillo)" }}>3 mejores jugadores del día</span> suben
+            al podio diario y reciben <span style={{ color: "var(--verde-claro)" }}>Cartas Coleccionables</span>{" "}
+            únicas como premio. ¡Además, el ganador del día obtiene{" "}
+            <span style={{ color: "var(--rojo-chile)" }}>+3 puntos extra</span>!
+          </p>
+          <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            {[
+              { emoji: "⚽🔮", label: "Cartas Comunes (x2)", color: "var(--verde-claro)", desc: "Podio 2° y 3° lugar" },
+              { emoji: "👑🔥", label: "Cartas Raras (x3)", color: "var(--amarillo)", desc: "Podio 1° lugar" },
+              { emoji: "🏆⭐", label: "Cartas Legendarias (x4)", color: "var(--rojo-chile)", desc: "Logros especiales" },
+            ].map((c, i) => (
+              <div key={i} style={{
+                padding: "8px 10px", border: `2px solid ${c.color}`,
+                background: "rgba(0,0,0,0.3)", display: "flex",
+                justifyContent: "space-between", alignItems: "center",
+              }}>
+                <div>
+                  <span style={{ fontSize: "7px", color: c.color }}>{c.emoji} {c.label}</span>
+                  <p style={{ fontSize: "5px", color: "var(--gris-claro)", marginTop: "3px" }}>{c.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ marginTop: "10px", fontSize: "6px", color: "var(--gris-claro)", lineHeight: 2 }}>
+            Adjunta cartas a tus predicciones favoritas para{" "}
+            <span style={{ color: "var(--amarillo)" }}>multiplicar tus puntos</span> si aciertas todo.
+          </p>
+        </>
+      ),
+    },
+  ];
+
+  const pasoActual = pasos[paso];
+  const esUltimo = paso === pasos.length - 1;
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.92)",
+      zIndex: 1000,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "20px",
+    }}>
+      <div style={{
+        background: "var(--negro)",
+        border: `4px solid ${pasoActual.color}`,
+        boxShadow: `6px 6px 0 ${pasoActual.color}44`,
+        padding: "24px 20px",
+        maxWidth: "400px",
+        width: "100%",
+        maxHeight: "90vh",
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+      }}>
+        {/* Encabezado */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "36px", marginBottom: "8px" }}>{pasoActual.icono}</div>
+          <h2 style={{ color: pasoActual.color, fontSize: "11px" }}>{pasoActual.titulo}</h2>
+        </div>
+
+        {/* Indicador de pasos */}
+        <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
+          {pasos.map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: i === paso ? "20px" : "8px",
+                height: "8px",
+                background: i === paso ? pasoActual.color : "var(--gris)",
+                border: "2px solid var(--negro)",
+                transition: "width 0.2s",
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Contenido */}
+        <div style={{ fontSize: "7px", color: "var(--blanco)", lineHeight: 2 }}>
+          {pasoActual.contenido}
+        </div>
+
+        {/* Botones de navegación */}
+        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+          {paso > 0 && (
+            <button
+              className="btn-pixel btn-gris"
+              style={{ fontSize: "7px", flex: "0 0 auto" }}
+              onClick={() => setPaso((p) => p - 1)}
+            >
+              ← ATRÁS
+            </button>
+          )}
+          {!esUltimo ? (
+            <button
+              className="btn-pixel btn-verde w-full"
+              style={{ fontSize: "7px" }}
+              onClick={() => setPaso((p) => p + 1)}
+            >
+              SIGUIENTE →
+            </button>
+          ) : (
+            <button
+              className="btn-pixel btn-amarillo w-full"
+              style={{ fontSize: "8px" }}
+              onClick={handleCerrar}
+            >
+              ✅ ¡ENTENDIDO! JUGAR
+            </button>
+          )}
+        </div>
+
+        {/* Skip */}
+        {!esUltimo && (
+          <button
+            onClick={handleCerrar}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--gris)",
+              fontSize: "6px",
+              fontFamily: "'Press Start 2P', monospace",
+              cursor: "pointer",
+              textAlign: "center",
+            }}
+          >
+            Saltar intro →
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/Perfil.jsx">
+import React, { useState } from "react";
+import { doc, updateDoc, getDocs, collection, query, where } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { CARTAS, AVATARES } from "../data/sampleData";
+
+export default function Perfil({ onVolver }) {
+  const { firebaseUser, userProfile, refreshProfile } = useAuth();
+  const [editando, setEditando] = useState(false);
+  const [nuevoNick, setNuevoNick] = useState(userProfile?.nickname || "");
+  const [error, setError] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [exito, setExito] = useState("");
+
+  const handleGuardarNick = async () => {
+    if (nuevoNick === userProfile?.nickname) {
+      setEditando(false);
+      return;
+    }
+    if (nuevoNick.length < 3) { setError("Mínimo 3 caracteres"); return; }
+    if (nuevoNick.length > 16) { setError("Máximo 16 caracteres"); return; }
+
+    setGuardando(true);
+    setError("");
+    try {
+      const nicknameNorm = nuevoNick.toLowerCase();
+      const q = query(
+        collection(db, "usuarios"),
+        where("nicknameLower", "==", nicknameNorm)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty && snap.docs[0].id !== firebaseUser.uid) {
+        setError("Ese nickname ya está en uso.");
+        setGuardando(false);
+        return;
+      }
+
+      await updateDoc(doc(db, "usuarios", firebaseUser.uid), {
+        nickname: nuevoNick,
+        nicknameLower: nicknameNorm,
+      });
+      await refreshProfile();
+      setEditando(false);
+      setExito("¡Nickname actualizado!");
+      setTimeout(() => setExito(""), 3000);
+    } catch (e) {
+      setError("Error al guardar.");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const cartasDesbloqueadas = userProfile?.cartasDesbloqueadas || [];
+
+  return (
+    <div style={{ padding: "16px 16px 80px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+        <button
+          className="btn-pixel btn-gris"
+          onClick={onVolver}
+          style={{ padding: "8px 12px", fontSize: "8px" }}
+        >
+          ← VOLVER
+        </button>
+        <h2 className="text-amarillo">👤 MI PERFIL</h2>
+      </div>
+
+      {/* Header perfil */}
+      <div className="perfil-header mb-16">
+        <span className="perfil-avatar-grande">{userProfile?.avatarEmoji}</span>
+        <div style={{ textAlign: "center" }}>
+          {!editando ? (
+            <div>
+              <p style={{ fontSize: "12px", color: "var(--amarillo)", marginBottom: "6px" }}>
+                {userProfile?.nickname}
+              </p>
+              <p style={{ fontSize: "7px", color: "var(--gris-claro)", marginBottom: "10px" }}>
+                {userProfile?.nombreReal}
+              </p>
+              <button
+                className="btn-pixel btn-verde"
+                style={{ fontSize: "7px", padding: "6px 12px" }}
+                onClick={() => { setEditando(true); setNuevoNick(userProfile?.nickname); }}
+              >
+                ✏ CAMBIAR NICKNAME
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+              <input
+                className="input-pixel"
+                style={{ textAlign: "center" }}
+                value={nuevoNick}
+                maxLength={16}
+                onChange={(e) => setNuevoNick(e.target.value)}
+              />
+              {error && <p className="text-rojo" style={{ fontSize: "7px" }}>{error}</p>}
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  className="btn-pixel btn-verde"
+                  style={{ fontSize: "7px", padding: "6px 12px" }}
+                  onClick={handleGuardarNick}
+                  disabled={guardando}
+                >
+                  {guardando ? "..." : "✅ OK"}
+                </button>
+                <button
+                  className="btn-pixel btn-gris"
+                  style={{ fontSize: "7px", padding: "6px 12px" }}
+                  onClick={() => { setEditando(false); setError(""); }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+          {exito && <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginTop: "6px" }}>{exito}</p>}
+        </div>
+
+        <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>PUNTOS TOTAL</p>
+            <span className="puntos-badge" style={{ fontSize: "12px" }}>
+              {userProfile?.puntosTotal ?? 0}
+            </span>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>CARTAS</p>
+            <span className="puntos-badge" style={{ fontSize: "12px" }}>
+              {cartasDesbloqueadas.length}/{CARTAS.length}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Cartas coleccionables */}
+      <div className="seccion-titulo">🃏 CARTAS COLECCIONABLES</div>
+      <div className="cartas-grid">
+        {CARTAS.map((carta) => {
+          const desbloqueada = cartasDesbloqueadas.includes(carta.id);
+          return (
+            <div
+              key={carta.id}
+              className={`carta ${desbloqueada ? "carta-desbloqueada" : "carta-bloqueada"}`}
+            >
+              <span className="carta-emoji">{desbloqueada ? carta.emoji : "🔒"}</span>
+              <p className="carta-nombre">{carta.nombre}</p>
+              <p className="carta-condicion">{carta.condicion}</p>
+              {desbloqueada && (
+                <span style={{ fontSize: "6px", color: "var(--amarillo)" }}>✓ DESBLOQUEADA</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Info cuenta */}
+      <div className="caja-pixel mt-16" style={{ fontSize: "7px" }}>
+        <p className="text-amarillo mb-8">ℹ INFORMACIÓN DE CUENTA</p>
+        <p className="text-gris mb-4">Email: {firebaseUser?.email}</p>
+        <p className="text-gris mb-4">Avatar: {userProfile?.avatarNombre}</p>
+        <p className="text-gris">
+          Miembro desde: {userProfile?.creadoEn
+            ? new Date(userProfile.creadoEn).toLocaleDateString("es-CL")
+            : "-"}
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/PreguntaCard.jsx">
+import React, { useState, useEffect } from "react";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+
+export default function PreguntaCard({ pregunta }) {
+  const { firebaseUser } = useAuth();
+  const { id, texto, opciones, respuestaCorrecta } = pregunta;
+
+  const [seleccion, setSeleccion] = useState(null);
+  const [guardado, setGuardado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const cargar = async () => {
+      const ref = doc(db, "respuestas", `${firebaseUser.uid}_${id}`);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setSeleccion(snap.data().respuesta);
+        setGuardado(true);
+      }
+    };
+    cargar();
+  }, [firebaseUser, id]);
+
+  const handleGuardar = async () => {
+    if (!seleccion) return;
+    setGuardando(true);
+    try {
+      await setDoc(doc(db, "respuestas", `${firebaseUser.uid}_${id}`), {
+        uid: firebaseUser.uid,
+        preguntaId: id,
+        respuesta: seleccion,
+        guardadoEn: new Date().toISOString(),
+      });
+      setGuardado(true);
+    } catch (e) {
+      console.error("Error guardando respuesta:", e);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const colorOpcion = (op) => {
+    if (!guardado || !respuestaCorrecta) {
+      return seleccion === op ? "seleccionado" : "";
+    }
+    // Si ya está guardado y hay respuesta correcta: mostrar feedback
+    if (op === respuestaCorrecta) return "seleccionado"; // verde
+    if (op === seleccion && seleccion !== respuestaCorrecta) return ""; // error
+    return "";
+  };
+
+  return (
+    <div className="pregunta-card">
+      <p style={{ fontSize: "7px", color: "var(--amarillo)", marginBottom: "10px" }}>
+        🎯 PREGUNTA DEL DÍA — 2 PUNTOS
+      </p>
+      <p className="pregunta-texto">{texto}</p>
+
+      <div className="pregunta-opciones">
+        {opciones.map((op, i) => (
+          <button
+            key={i}
+            className={`pred-btn ${colorOpcion(op)}`}
+            onClick={() => !guardado && setSeleccion(op)}
+            disabled={guardado}
+            style={{ padding: "8px", fontSize: "7px", lineHeight: 1.8 }}
+          >
+            {op}
+          </button>
+        ))}
+      </div>
+
+      {!guardado ? (
+        <button
+          className="btn-pixel btn-amarillo w-full"
+          style={{ marginTop: "12px" }}
+          onClick={handleGuardar}
+          disabled={!seleccion || guardando}
+        >
+          {guardando ? "GUARDANDO..." : "RESPONDER"}
+        </button>
+      ) : (
+        <div style={{
+          marginTop: "10px",
+          fontSize: "7px",
+          color: respuestaCorrecta
+            ? seleccion === respuestaCorrecta
+              ? "var(--verde-claro)"
+              : "var(--rojo-chile)"
+            : "var(--gris-claro)",
+          textAlign: "center",
+          padding: "6px",
+          border: `2px solid ${respuestaCorrecta
+            ? seleccion === respuestaCorrecta
+              ? "var(--verde-claro)"
+              : "var(--rojo-chile)"
+            : "var(--gris)"}`,
+        }}>
+          {respuestaCorrecta
+            ? seleccion === respuestaCorrecta
+              ? "✅ ¡CORRECTO! +2 PUNTOS"
+              : `❌ INCORRECTO. Era: ${respuestaCorrecta}`
+            : "✓ Respuesta guardada"}
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/Ranking.jsx">
+import React, { useEffect, useState } from "react";
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+
+export default function Ranking({ onVolver }) {
+  const { firebaseUser } = useAuth();
+  const [usuarios, setUsuarios] = useState([]);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const q = query(
+          collection(db, "usuarios"),
+          orderBy("puntosTotal", "desc")
+        );
+        const snap = await getDocs(q);
+        setUsuarios(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargar();
+  }, []);
+
+  const medallas = ["🥇", "🥈", "🥉"];
+
+  return (
+    <div style={{ padding: "16px 16px 80px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+        <button
+          className="btn-pixel btn-gris"
+          onClick={onVolver}
+          style={{ padding: "8px 12px", fontSize: "8px" }}
+        >
+          ← VOLVER
+        </button>
+        <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
+      </div>
+
+      {cargando ? (
+        <div className="text-center" style={{ padding: "40px", fontSize: "8px", color: "var(--verde-claro)" }}>
+          <span className="spinner">⚙</span>
+          <br /><br />
+          CARGANDO...
+        </div>
+      ) : (
+        <div className="caja-pixel">
+          <table className="ranking-tabla">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>JUGADOR</th>
+                <th style={{ textAlign: "right" }}>PUNTOS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuarios.map((u, i) => (
+                <tr
+                  key={u.id}
+                  className={u.uid === firebaseUser?.uid ? "ranking-fila-yo" : ""}
+                >
+                  <td className="ranking-pos">
+                    {i < 3 ? medallas[i] : `${i + 1}`}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "16px" }}>{u.avatarEmoji}</span>
+                      <div>
+                        <div style={{ fontSize: "7px", color: "var(--blanco)" }}>
+                          {u.nickname}
+                          {u.uid === firebaseUser?.uid && (
+                            <span style={{
+                              marginLeft: "6px",
+                              fontSize: "6px",
+                              background: "var(--verde-claro)",
+                              color: "var(--negro)",
+                              padding: "1px 4px",
+                              border: "1px solid var(--negro)",
+                            }}>
+                              TÚ
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <span className="puntos-badge">{u.puntosTotal ?? 0}</span>
+                  </td>
+                </tr>
+              ))}
+              {usuarios.length === 0 && (
+                <tr>
+                  <td colSpan={3} style={{ textAlign: "center", padding: "20px", fontSize: "7px", color: "var(--gris-claro)" }}>
+                    Aún no hay jugadores
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/Registro.jsx">
+import React, { useState } from "react";
+import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { AVATARES } from "../data/sampleData";
+
+export default function Registro() {
+  const { firebaseUser, setUserProfile } = useAuth();
+  const [nickname, setNickname] = useState("");
+  const [avatarId, setAvatarId] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+
+  const validarNickname = (val) => {
+    if (val.length < 3) return "Mínimo 3 caracteres";
+    if (val.length > 16) return "Máximo 16 caracteres";
+    if (!/^[a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]+$/.test(val))
+      return "Solo letras, números y guión bajo";
+    return "";
+  };
+
+  const handleRegistro = async () => {
+    const errNick = validarNickname(nickname);
+    if (errNick) { setError(errNick); return; }
+    if (!avatarId) { setError("Elige un avatar"); return; }
+
+    setCargando(true);
+    setError("");
+
+    try {
+      // Verificar unicidad del nickname (insensible a mayúsculas)
+      const nicknameNorm = nickname.toLowerCase();
+      const q = query(
+        collection(db, "usuarios"),
+        where("nicknameLower", "==", nicknameNorm)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setError("Ese nickname ya está en uso. Elige otro.");
+        setCargando(false);
+        return;
+      }
+
+      const avatarElegido = AVATARES.find((a) => a.id === avatarId);
+
+      const nuevoUsuario = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        nombreReal: firebaseUser.displayName || "",
+        nickname: nickname,
+        nicknameLower: nicknameNorm,
+        avatarId: avatarId,
+        avatarEmoji: avatarElegido.emoji,
+        avatarNombre: avatarElegido.nombre,
+        puntosTotal: 0,
+        cartasDesbloqueadas: [],
+        creadoEn: new Date().toISOString(),
+      };
+
+      await setDoc(doc(db, "usuarios", firebaseUser.uid), nuevoUsuario);
+      setUserProfile(nuevoUsuario);
+    } catch (e) {
+      console.error(e);
+      setError("Error al guardar. Revisa tu conexión.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <div className="pantalla">
+      <div className="registro-box">
+        <h2 style={{ color: "var(--amarillo)", textAlign: "center", marginBottom: "4px" }}>
+          ¡BIENVENIDO!
+        </h2>
+        <p style={{ fontSize: "7px", color: "var(--gris-claro)", textAlign: "center", marginBottom: "8px" }}>
+          Crea tu perfil para jugar
+        </p>
+
+        {/* Nickname */}
+        <div>
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+            NICKNAME (único)
+          </p>
+          <input
+            className="input-pixel"
+            type="text"
+            placeholder="Ej: ElPibe10"
+            value={nickname}
+            maxLength={16}
+            onChange={(e) => setNickname(e.target.value)}
+          />
+          <p style={{ fontSize: "6px", color: "var(--gris)", marginTop: "4px" }}>
+            {nickname.length}/16 caracteres
+          </p>
+        </div>
+
+        {/* Avatar */}
+        <div>
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "8px" }}>
+            ELIGE TU AVATAR
+          </p>
+          <div className="avatar-grid">
+            {AVATARES.map((av) => (
+              <button
+                key={av.id}
+                className={`avatar-opcion ${avatarId === av.id ? "seleccionado" : ""}`}
+                onClick={() => setAvatarId(av.id)}
+                type="button"
+              >
+                <span>{av.emoji}</span>
+                <span className="avatar-opcion-nombre">{av.nombre}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && <div className="error-msg">❌ {error}</div>}
+
+        <button
+          className="btn-pixel btn-amarillo w-full"
+          onClick={handleRegistro}
+          disabled={cargando}
+          style={{ marginTop: "8px" }}
+        >
+          {cargando ? "GUARDANDO..." : "✅ CREAR PERFIL"}
+        </button>
+
+        <p style={{ fontSize: "6px", color: "var(--gris)", textAlign: "center" }}>
+          Entrando como: {firebaseUser?.displayName || firebaseUser?.email}
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/contexts/AuthContext.jsx">
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [firebaseUser, setFirebaseUser] = useState(undefined); // undefined = cargando
+  const [userProfile, setUserProfile] = useState(null); // datos de Firestore
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      if (user) {
+        setLoadingProfile(true);
+        try {
+          const ref = doc(db, "usuarios", user.uid);
+          const snap = await getDoc(ref);
+          if (snap.exists()) {
+            setUserProfile(snap.data());
+          } else {
+            setUserProfile(null); // Nuevo usuario → va a Registro
+          }
+        } catch (e) {
+          console.error("Error cargando perfil:", e);
+          setUserProfile(null);
+        } finally {
+          setLoadingProfile(false);
+        }
+      } else {
+        setUserProfile(null);
+        setLoadingProfile(false);
+      }
+    });
+    return unsub;
+  }, []);
+
+  const refreshProfile = async () => {
+    if (!firebaseUser) return;
+    const ref = doc(db, "usuarios", firebaseUser.uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) setUserProfile(snap.data());
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{ firebaseUser, userProfile, setUserProfile, loadingProfile, refreshProfile }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+</file>
+
+<file path="src/index.css">
+:root {
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --social-bg: rgba(244, 243, 236, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #9ca3af;
+    --text-h: #f3f4f6;
+    --bg: #16171d;
+    --border: #2e303a;
+    --code-bg: #1f2028;
+    --accent: #c084fc;
+    --accent-bg: rgba(192, 132, 252, 0.15);
+    --accent-border: rgba(192, 132, 252, 0.5);
+    --social-bg: rgba(47, 48, 58, 0.5);
+    --shadow:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  }
+
+  #social .button-icon {
+    filter: invert(1) brightness(2);
+  }
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  width: 1126px;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  border-inline: 1px solid var(--border);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 56px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
+</file>
+
+<file path="src/main.jsx">
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
+import "./styles/global.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+</file>
+
+<file path="vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})
+</file>
+
+<file path="src/components/Login.jsx">
+import React, { useState } from "react";
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "../firebase";
+
+export default function Login() {
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGoogle = async () => {
+    setCargando(true);
+    setError("");
+    try {
+      await signInWithPopup(auth, googleProvider);
+      // onAuthStateChanged en AuthContext manejará el resto
+    } catch (e) {
+      console.error(e);
+      if (e.code === "auth/popup-closed-by-user") {
+        setError("Cerraste la ventana. Intenta de nuevo.");
+      } else if (e.code === "auth/popup-blocked") {
+        setError("El navegador bloqueó el popup. Permite popups para este sitio.");
+      } else {
+        setError("Error al iniciar sesión. Intenta de nuevo.");
+      }
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <div className="pantalla">
+      <div className="login-box">
+        {/* Logo */}
+        <div style={{ fontSize: "40px", textAlign: "center" }}>⚽</div>
+
+        <h2 style={{ textAlign: "center", color: "var(--verde-claro)", lineHeight: 2 }}>
+          INTERNATIONAL
+          <br />
+          SUPERSTAR
+          <br />
+          POLLA
+        </h2>
+
+        <p style={{ fontSize: "7px", color: "var(--gris-claro)", textAlign: "center", lineHeight: 2 }}>
+          Predice los partidos del
+          <br />
+          Mundial 2026 y compite
+          <br />
+          con tus amigos... y enemigos.
+        </p>
+
+        {error && <div className="error-msg">{error}</div>}
+
+        <button
+          className="btn-google"
+          onClick={handleGoogle}
+          disabled={cargando}
+        >
+          {/* SVG Google logo */}
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.8 29.3 5 24 5 12.9 5 4 13.9 4 25s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.5-.4-3.9z" />
+            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19.1 13 24 13c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.8 29.3 5 24 5 16.3 5 9.7 9.3 6.3 14.7z" />
+            <path fill="#4CAF50" d="M24 45c5.2 0 9.9-1.8 13.5-4.7l-6.2-5.2C29.4 36.6 26.8 37.5 24 37.5c-5.2 0-9.6-3.3-11.3-8H6.4C9.8 37.8 16.4 45 24 45z" />
+            <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.2 5.2C37 39 44 34.5 44 25c0-1.3-.1-2.5-.4-3.9z" />
+          </svg>
+          {cargando ? "CONECTANDO..." : "ENTRAR CON GOOGLE"}
+        </button>
+
+        <p style={{ fontSize: "6px", color: "var(--gris)", textAlign: "center" }}>
+          ⚠ Solo para invitados del grupo
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/PartidoCard.jsx">
+import React, { useState, useEffect } from "react";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { partidoAbierto, formatHora } from "../utils/helpers";
+import { CARTAS, FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
+
+// ── Mini-modal selector de cartas ────────────────────────────
+function SelectorCartas({ cartasDesbloqueadas, cartaSeleccionada, onSeleccionar, onCerrar }) {
+  const cartasDisponibles = CARTAS.filter((c) =>
+    cartasDesbloqueadas.includes(c.id)
+  );
+
+  const RAREZA_COLOR = {
+    comun: "var(--verde-claro)",
+    rara: "var(--amarillo)",
+    legendaria: "var(--rojo-chile)",
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.85)",
+      zIndex: 500,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "20px",
+    }}>
+      <div style={{
+        background: "var(--negro)",
+        border: "4px solid var(--amarillo)",
+        boxShadow: "6px 6px 0 var(--amarillo-oscuro)",
+        padding: "20px",
+        maxWidth: "360px",
+        width: "100%",
+        maxHeight: "80vh",
+        overflowY: "auto",
+      }}>
+        <p style={{ fontSize: "8px", color: "var(--amarillo)", marginBottom: "14px" }}>
+          🃏 ELIGE UNA CARTA PARA ESTE PARTIDO
+        </p>
+        <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginBottom: "14px", lineHeight: 2 }}>
+          Si aciertas el puntaje MÁXIMO del partido, la carta multiplica tus puntos.
+          Si fallas, la carta se consume igual.
+        </p>
+
+        {cartasDisponibles.length === 0 ? (
+          <p style={{ fontSize: "7px", color: "var(--gris-claro)", textAlign: "center", padding: "20px" }}>
+            No tienes cartas desbloqueadas todavía. ¡Sube al podio del día!
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
+            {/* Opción: sin carta */}
+            <button
+              onClick={() => onSeleccionar(null)}
+              style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: "7px",
+                padding: "8px 12px",
+                border: `2px solid ${cartaSeleccionada === null ? "var(--verde-claro)" : "var(--gris)"}`,
+                background: cartaSeleccionada === null ? "rgba(82,183,136,0.2)" : "transparent",
+                color: "var(--blanco)",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              ✖ Sin carta (no arriesgar)
+            </button>
+
+            {cartasDisponibles.map((carta) => (
+              <button
+                key={carta.id}
+                onClick={() => onSeleccionar(carta.id)}
+                style={{
+                  fontFamily: "'Press Start 2P', monospace",
+                  fontSize: "7px",
+                  padding: "10px 12px",
+                  border: `2px solid ${cartaSeleccionada === carta.id
+                    ? RAREZA_COLOR[carta.rareza]
+                    : "var(--gris)"}`,
+                  background: cartaSeleccionada === carta.id
+                    ? `rgba(${carta.rareza === "legendaria" ? "214,40,40" : carta.rareza === "rara" ? "244,208,63" : "82,183,136"},0.15)`
+                    : "transparent",
+                  color: "var(--blanco)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>{carta.emoji}</span>
+                <div>
+                  <div style={{ color: RAREZA_COLOR[carta.rareza] }}>{carta.nombre}</div>
+                  <div style={{ color: "var(--gris-claro)", marginTop: "4px" }}>
+                    x{carta.multiplicador} — {carta.descripcion}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <button
+          className="btn-pixel btn-gris w-full"
+          onClick={onCerrar}
+          style={{ fontSize: "7px" }}
+        >
+          CERRAR
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+export default function PartidoCard({ partido }) {
+  const { firebaseUser, userProfile } = useAuth();
+  const {
+    id, fecha, horaInicio, local, visitante,
+    fase = "grupos", estaDestacado, resultado,
+  } = partido;
+
+  const abierto = partidoAbierto(fecha, horaInicio);
+  const esEliminatoria = FASES_ELIMINATORIAS.includes(fase);
+  const tieneResultado = resultado !== null && resultado !== undefined;
+
+  // ── Estado predicción grupos ──────────────────────────────
+  const [ganadorSel, setGanadorSel] = useState(null);   // "local"|"empate"|"visitante"
+  const [difSel, setDifSel] = useState(null);            // "1"|"2+"
+  const [golesLocalPred, setGolesLocalPred] = useState("");
+  const [golesVisPred, setGolesVisPred] = useState("");
+
+  // ── Estado predicción eliminatoria ───────────────────────
+  const [definicionSel, setDefinicionSel] = useState(null); // "normal"|"alargue"|"penales"
+  const [ganador90Sel, setGanador90Sel] = useState(null);   // "local"|"visitante"
+  const [dif90Sel, setDif90Sel] = useState(null);           // "1"|"2+"
+  const [ganadorAlargueSel, setGanadorAlargueSel] = useState(null);
+  const [difAlargueSel, setDifAlargueSel] = useState(null);
+  const [penalesLocalSel, setPenalesLocalSel] = useState("");
+  const [penalesVisSel, setPenalesVisSel] = useState("");
+
+  // ── Cartas ───────────────────────────────────────────────
+  const [cartaSeleccionada, setCartaSeleccionada] = useState(null); // cartaId o null
+  const [mostrarSelectorCartas, setMostrarSelectorCartas] = useState(false);
+  const cartasDesbloqueadas = userProfile?.cartasDesbloqueadas || [];
+
+  // ── Estado general ────────────────────────────────────────
+  const [guardado, setGuardado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [predExistente, setPredExistente] = useState(null);
+
+  // ── Cargar predicción previa ──────────────────────────────
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const cargar = async () => {
+      const ref = doc(db, "predicciones", `${firebaseUser.uid}_${id}`);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+
+      const data = snap.data();
+      setPredExistente(data);
+      setGuardado(true);
+      setCartaSeleccionada(data.cartaId || null);
+
+      if (esEliminatoria) {
+        setDefinicionSel(data.definicion || null);
+        setGanador90Sel(data.ganador90 || null);
+        setDif90Sel(data.diferencia90 || null);
+        setGanadorAlargueSel(data.ganadorAlargue || null);
+        setDifAlargueSel(data.diferenciaAlargue || null);
+        setPenalesLocalSel(String(data.penalesLocal ?? ""));
+        setPenalesVisSel(String(data.penalesVisitante ?? ""));
+      } else {
+        setGanadorSel(data.ganador || null);
+        setDifSel(data.diferencia || null);
+        if (estaDestacado) {
+          setGolesLocalPred(String(data.golesLocalPred ?? ""));
+          setGolesVisPred(String(data.golesVisitantePred ?? ""));
+        }
+      }
+    };
+    cargar();
+  }, [firebaseUser, id, esEliminatoria, estaDestacado]);
+
+  // ── Validación antes de guardar ───────────────────────────
+  const puedeGuardar = () => {
+    if (esEliminatoria) {
+      if (!definicionSel) return false;
+      if (definicionSel === "normal") {
+        return !!ganador90Sel && !!dif90Sel;
+      }
+      if (definicionSel === "alargue") {
+        return !!ganadorAlargueSel && !!difAlargueSel;
+      }
+      if (definicionSel === "penales") {
+        return penalesLocalSel !== "" && penalesVisSel !== "";
+      }
+      return false;
+    } else {
+      if (estaDestacado) {
+        return golesLocalPred !== "" && golesVisPred !== "";
+      }
+      if (ganadorSel === "empate") return true;
+      return !!ganadorSel && !!difSel;
+    }
+  };
+
+  // ── Guardar predicción ────────────────────────────────────
+  const handleGuardar = async () => {
+    if (!puedeGuardar()) return;
+    setGuardando(true);
+
+    try {
+      const predData = {
+        uid: firebaseUser.uid,
+        partidoId: id,
+        fecha,
+        fase,
+        estaDestacado,
+        cartaId: cartaSeleccionada,
+        guardadoEn: new Date().toISOString(),
+      };
+
+      if (esEliminatoria) {
+        predData.definicion = definicionSel;
+        if (definicionSel === "normal") {
+          predData.ganador90 = ganador90Sel;
+          predData.diferencia90 = dif90Sel;
+          predData.ganador = ganador90Sel; // alias para compatibilidad
+        } else if (definicionSel === "alargue") {
+          predData.ganadorAlargue = ganadorAlargueSel;
+          predData.diferenciaAlargue = difAlargueSel;
+          predData.ganador = ganadorAlargueSel;
+        } else if (definicionSel === "penales") {
+          predData.penalesLocal = Number(penalesLocalSel);
+          predData.penalesVisitante = Number(penalesVisSel);
+          // Inferir ganador de la tanda
+          predData.ganadorPenales =
+            Number(penalesLocalSel) > Number(penalesVisSel) ? "local" : "visitante";
+          predData.ganador = predData.ganadorPenales;
+        }
+      } else {
+        if (estaDestacado) {
+          predData.golesLocalPred = Number(golesLocalPred);
+          predData.golesVisitantePred = Number(golesVisPred);
+          const gl = Number(golesLocalPred);
+          const gv = Number(golesVisPred);
+          predData.ganador = gl > gv ? "local" : gv > gl ? "visitante" : "empate";
+        } else {
+          predData.ganador = ganadorSel;
+          predData.diferencia = ganadorSel === "empate" ? null : difSel;
+        }
+      }
+
+      await setDoc(doc(db, "predicciones", `${firebaseUser.uid}_${id}`), predData);
+      setPredExistente(predData);
+      setGuardado(true);
+    } catch (e) {
+      console.error("Error guardando predicción:", e);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleEditarPred = () => {
+    setGuardado(false);
+  };
+
+  // ── Carta adjunta ─────────────────────────────────────────
+  const cartaAdjunta = cartaSeleccionada
+    ? CARTAS.find((c) => c.id === cartaSeleccionada)
+    : null;
+
+  // ── Render resultado real ─────────────────────────────────
+  const renderResultadoReal = () => {
+    if (!tieneResultado) return null;
+    return (
+      <div style={{
+        background: "var(--negro)", border: "2px solid var(--verde-claro)",
+        padding: "10px", margin: "8px 0", textAlign: "center",
+      }}>
+        <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginBottom: "4px" }}>
+          RESULTADO FINAL
+        </p>
+        <p style={{ fontSize: "18px" }}>
+          {resultado.golesLocal} - {resultado.golesVisitante}
+        </p>
+        {resultado.definicion && resultado.definicion !== "normal" && (
+          <p style={{ fontSize: "6px", color: "var(--amarillo)", marginTop: "4px" }}>
+            {resultado.definicion === "alargue" ? "⏱ Se fue a ALARGUE" : "🎯 Se fue a PENALES"}
+            {resultado.penalesLocal !== undefined && (
+              <span> ({resultado.penalesLocal}-{resultado.penalesVisitante})</span>
+            )}
+          </p>
+        )}
+        {predExistente && predExistente.puntosGanados !== undefined && (
+          <p style={{ fontSize: "7px", color: "var(--amarillo)", marginTop: "6px" }}>
+            Ganaste: <span className="puntos-badge">{predExistente.puntosGanados} pts</span>
+            {predExistente.cartaId && predExistente.esMaximo && (
+              <span style={{ marginLeft: "6px", color: "var(--verde-claro)" }}>
+                🃏 ×{CARTAS.find(c => c.id === predExistente.cartaId)?.multiplicador}
+              </span>
+            )}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  // ── Render sección de predicción GRUPOS ──────────────────
+  const renderPredGrupos = () => (
+    <div>
+      {estaDestacado ? (
+        <div>
+          <p style={{ fontSize: "7px", color: "var(--amarillo)", textAlign: "center", marginBottom: "8px" }}>
+            PREDICE EL MARCADOR EXACTO
+          </p>
+          <div className="resultado-exacto">
+            <input type="number" min="0" max="20"
+              value={golesLocalPred}
+              onChange={(e) => setGolesLocalPred(e.target.value)}
+              placeholder="0" />
+            <span style={{ fontSize: "18px", color: "var(--amarillo)" }}>-</span>
+            <input type="number" min="0" max="20"
+              value={golesVisPred}
+              onChange={(e) => setGolesVisPred(e.target.value)}
+              placeholder="0" />
+          </div>
+          <p style={{ fontSize: "6px", color: "var(--gris-claro)", textAlign: "center", marginTop: "6px" }}>
+            Exacto: 3 pts | Solo ganador: 1 pt
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>¿QUIÉN GANA?</p>
+          <div className="pred-opciones">
+            <button className={`pred-btn ${ganadorSel === "local" ? "seleccionado" : ""}`}
+              onClick={() => { setGanadorSel("local"); setDifSel(null); }}>
+              {local.bandera} {local.nombre}
+            </button>
+            <button className={`pred-btn ${ganadorSel === "empate" ? "seleccionado" : ""}`}
+              onClick={() => { setGanadorSel("empate"); setDifSel(null); }}>
+              🤝 EMPATE
+            </button>
+            <button className={`pred-btn ${ganadorSel === "visitante" ? "seleccionado" : ""}`}
+              onClick={() => { setGanadorSel("visitante"); setDifSel(null); }}>
+              {visitante.bandera} {visitante.nombre}
+            </button>
+          </div>
+          {ganadorSel && ganadorSel !== "empate" && (
+            <div style={{ marginTop: "8px" }}>
+              <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>¿POR CUÁNTO?</p>
+              <div className="pred-opciones">
+                <button className={`pred-btn ${difSel === "1" ? "seleccionado" : ""}`}
+                  onClick={() => setDifSel("1")}>1 GOL</button>
+                <button className={`pred-btn ${difSel === "2+" ? "seleccionado" : ""}`}
+                  onClick={() => setDifSel("2+")}>2+ GOLES</button>
+              </div>
+            </div>
+          )}
+          <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginTop: "6px" }}>
+            Ganador: 1 pt | + diferencia: 1 pt extra
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Render sección de predicción ELIMINATORIA ─────────────
+  const renderPredEliminatoria = () => (
+    <div>
+      {/* Paso 1: ¿Cómo se decide? */}
+      <p style={{ fontSize: "7px", color: "var(--amarillo)", marginBottom: "8px" }}>
+        ¿CÓMO SE DECIDE EL PARTIDO?
+      </p>
+      <div className="pred-opciones" style={{ flexWrap: "wrap" }}>
+        {[
+          { val: "normal", label: "⚽ 90 MIN", sub: "+2/+3 pts" },
+          { val: "alargue", label: "⏱ ALARGUE", sub: "+2/+3 pts" },
+          { val: "penales", label: "🎯 PENALES", sub: "+2/+3/+4 pts" },
+        ].map(({ val, label, sub }) => (
+          <button
+            key={val}
+            className={`pred-btn ${definicionSel === val ? "seleccionado" : ""}`}
+            onClick={() => {
+              setDefinicionSel(val);
+              setGanador90Sel(null); setDif90Sel(null);
+              setGanadorAlargueSel(null); setDifAlargueSel(null);
+              setPenalesLocalSel(""); setPenalesVisSel("");
+            }}
+            style={{ flex: "1 0 28%", flexDirection: "column", gap: "4px" }}
+          >
+            <span>{label}</span>
+            <span style={{ fontSize: "5px", color: "var(--amarillo)" }}>{sub}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Paso 2: Detalle según selección */}
+      {definicionSel === "normal" && (
+        <div style={{ marginTop: "10px" }}>
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+            ¿QUIÉN GANA EN 90 MIN?
+          </p>
+          <div className="pred-opciones">
+            <button className={`pred-btn ${ganador90Sel === "local" ? "seleccionado" : ""}`}
+              onClick={() => { setGanador90Sel("local"); setDif90Sel(null); }}>
+              {local.bandera} {local.nombre}
+            </button>
+            <button className={`pred-btn ${ganador90Sel === "visitante" ? "seleccionado" : ""}`}
+              onClick={() => { setGanador90Sel("visitante"); setDif90Sel(null); }}>
+              {visitante.bandera} {visitante.nombre}
+            </button>
+          </div>
+          {ganador90Sel && (
+            <div style={{ marginTop: "8px" }}>
+              <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+                ¿DIFERENCIA EN 90 MIN?
+              </p>
+              <div className="pred-opciones">
+                <button className={`pred-btn ${dif90Sel === "1" ? "seleccionado" : ""}`}
+                  onClick={() => setDif90Sel("1")}>1 GOL</button>
+                <button className={`pred-btn ${dif90Sel === "2+" ? "seleccionado" : ""}`}
+                  onClick={() => setDif90Sel("2+")}>2+ GOLES</button>
+              </div>
+            </div>
+          )}
+          <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginTop: "6px" }}>
+            Acierta ganador: +2 pts | + diferencia: +3 pts
+          </p>
+        </div>
+      )}
+
+      {definicionSel === "alargue" && (
+        <div style={{ marginTop: "10px" }}>
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+            ¿QUIÉN GANA EN EL ALARGUE?
+          </p>
+          <div className="pred-opciones">
+            <button className={`pred-btn ${ganadorAlargueSel === "local" ? "seleccionado" : ""}`}
+              onClick={() => { setGanadorAlargueSel("local"); setDifAlargueSel(null); }}>
+              {local.bandera} {local.nombre}
+            </button>
+            <button className={`pred-btn ${ganadorAlargueSel === "visitante" ? "seleccionado" : ""}`}
+              onClick={() => { setGanadorAlargueSel("visitante"); setDifAlargueSel(null); }}>
+              {visitante.bandera} {visitante.nombre}
+            </button>
+          </div>
+          {ganadorAlargueSel && (
+            <div style={{ marginTop: "8px" }}>
+              <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
+                ¿DIFERENCIA EN EL ALARGUE?
+              </p>
+              <div className="pred-opciones">
+                <button className={`pred-btn ${difAlargueSel === "1" ? "seleccionado" : ""}`}
+                  onClick={() => setDifAlargueSel("1")}>1 GOL</button>
+                <button className={`pred-btn ${difAlargueSel === "2+" ? "seleccionado" : ""}`}
+                  onClick={() => setDifAlargueSel("2+")}>2+ GOLES</button>
+              </div>
+            </div>
+          )}
+          <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginTop: "6px" }}>
+            Alargue: +2 pts | + diferencia: +3 pts
+          </p>
+        </div>
+      )}
+
+      {definicionSel === "penales" && (
+        <div style={{ marginTop: "10px" }}>
+          <p style={{ fontSize: "7px", color: "var(--amarillo)", marginBottom: "8px" }}>
+            PREDICE EL RESULTADO DE LA TANDA
+          </p>
+          <div className="resultado-exacto">
+            <input type="number" min="0" max="20"
+              value={penalesLocalSel}
+              onChange={(e) => setPenalesLocalSel(e.target.value)}
+              placeholder="0" />
+            <span style={{ fontSize: "12px", color: "var(--gris-claro)", padding: "0 8px" }}>
+              {local.bandera}PEN{visitante.bandera}
+            </span>
+            <input type="number" min="0" max="20"
+              value={penalesVisSel}
+              onChange={(e) => setPenalesVisSel(e.target.value)}
+              placeholder="0" />
+          </div>
+          <p style={{ fontSize: "6px", color: "var(--gris-claro)", textAlign: "center", marginTop: "6px" }}>
+            Penales: +2 pts | + ganador tanda: +3 pts | + diferencia exacta: +4 pts
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Badge de fase ─────────────────────────────────────────
+  const faseLabel = FASE_LABELS[fase] || fase;
+
+  return (
+    <>
+      {mostrarSelectorCartas && (
+        <SelectorCartas
+          cartasDesbloqueadas={cartasDesbloqueadas}
+          cartaSeleccionada={cartaSeleccionada}
+          onSeleccionar={(id) => { setCartaSeleccionada(id); setMostrarSelectorCartas(false); }}
+          onCerrar={() => setMostrarSelectorCartas(false)}
+        />
+      )}
+
+      <div className={`partido-card ${estaDestacado ? "partido-destacado-card" : ""}`}
+        style={esEliminatoria ? { borderColor: "var(--rojo-chile)", boxShadow: "4px 4px 0 var(--rojo-oscuro)" } : {}}>
+
+        {/* Badges */}
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "4px" }}>
+          {estaDestacado && <span className="partido-badge" style={{ position: "static", transform: "none" }}>⭐ DESTACADO</span>}
+          {esEliminatoria && (
+            <span className="partido-badge"
+              style={{ position: "static", transform: "none", background: "var(--rojo-chile)", color: "var(--blanco)" }}>
+              💀 {faseLabel.toUpperCase()}
+            </span>
+          )}
+        </div>
+
+        {/* Hora */}
+        <div className="partido-hora">
+          🕐 {formatHora(horaInicio)}
+          {!abierto && !tieneResultado && (
+            <span style={{ color: "var(--rojo-chile)", marginLeft: "8px" }}>[CERRADO]</span>
+          )}
+        </div>
+
+        {/* Equipos */}
+        <div className="partido-equipos">
+          <div className="partido-equipo">
+            <span className="partido-bandera">{local.bandera}</span>
+            <span className="partido-nombre">{local.nombre}</span>
+          </div>
+          <span className="partido-vs">VS</span>
+          <div className="partido-equipo">
+            <span className="partido-bandera">{visitante.bandera}</span>
+            <span className="partido-nombre">{visitante.nombre}</span>
+          </div>
+        </div>
+
+        {/* Resultado real */}
+        {renderResultadoReal()}
+
+        {/* Zona de predicción (solo si está abierto y sin resultado) */}
+        {abierto && !tieneResultado && (
+          <div>
+            <div style={{ borderTop: "2px dashed var(--verde-campo)", paddingTop: "12px", marginTop: "4px" }}>
+              {esEliminatoria ? renderPredEliminatoria() : renderPredGrupos()}
+            </div>
+
+            {/* Selector de carta */}
+            <div style={{
+              marginTop: "12px",
+              borderTop: "1px solid var(--verde-campo)",
+              paddingTop: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
+            }}>
+              <div style={{ fontSize: "6px", color: "var(--gris-claro)" }}>
+                {cartaAdjunta ? (
+                  <span>
+                    🃏 <span style={{ color: "var(--amarillo)" }}>{cartaAdjunta.emoji} {cartaAdjunta.nombre}</span>
+                    <span style={{ color: "var(--verde-claro)", marginLeft: "4px" }}>
+                      ×{cartaAdjunta.multiplicador}
+                    </span>
+                  </span>
+                ) : (
+                  <span style={{ color: "var(--gris)" }}>Sin carta adjunta</span>
+                )}
+              </div>
+              <button
+                className="btn-pixel"
+                style={{
+                  fontSize: "6px", padding: "5px 8px",
+                  background: cartasDesbloqueadas.length > 0 ? "var(--amarillo)" : "var(--gris)",
+                  color: "var(--negro)",
+                  border: "2px solid var(--negro)",
+                  boxShadow: "2px 2px 0 var(--negro)",
+                }}
+                onClick={() => setMostrarSelectorCartas(true)}
+              >
+                🃏 CARTA
+              </button>
+            </div>
+
+            {/* Botón guardar */}
+            <button
+              className="btn-pixel btn-verde w-full"
+              style={{ marginTop: "12px" }}
+              onClick={handleGuardar}
+              disabled={guardando || guardado || !puedeGuardar()}
+            >
+              {guardando ? "GUARDANDO..." : guardado ? "✅ GUARDADO" : "💾 GUARDAR PREDICCIÓN"}
+            </button>
+
+            {guardado && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
+                <p className="pred-guardado-ok">✓ Puedes cambiarla antes del cierre</p>
+                <button
+                  style={{
+                    fontFamily: "'Press Start 2P', monospace",
+                    fontSize: "6px",
+                    background: "none",
+                    border: "1px solid var(--gris)",
+                    color: "var(--gris-claro)",
+                    padding: "3px 6px",
+                    cursor: "pointer",
+                  }}
+                  onClick={handleEditarPred}
+                >
+                  ✏ EDITAR
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!abierto && !tieneResultado && (
+          <div className="partido-cerrado">🔒 PREDICCIONES CERRADAS</div>
+        )}
+      </div>
+    </>
+  );
+}
+</file>
+
+<file path="src/data/sampleData.js">
+// ============================================================
+// DATOS DE EJEMPLO v2 — Incluye fases eliminatorias y cartas
+// con multiplicadores. Reemplaza desde Firestore cuando tengas
+// los partidos reales.
+// ============================================================
+
+// Fases válidas:
+// "grupos" | "dieciseisavos" | "octavos" | "cuartos" | "semifinal" | "tercer_lugar" | "final"
+
+export const PARTIDOS_EJEMPLO = [
+  {
+    id: "p1",
+    fecha: "2026-06-11",
+    horaInicio: "12:00",
+    local: { nombre: "Chile", bandera: "🇨🇱" },
+    visitante: { nombre: "España", bandera: "🇪🇸" },
+    fase: "grupos",
+    estaDestacado: true,
+    resultado: null,
+    // resultado real en grupos: { golesLocal: 2, golesVisitante: 1 }
+    // resultado real en eliminatoria: {
+    //   golesLocal: 1, golesVisitante: 1,    ← 90 min
+    //   definicion: "penales",                ← "normal"|"alargue"|"penales"
+    //   golesLocalAlargue: 0, golesVisitanteAlargue: 0,  ← solo si alargue/penales
+    //   penalesLocal: 4, penalesVisitante: 3, ← solo si penales
+    //   ganadorFinal: "local"                 ← quién ganó al final
+    // }
+  },
+  {
+    id: "p2",
+    fecha: "2026-06-11",
+    horaInicio: "15:00",
+    local: { nombre: "Brasil", bandera: "🇧🇷" },
+    visitante: { nombre: "Argentina", bandera: "🇦🇷" },
+    fase: "grupos",
+    estaDestacado: false,
+    resultado: null,
+  },
+  {
+    id: "p3",
+    fecha: "2026-06-11",
+    horaInicio: "18:00",
+    local: { nombre: "Francia", bandera: "🇫🇷" },
+    visitante: { nombre: "Alemania", bandera: "🇩🇪" },
+    fase: "grupos",
+    estaDestacado: false,
+    resultado: null,
+  },
+  // ── EJEMPLO eliminatoria ──────────────────────────────────
+  {
+    id: "p5",
+    fecha: "2026-07-04",
+    horaInicio: "17:00",
+    local: { nombre: "Chile", bandera: "🇨🇱" },
+    visitante: { nombre: "Francia", bandera: "🇫🇷" },
+    fase: "octavos",
+    estaDestacado: true,
+    resultado: null,
+  },
+];
+
+// ============================================================
+// PREGUNTAS DEL DÍA
+// ============================================================
+export const PREGUNTAS_EJEMPLO = [
+  {
+    id: "q1",
+    fecha: "2026-06-11",
+    texto: "¿Cuántos goles se marcarán en el partido Chile vs España?",
+    opciones: ["0-1 goles", "2-3 goles", "4-5 goles", "6 o más"],
+    respuestaCorrecta: null,
+  },
+  {
+    id: "q2",
+    fecha: "2026-06-12",
+    texto: "¿Quién será el goleador del día?",
+    opciones: ["Jugador A", "Jugador B", "Jugador C", "Otro"],
+    respuestaCorrecta: null,
+  },
+];
+
+// ============================================================
+// FRASES DEL DÍA
+// ============================================================
+export const FRASES_DEL_DIA = [
+  "La pelota no se mancha... ¡pero tus predicciones sí!",
+  "El que no arriesga, no gana. ¡Predice con el corazón!",
+  "En el fútbol y en la vida, nadie sabe nada.",
+  "Hay dos tipos de personas: las que ven el partido y las que lo predicen.",
+  "¡Arriba Chile! Aunque perdamos la polla...",
+  "El fútbol es la única religión que no tiene ateos en los penales.",
+  "Predecir el futuro es fácil. Lo difícil es acertar.",
+  "Un alargue a tiempo vale más que mil certezas en grupos.",
+];
+
+// ============================================================
+// AVATARES
+// ============================================================
+export const AVATARES = [
+  { id: "av1", emoji: "🦁", nombre: "León" },
+  { id: "av2", emoji: "🐺", nombre: "Lobo" },
+  { id: "av3", emoji: "🦊", nombre: "Zorro" },
+  { id: "av4", emoji: "🐻", nombre: "Oso" },
+  { id: "av5", emoji: "🦅", nombre: "Águila" },
+  { id: "av6", emoji: "🐉", nombre: "Dragón" },
+  { id: "av7", emoji: "🦈", nombre: "Tiburón" },
+  { id: "av8", emoji: "🐯", nombre: "Tigre" },
+];
+
+// ============================================================
+// CARTAS COLECCIONABLES — con multiplicadores
+// Las cartas se otorgan automáticamente al ganar el podio del día.
+// El campo "multiplicador" define cuánto multiplican el puntaje
+// máximo del partido al que se adjuntan.
+//
+// En Firestore, la colección es "cartas" con estos mismos campos.
+// El campo cartasDesbloqueadas del usuario es un array de IDs.
+// Para adjuntar la carta a una predicción, se guarda cartaId
+// en el documento de predicciones.
+// ============================================================
+export const CARTAS = [
+  {
+    id: "c1",
+    nombre: "Carta del Goleador",
+    emoji: "⚽",
+    multiplicador: 2,
+    rareza: "comun",
+    condicion: "Ganar el podio del día (1°, 2° o 3°)",
+    descripcion: "Duplica tus puntos si aciertas todo en un partido",
+  },
+  {
+    id: "c2",
+    nombre: "Carta del Vidente",
+    emoji: "🔮",
+    multiplicador: 2,
+    rareza: "comun",
+    condicion: "Ganar el podio del día (1°, 2° o 3°)",
+    descripcion: "Duplica tus puntos si aciertas todo en un partido",
+  },
+  {
+    id: "c3",
+    nombre: "Carta del Rey",
+    emoji: "👑",
+    multiplicador: 3,
+    rareza: "rara",
+    condicion: "Ser 1° del podio del día",
+    descripcion: "Triplica tus puntos si aciertas todo en un partido",
+  },
+  {
+    id: "c4",
+    nombre: "Carta de la Racha",
+    emoji: "🔥",
+    multiplicador: 3,
+    rareza: "rara",
+    condicion: "Ser 1° del podio del día",
+    descripcion: "Triplica tus puntos si aciertas todo en un partido",
+  },
+  {
+    id: "c5",
+    nombre: "Carta del Campeón",
+    emoji: "🏆",
+    multiplicador: 4,
+    rareza: "legendaria",
+    condicion: "Ganar el podio 3 veces consecutivas",
+    descripcion: "¡Cuadruplica tus puntos si aciertas todo!",
+  },
+  {
+    id: "c6",
+    nombre: "Carta Legendaria",
+    emoji: "⭐",
+    multiplicador: 4,
+    rareza: "legendaria",
+    condicion: "Puntaje perfecto en un día completo",
+    descripcion: "¡Cuadruplica tus puntos si aciertas todo!",
+  },
+];
+
+// Helper para buscar una carta por ID
+export function getCarta(cartaId) {
+  return CARTAS.find((c) => c.id === cartaId) || null;
+}
+
+// Etiquetas de fase para mostrar en la UI
+export const FASE_LABELS = {
+  grupos: "Fase de Grupos",
+  dieciseisavos: "Dieciseisavos de Final",
+  octavos: "Octavos de Final",
+  cuartos: "Cuartos de Final",
+  semifinal: "Semifinal",
+  tercer_lugar: "Tercer y Cuarto Lugar",
+  final: "FINAL",
+};
+
+export const FASES_ELIMINATORIAS = [
+  "dieciseisavos", "octavos", "cuartos", "semifinal", "tercer_lugar", "final"
+];
+</file>
+
+<file path="src/firebase.js">
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration (Ocultas con variables de entorno)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const googleProvider = new GoogleAuthProvider();
+</file>
+
+<file path="src/utils/helpers.js">
+// ============================================================
+// UTILIDADES v2 — Cálculo AUTOMÁTICO de puntajes
+// Soporta fase de grupos y eliminatorias (alargue / penales)
+// + multiplicadores de cartas coleccionables
+// ============================================================
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  updateDoc,
+  setDoc,
+  increment,
+  getDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { CARTAS } from "../data/sampleData";
+
+// ──────────────────────────────────────────────────────────────
+// HELPERS DE FECHA
+// ──────────────────────────────────────────────────────────────
+export function partidoAbierto(fecha, horaInicio) {
+  const [anio, mes, dia] = fecha.split("-").map(Number);
+  const [hora, min] = horaInicio.split(":").map(Number);
+  const inicio = new Date(anio, mes - 1, dia, hora, min, 0);
+  const cierre = new Date(inicio.getTime() - 60 * 60 * 1000);
+  return new Date() < cierre;
+}
+
+export function hoyStr() {
+  const hoy = new Date();
+  const y = hoy.getFullYear();
+  const m = String(hoy.getMonth() + 1).padStart(2, "0");
+  const d = String(hoy.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function ayerStr() {
+  const ayer = new Date();
+  ayer.setDate(ayer.getDate() - 1);
+  const y = ayer.getFullYear();
+  const m = String(ayer.getMonth() + 1).padStart(2, "0");
+  const d = String(ayer.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function formatHora(horaStr) {
+  return `${horaStr} hrs`;
+}
+
+export function formatFecha(fechaStr) {
+  const [y, m, d] = fechaStr.split("-").map(Number);
+  const fecha = new Date(y, m - 1, d);
+  return fecha.toLocaleDateString("es-CL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+// ──────────────────────────────────────────────────────────────
+// CÁLCULO DE PUNTOS (solo retorna número, sin escribir a Firebase)
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Calcula puntos de UNA predicción dado un resultado real.
+ *
+ * FASE GRUPOS (fase === "grupos"):
+ *   resultado: { golesLocal, golesVisitante }
+ *   prediccion: { ganador: "local"|"empate"|"visitante", diferencia: "1"|"2+" }
+ *   estaDestacado (true): prediccion tiene { golesLocalPred, golesVisitantePred }
+ *
+ * FASES ELIMINATORIAS (cualquier otra fase):
+ *   resultado: {
+ *     golesLocal, golesVisitante,         ← 90 min
+ *     definicion: "normal"|"alargue"|"penales",
+ *     golesLocalAlargue, golesVisitanteAlargue,  ← si alargue o penales
+ *     penalesLocal, penalesVisitante,     ← si penales
+ *     ganadorFinal: "local"|"visitante"   ← quién ganó al final
+ *   }
+ *   prediccion: {
+ *     ganador90: "local"|"visitante",
+ *     diferencia90: "1"|"2+",
+ *     definicion: "normal"|"alargue"|"penales",
+ *     // si alargue:
+ *     ganadorAlargue: "local"|"visitante",
+ *     diferenciaAlargue: "1"|"2+",
+ *     // si penales:
+ *     penalesLocal: number, penalesVisitante: number
+ *   }
+ *
+ * @returns { puntos: number, esMaximo: boolean }
+ *   esMaximo: true si obtuvo el puntaje máximo posible para ese tipo de partido
+ */
+export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado) {
+  if (!resultado || !prediccion) return { puntos: 0, esMaximo: false };
+
+  const esEliminatoria = fase && fase !== "grupos";
+
+  // ── FASE DE GRUPOS ────────────────────────────────────────
+  if (!esEliminatoria) {
+    const { golesLocal, golesVisitante } = resultado;
+    const diff = Math.abs(golesLocal - golesVisitante);
+    let ganadorReal =
+      golesLocal > golesVisitante ? "local" :
+      golesVisitante > golesLocal ? "visitante" : "empate";
+    const diferenciaReal = diff === 1 ? "1" : "2+";
+
+    if (estaDestacado) {
+      // Partido destacado: marcador exacto → 3 pts, solo ganador → 1 pt
+      const exacto =
+        Number(prediccion.golesLocalPred) === golesLocal &&
+        Number(prediccion.golesVisitantePred) === golesVisitante;
+      if (exacto) return { puntos: 3, esMaximo: true };
+      if (prediccion.ganador === ganadorReal) return { puntos: 1, esMaximo: false };
+      return { puntos: 0, esMaximo: false };
+    } else {
+      // Partido normal: ganador → 1, ganador+diferencia → 2
+      let puntos = 0;
+      if (prediccion.ganador === ganadorReal) {
+        puntos += 1;
+        if (ganadorReal !== "empate" && prediccion.diferencia === diferenciaReal) {
+          puntos += 1;
+        }
+      }
+      const esMaximo = puntos === (ganadorReal === "empate" ? 1 : 2);
+      return { puntos, esMaximo };
+    }
+  }
+
+  // ── FASES ELIMINATORIAS ───────────────────────────────────
+  const {
+    golesLocal, golesVisitante,
+    definicion,                    // "normal"|"alargue"|"penales"
+    golesLocalAlargue, golesVisitanteAlargue,
+    penalesLocal, penalesVisitante,
+    ganadorFinal,
+  } = resultado;
+
+  // Ganador en 90 min
+  let ganador90Real = null;
+  if (golesLocal !== golesVisitante) {
+    ganador90Real = golesLocal > golesVisitante ? "local" : "visitante";
+  }
+  const diff90 = Math.abs(golesLocal - golesVisitante);
+  const diferencia90Real = diff90 === 1 ? "1" : "2+";
+
+  let puntos = 0;
+  let maxPosible = 0;
+
+  if (definicion === "normal") {
+    // Se decidió en 90 min (hubo ganador claro)
+    maxPosible = 3; // ganador(2) + diferencia(1)
+    if (prediccion.definicion === "normal") {
+      if (prediccion.ganador90 === ganador90Real) {
+        puntos += 2; // acertó ganador
+        if (prediccion.diferencia90 === diferencia90Real) {
+          puntos += 1; // acertó diferencia
+        }
+      }
+    }
+  } else if (definicion === "alargue") {
+    maxPosible = 3; // alargue(2) + diferencia alargue(1)
+    if (prediccion.definicion === "alargue") {
+      puntos += 2; // acertó que hubo alargue
+      // Ganador y diferencia en alargue
+      const diffAlargue = Math.abs(
+        (golesLocalAlargue ?? 0) - (golesVisitanteAlargue ?? 0)
+      );
+      const difAlargueReal = diffAlargue === 1 ? "1" : "2+";
+      if (
+        prediccion.ganadorAlargue === ganadorFinal &&
+        prediccion.diferenciaAlargue === difAlargueReal
+      ) {
+        puntos += 1;
+      }
+    }
+  } else if (definicion === "penales") {
+    maxPosible = 4; // penales(2) + ganador tanda(1) + diferencia exacta(1)
+    if (prediccion.definicion === "penales") {
+      puntos += 2; // acertó que hubo penales
+      if (prediccion.ganadorPenales === ganadorFinal) {
+        puntos += 1; // acertó ganador de la tanda
+        // Diferencia exacta en penales
+        if (
+          Number(prediccion.penalesLocal) === penalesLocal &&
+          Number(prediccion.penalesVisitante) === penalesVisitante
+        ) {
+          puntos += 1;
+        }
+      }
+    }
+  }
+
+  return { puntos, esMaximo: puntos === maxPosible };
+}
+
+/**
+ * Calcula puntos de la pregunta del día.
+ */
+export function calcularPuntosPregunta(respuestaUsuario, respuestaCorrecta) {
+  if (!respuestaCorrecta || !respuestaUsuario) return 0;
+  return respuestaUsuario === respuestaCorrecta ? 2 : 0;
+}
+
+/**
+ * Aplica multiplicador de carta si el usuario sacó puntaje máximo.
+ * Si no fue máximo, la carta se consume sin efecto (retorna puntos sin cambio).
+ */
+export function aplicarMultiplicadorCarta(puntos, esMaximo, cartaId) {
+  if (!cartaId || !esMaximo) return puntos;
+  const carta = CARTAS.find((c) => c.id === cartaId);
+  if (!carta) return puntos;
+  return puntos * carta.multiplicador;
+}
+
+// ──────────────────────────────────────────────────────────────
+// MOTOR DE CÓMPUTO AUTOMÁTICO
+// Llama esto cuando el admin guarda el resultado de un partido.
+// Lee todas las predicciones, calcula puntos, actualiza usuarios
+// y construye/actualiza el podio del día.
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * procesarResultadoPartido(partidoId, resultado, fase, estaDestacado, fecha)
+ *
+ * @param {string} partidoId   - ID del partido en Firestore
+ * @param {object} resultado   - Objeto resultado real (ver formato arriba)
+ * @param {string} fase        - Fase del torneo
+ * @param {boolean} estaDestacado
+ * @param {string} fecha       - "YYYY-MM-DD"
+ * @returns {Promise<{ procesados: number, errores: number }>}
+ */
+export async function procesarResultadoPartido(
+  partidoId, resultado, fase, estaDestacado, fecha
+) {
+  let procesados = 0;
+  let errores = 0;
+
+  try {
+    // 1. Obtener todas las predicciones para este partido
+    const predQuery = query(
+      collection(db, "predicciones"),
+      where("partidoId", "==", partidoId)
+    );
+    const predSnap = await getDocs(predQuery);
+
+    if (predSnap.empty) {
+      return { procesados: 0, errores: 0 };
+    }
+
+    // 2. Calcular puntos para cada usuario
+    const puntajesPorUsuario = {}; // uid → puntos ganados en este partido
+
+    for (const predDoc of predSnap.docs) {
+      try {
+        const prediccion = predDoc.data();
+        const uid = prediccion.uid;
+
+        const { puntos: puntosBase, esMaximo } = calcularPuntosPartido(
+          prediccion, resultado, fase, estaDestacado
+        );
+
+        // Aplicar multiplicador si adjuntó carta
+        const puntosFinales = aplicarMultiplicadorCarta(
+          puntosBase, esMaximo, prediccion.cartaId || null
+        );
+
+        // Actualizar documento de predicción con puntos calculados
+        await updateDoc(doc(db, "predicciones", predDoc.id), {
+          puntosGanados: puntosFinales,
+          puntosBase,
+          esMaximo,
+          calculadoEn: new Date().toISOString(),
+        });
+
+        // Actualizar puntosTotal del usuario
+        await updateDoc(doc(db, "usuarios", uid), {
+          puntosTotal: increment(puntosFinales),
+        });
+
+        puntajesPorUsuario[uid] = (puntajesPorUsuario[uid] || 0) + puntosFinales;
+        procesados++;
+      } catch (e) {
+        console.error(`Error procesando predicción ${predDoc.id}:`, e);
+        errores++;
+      }
+    }
+
+    // 3. Actualizar/crear registro en puntosDelDia para cada usuario
+    //    (acumula todos los partidos del día)
+    for (const [uid, puntosDia] of Object.entries(puntajesPorUsuario)) {
+      try {
+        const diaDocId = `${uid}_${fecha}`;
+        const diaRef = doc(db, "puntosDelDia", diaDocId);
+        const diaSnap = await getDoc(diaRef);
+
+        // Obtener perfil del usuario para nickname/avatar
+        const userSnap = await getDoc(doc(db, "usuarios", uid));
+        const userProfile = userSnap.exists() ? userSnap.data() : {};
+
+        if (diaSnap.exists()) {
+          await updateDoc(diaRef, {
+            puntos: increment(puntosDia),
+          });
+        } else {
+          await setDoc(diaRef, {
+            uid,
+            fecha,
+            puntos: puntosDia,
+            nickname: userProfile.nickname || "",
+            avatarEmoji: userProfile.avatarEmoji || "❓",
+          });
+        }
+      } catch (e) {
+        console.error(`Error actualizando puntosDelDia para ${uid}:`, e);
+      }
+    }
+
+    // 4. Determinar ganador del día y darle +3 bonus
+    //    (Solo ejecutar cuando se procesa el ÚLTIMO partido del día)
+    //    → El admin debe llamar a calcularGanadorDelDia() separadamente
+    //      desde la función de admin.
+
+    return { procesados, errores };
+  } catch (e) {
+    console.error("Error en procesarResultadoPartido:", e);
+    return { procesados: 0, errores: 1 };
+  }
+}
+
+/**
+ * calcularGanadorDelDia(fecha)
+ * Llama DESPUÉS de procesar todos los partidos del día.
+ * Ordena puntosDelDia por puntos, da +3 al primero,
+ * y marca el podio para mostrarlo al día siguiente.
+ *
+ * @param {string} fecha - "YYYY-MM-DD"
+ */
+export async function calcularGanadorDelDia(fecha) {
+  try {
+    const q = query(
+      collection(db, "puntosDelDia"),
+      where("fecha", "==", fecha)
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) return { ok: false, mensaje: "Sin datos para ese día" };
+
+    const jugadores = snap.docs
+      .map((d) => ({ docId: d.id, ...d.data() }))
+      .sort((a, b) => b.puntos - a.puntos);
+
+    // Ganador del día: +3 puntos extra
+    const ganador = jugadores[0];
+    await updateDoc(doc(db, "puntosDelDia", ganador.docId), {
+      esGanadorDelDia: true,
+      bonusGanador: 3,
+    });
+    await updateDoc(doc(db, "usuarios", ganador.uid), {
+      puntosTotal: increment(3),
+    });
+
+    return {
+      ok: true,
+      ganador: ganador.nickname,
+      totalJugadores: jugadores.length,
+    };
+  } catch (e) {
+    console.error("Error en calcularGanadorDelDia:", e);
+    return { ok: false, error: e.message };
+  }
+}
+
+/**
+ * procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha)
+ * Recorre todas las respuestas a la pregunta, da +2 a quien acertó
+ * y actualiza puntosDelDia y puntosTotal del usuario.
+ */
+export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha) {
+  let procesados = 0;
+  try {
+    const q = query(
+      collection(db, "respuestas"),
+      where("preguntaId", "==", preguntaId)
+    );
+    const snap = await getDocs(q);
+
+    for (const rDoc of snap.docs) {
+      const data = rDoc.data();
+      if (data.respuesta === respuestaCorrecta) {
+        const uid = data.uid;
+        await updateDoc(doc(db, "usuarios", uid), {
+          puntosTotal: increment(2),
+        });
+
+        // Actualizar puntosDelDia
+        const diaDocId = `${uid}_${fecha}`;
+        const diaRef = doc(db, "puntosDelDia", diaDocId);
+        const diaSnap = await getDoc(diaRef);
+        const userSnap = await getDoc(doc(db, "usuarios", uid));
+        const userProfile = userSnap.exists() ? userSnap.data() : {};
+
+        if (diaSnap.exists()) {
+          await updateDoc(diaRef, { puntos: increment(2) });
+        } else {
+          await setDoc(diaRef, {
+            uid,
+            fecha,
+            puntos: 2,
+            nickname: userProfile.nickname || "",
+            avatarEmoji: userProfile.avatarEmoji || "❓",
+          });
+        }
+
+        // Marcar respuesta como correcta/procesada
+        await updateDoc(doc(db, "respuestas", rDoc.id), {
+          esCorrecta: true,
+          puntosGanados: 2,
+        });
+
+        procesados++;
+      } else {
+        await updateDoc(doc(db, "respuestas", rDoc.id), {
+          esCorrecta: false,
+          puntosGanados: 0,
+        });
+      }
+    }
+    return { ok: true, procesados };
+  } catch (e) {
+    console.error("Error procesarPreguntaDelDia:", e);
+    return { ok: false, error: e.message };
+  }
+}
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>INTERNATIONAL SUPERSTAR POLLA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="src/components/Dashboard.jsx">
+import React, { useEffect, useState } from "react";
+import {
+  collection, getDocs, orderBy, query, where, limit,
+} from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { auth, db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  PARTIDOS_EJEMPLO, PREGUNTAS_EJEMPLO, FRASES_DEL_DIA,
+} from "../data/sampleData";
+import { hoyStr, ayerStr, formatFecha } from "../utils/helpers";
+import PartidoCard from "./PartidoCard";
+import PreguntaCard from "./PreguntaCard";
+import Ranking from "./Ranking";
+import Perfil from "./Perfil";
+import OnboardingModal from "./OnboardingModal";
+import AdminPanel from "./AdminPanel";
+
+// ── ADMIN emails (debe coincidir con AdminPanel.jsx) ─────────
+const ADMIN_EMAILS = [
+  "xtokesu@gmail.com", // ← reemplaza con tu email real
+];
+
+const PANTALLAS = {
+  INICIO: "inicio",
+  RANKING: "ranking",
+  PERFIL: "perfil",
+  ADMIN: "admin",
+};
+
+export default function Dashboard() {
+  const { firebaseUser, userProfile } = useAuth();
+  const [pantalla, setPantalla] = useState(PANTALLAS.INICIO);
+  const [usuariosRanking, setUsuariosRanking] = useState([]);
+  const [podioAyer, setPodioAyer] = useState([]);
+  const [frase, setFrase] = useState("");
+  const [partidosHoy, setPartidosHoy] = useState([]);
+  const [preguntaHoy, setPreguntaHoy] = useState(null);
+  const [cargando, setCargando] = useState(true);
+
+  const hoy = hoyStr();
+  const ayer = ayerStr();
+  const esAdmin = ADMIN_EMAILS.includes(firebaseUser?.email);
+
+  useEffect(() => {
+    setFrase(FRASES_DEL_DIA[Math.floor(Math.random() * FRASES_DEL_DIA.length)]);
+    cargarDatos();
+  }, []);
+
+  const cargarDatos = async () => {
+    setCargando(true);
+    try {
+      // Ranking top 10
+      const qU = query(collection(db, "usuarios"), orderBy("puntosTotal", "desc"), limit(10));
+      const snapU = await getDocs(qU);
+      setUsuariosRanking(snapU.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+      // Podio de ayer
+      try {
+        const qA = query(
+          collection(db, "puntosDelDia"),
+          where("fecha", "==", ayer),
+          orderBy("puntos", "desc"),
+          limit(3)
+        );
+        const snapA = await getDocs(qA);
+        if (!snapA.empty) setPodioAyer(snapA.docs.map((d) => ({ ...d.data() })));
+      } catch (_) {}
+
+      // ── MODIFICADO: Partidos de hoy + Apuestas Anticipadas ──
+      try {
+        // 1. Traer partidos de hoy
+        const qP = query(collection(db, "partidos"), where("fecha", "==", hoy));
+        const snapP = await getDocs(qP);
+        const partidosDeHoyDb = snapP.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        // 2. Traer partidos con apuesta anticipada habilitada
+        const qAnticipados = query(collection(db, "partidos"), where("permitirApuestaAnticipada", "==", true));
+        const snapAnticipados = await getDocs(qAnticipados);
+        const partidosAnticipadosDb = snapAnticipados.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        // 3. Combinar y eliminar duplicados (por id)
+        const combinados = [...partidosDeHoyDb, ...partidosAnticipadosDb];
+        let unicos = combinados.filter(
+          (partido, index, self) => self.findIndex((p) => p.id === partido.id) === index
+        );
+
+        // Si la base de datos está completamente vacía, usamos los de ejemplo filtrados por hoy
+        if (unicos.length === 0) {
+          unicos = PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy);
+        }
+
+        // 4. Ordenar por hora de inicio
+        unicos.sort((a, b) => (a.horaInicio || "").localeCompare(b.horaInicio || ""));
+        
+        setPartidosHoy(unicos);
+      } catch (_) {
+        setPartidosHoy(PARTIDOS_EJEMPLO.filter((p) => p.fecha === hoy));
+      }
+
+      // Pregunta de hoy
+      try {
+        const qQ = query(collection(db, "preguntas"), where("fecha", "==", hoy), limit(1));
+        const snapQ = await getDocs(qQ);
+        if (!snapQ.empty) {
+          setPreguntaHoy({ id: snapQ.docs[0].id, ...snapQ.docs[0].data() });
+        } else {
+          const ej = PREGUNTAS_EJEMPLO.find((q) => q.fecha === hoy);
+          if (ej) setPreguntaHoy(ej);
+        }
+      } catch (_) {
+        const ej = PREGUNTAS_EJEMPLO.find((q) => q.fecha === hoy);
+        if (ej) setPreguntaHoy(ej);
+      }
+    } catch (e) {
+      console.error("Error cargando datos:", e);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const handleLogout = async () => { await signOut(auth); };
+
+  const medallas = ["🥇", "🥈", "🥉"];
+
+  // ── Pantallas secundarias ─────────────────────────────────
+  if (pantalla === PANTALLAS.RANKING) return (
+    <>
+      <TopBar userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)} onLogout={handleLogout} />
+      <Ranking onVolver={() => setPantalla(PANTALLAS.INICIO)} />
+      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} esAdmin={esAdmin} />
+    </>
+  );
+
+  if (pantalla === PANTALLAS.PERFIL) return (
+    <>
+      <TopBar userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)} onLogout={handleLogout} />
+      <Perfil onVolver={() => setPantalla(PANTALLAS.INICIO)} />
+      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} esAdmin={esAdmin} />
+    </>
+  );
+
+  if (pantalla === PANTALLAS.ADMIN) return (
+    <>
+      <TopBar userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)} onLogout={handleLogout} />
+      <AdminPanel onVolver={() => setPantalla(PANTALLAS.INICIO)} />
+      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} esAdmin={esAdmin} />
+    </>
+  );
+
+  // ── Dashboard principal ──────────────────────────────────
+  return (
+    <>
+      {/* Modal de bienvenida (se muestra solo la primera vez) */}
+      <OnboardingModal />
+
+      <TopBar userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)} onLogout={handleLogout} />
+
+      <div className="contenedor dashboard-wrapper">
+        {/* FRASE DEL DÍA */}
+        <div className="frase-dia">💬 "{frase}"</div>
+
+        {cargando ? (
+          <div className="loading-pantalla" style={{ minHeight: "200px" }}>
+            <span className="spinner">⚙</span><p>CARGANDO...</p>
+          </div>
+        ) : (
+          <>
+            {/* PODIO DE AYER */}
+            <div className="seccion-titulo">🏆 PODIO DEL DÍA ANTERIOR</div>
+            {podioAyer.length > 0 ? (
+              <div className="caja-pixel mb-16">
+                <div className="podio">
+                  {podioAyer[1] && (
+                    <div className="podio-lugar podio-2">
+                      <span className="podio-avatar">{podioAyer[1].avatarEmoji || "?"}</span>
+                      <span className="podio-nickname">{podioAyer[1].nickname}</span>
+                      <span className="podio-puntos">{podioAyer[1].puntos}pts</span>
+                      <div className="podio-bloque">2</div>
+                    </div>
+                  )}
+                  {podioAyer[0] && (
+                    <div className="podio-lugar podio-1">
+                      <span style={{ fontSize: "10px" }}>👑</span>
+                      <span className="podio-avatar">{podioAyer[0].avatarEmoji || "?"}</span>
+                      <span className="podio-nickname">{podioAyer[0].nickname}</span>
+                      <span className="podio-puntos">{podioAyer[0].puntos}pts</span>
+                      <div className="podio-bloque">1</div>
+                    </div>
+                  )}
+                  {podioAyer[2] && (
+                    <div className="podio-lugar podio-3">
+                      <span className="podio-avatar">{podioAyer[2].avatarEmoji || "?"}</span>
+                      <span className="podio-nickname">{podioAyer[2].nickname}</span>
+                      <span className="podio-puntos">{podioAyer[2].puntos}pts</span>
+                      <div className="podio-bloque">3</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="caja-pixel mb-16 text-center">
+                <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>
+                  Sin datos todavía. ¡El podio aparecerá mañana!
+                </p>
+              </div>
+            )}
+
+            {/* RANKING RÁPIDO */}
+            <div className="seccion-titulo">📊 RANKING GENERAL</div>
+            <div className="caja-pixel mb-16">
+              <table className="ranking-tabla">
+                <thead>
+                  <tr><th>#</th><th>JUGADOR</th><th style={{ textAlign: "right" }}>PTS</th></tr>
+                </thead>
+                <tbody>
+                  {usuariosRanking.slice(0, 5).map((u, i) => (
+                    <tr key={u.id} className={u.uid === firebaseUser?.uid ? "ranking-fila-yo" : ""}>
+                      <td className="ranking-pos">{i < 3 ? medallas[i] : i + 1}</td>
+                      <td>
+                        <span style={{ fontSize: "14px", marginRight: "6px" }}>{u.avatarEmoji}</span>
+                        <span style={{ fontSize: "7px" }}>{u.nickname}</span>
+                        {u.uid === firebaseUser?.uid && (
+                          <span style={{ marginLeft: "6px", fontSize: "5px", background: "var(--verde-claro)", color: "var(--negro)", padding: "1px 3px" }}>TÚ</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <span className="puntos-badge">{u.puntosTotal ?? 0}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button
+                className="btn-pixel btn-gris w-full"
+                style={{ marginTop: "12px", fontSize: "7px" }}
+                onClick={() => setPantalla(PANTALLAS.RANKING)}
+              >
+                VER RANKING COMPLETO →
+              </button>
+            </div>
+
+            {/* PARTIDOS DE HOY / PRÓXIMOS */}
+<div className="seccion-titulo">⚽ PARTIDOS DISPONIBLES</div>
+            {partidosHoy.length > 0 ? (
+              partidosHoy.map((p) => <PartidoCard key={p.id} partido={p} />)
+            ) : (
+              <div className="caja-pixel mb-16 text-center">
+                <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>
+                  No hay partidos hoy. Agrégalos en Firebase Console.
+                </p>
+              </div>
+            )}
+
+            {/* PREGUNTA DEL DÍA */}
+            {preguntaHoy && (
+              <>
+                <div className="seccion-titulo">❓ PREGUNTA DEL DÍA</div>
+                <PreguntaCard pregunta={preguntaHoy} />
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      <MenuInferior pantalla={pantalla} setPantalla={setPantalla} esAdmin={esAdmin} />
+    </>
+  );
+}
+
+// ── Sub-componentes ──────────────────────────────────────────
+function TopBar({ userProfile, onPerfil, onLogout }) {
+  return (
+    <div className="topbar">
+      <span className="topbar-logo">⚽ CP8B</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <span className="nickname-topbar">{userProfile?.nickname}</span>
+        <div className="avatar-topbar" onClick={onPerfil}>
+          <span className="avatar-emoji">{userProfile?.avatarEmoji || "?"}</span>
+          <span className="avatar-tooltip">{userProfile?.nombreReal || "Usuario"}</span>
+        </div>
+        <button className="btn-pixel btn-rojo" style={{ fontSize: "6px", padding: "5px 8px" }} onClick={onLogout}>
+          SALIR
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MenuInferior({ pantalla, setPantalla, esAdmin }) {
+  const items = [
+    { id: PANTALLAS.INICIO, label: "INICIO", icono: "🏠" },
+    { id: PANTALLAS.RANKING, label: "RANKING", icono: "📊" },
+    { id: PANTALLAS.PERFIL, label: "PERFIL", icono: "👤" },
+    ...(esAdmin ? [{ id: PANTALLAS.ADMIN, label: "ADMIN", icono: "⚙" }] : []),
+  ];
+
+  return (
+    <nav className="menu-inferior">
+      {items.map((item) => (
+        <button
+          key={item.id}
+          className={`menu-item ${pantalla === item.id ? "activo" : ""}`}
+          onClick={() => setPantalla(item.id)}
+          style={item.id === PANTALLAS.ADMIN ? { color: "var(--rojo-chile)" } : {}}
+        >
+          <span className="menu-item-icono">{item.icono}</span>
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+</file>
+
+<file path="src/App.jsx">
+import React, { useEffect, useState } from "react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Splash from "./components/Splash";
+import Login from "./components/Login";
+import Registro from "./components/Registro";
+import Dashboard from "./components/Dashboard";
+
+// ── Núcleo de la app (usa el contexto de auth) ───────────────
+function AppCore() {
+  const { firebaseUser, userProfile, loadingProfile } = useAuth();
+  const [mostrarSplash, setMostrarSplash] = useState(true);
+// 👇 NUEVO: Cambiar el título de la pestaña
+  useEffect(() => {
+    document.title = "INTERNATIONAL SUPERSTAR POLLA";
+  }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => setMostrarSplash(false), 8000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 1. Splash inicial (2 segundos)
+  if (mostrarSplash) return <Splash />;
+
+  // 2. Cargando estado de auth
+  if (firebaseUser === undefined || loadingProfile) {
+    return (
+      <div className="loading-pantalla">
+        <span className="spinner">⚙</span>
+        <p>CARGANDO...</p>
+      </div>
+    );
+  }
+
+
+  // 3. No autenticado → Login
+  if (!firebaseUser) return <Login />;
+
+  // 4. Autenticado pero sin perfil → Registro
+  if (!userProfile) return <Registro />;
+
+  // 5. Usuario completo → Dashboard
+  return <Dashboard />;
+}
+
+// ── Wrapper con Provider ─────────────────────────────────────
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppCore />
+    </AuthProvider>
+  );
+}
+</file>
+
+<file path="src/components/Splash.jsx">
+import React, { useEffect, useState } from "react";
+
+export default function Splash() {
+  const [imagenesListas, setImagenesListas] = useState(false);
+  const [mostrar1, setMostrar1] = useState(false);
+  const [mostrar2, setMostrar2] = useState(false);
+  const [mostrar3, setMostrar3] = useState(false);
+  const [mostrar3b, setMostrar3b] = useState(false);
+  const [mostrar4, setMostrar4] = useState(false);
+  const [mostrarTexto, setMostrarTexto] = useState(false);
+  const [mostrarStart, setMostrarStart] = useState(false);
+
+  // Precargar imágenes
+  useEffect(() => {
+    const imagenes = [
+      "/inicio1.jpg",
+      "/inicio2.png",
+      "/inicio3.png",
+      "/inicio3b.png",
+      "/inicio4.jpg"
+    ];
+    let cargadas = 0;
+    imagenes.forEach((src) => {
+      const img = new Image();
+      img.onload = () => {
+        cargadas++;
+        if (cargadas === imagenes.length) setImagenesListas(true);
+      };
+      img.onerror = () => {
+        cargadas++;
+        if (cargadas === imagenes.length) setImagenesListas(true);
+      };
+      img.src = src;
+    });
+  }, []);
+
+  // Secuencia con los nuevos tiempos
+  useEffect(() => {
+    if (!imagenesListas) return;
+
+    // Mostrar inicio1 inmediatamente
+    setMostrar1(true);
+
+    const timerInicio2 = setTimeout(() => setMostrar2(true), 500);   // 0.5s
+    const timerInicio3 = setTimeout(() => setMostrar3(true), 1000);  // 1.0s
+    const timerInicio3b = setTimeout(() => setMostrar3b(true), 1500); // 1.5s
+    const timerPreMostrar4 = setTimeout(() => setMostrar4(true), 2400); // 2.4s
+    const timerOcultar = setTimeout(() => {
+      setMostrar1(false);
+      setMostrar2(false);
+      setMostrar3(false);
+      setMostrar3b(false);
+      setMostrarTexto(true);
+    }, 3000); // 3.0s – aparece inicio4 + texto
+    const timerStart = setTimeout(() => setMostrarStart(true), 4000); // 4.0s – aparece START
+
+    return () => {
+      clearTimeout(timerInicio2);
+      clearTimeout(timerInicio3);
+      clearTimeout(timerInicio3b);
+      clearTimeout(timerPreMostrar4);
+      clearTimeout(timerOcultar);
+      clearTimeout(timerStart);
+    };
+  }, [imagenesListas]);
+
+if (!imagenesListas) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "rgb(225, 225, 225)",
+        zIndex: 9999,
+      }}
+    />
+  );
+}
+
+  return (
+    <div className="splash-container-unificado">
+      {mostrar1 && <img src="/inicio1.jpg" alt="inicio1" className="splash-fondo" />}
+      {mostrar2 && <img src="/inicio2.png" alt="inicio2" className="splash-fondo fade-in" />}
+      {mostrar3 && <img src="/inicio3.png" alt="inicio3" className="splash-fondo slide-in-right" />}
+      {mostrar3b && <img src="/inicio3b.png" alt="inicio3b" className="splash-fondo fade-in" />}
+      {mostrar4 && <img src="/inicio4.jpg" alt="inicio4" className="splash-fondo" />}
+      {mostrarTexto && (
+        <div className="splash-texto-final">
+          <p>©1995 KONAMIGOS</p>
+          <p>TODOS LOS DERECHOS RESERVADOS A</p>
+          <p>TU JUEGO FAVORITO</p>
+        </div>
+      )}
+      {mostrarStart && <div className="splash-start">START</div>}
+    </div>
+  );
+}
+</file>
+
+<file path="src/styles/global.css">
+/* ============================================================
+   CHILE PREDICTOR 8-BIT — ESTILOS GLOBALES
+   Fuente: Press Start 2P (Google Fonts)
+   Paleta: Verde cancha + rojo Chile + pixel art
+   ============================================================ */
+
+:root {
+  --verde-oscuro: #1a472a;
+  --verde-medio: #2d6a4f;
+  --verde-claro: #52b788;
+  --verde-campo: #40916c;
+  --rojo-chile: #d62828;
+  --rojo-oscuro: #9b1c1c;
+  --amarillo: #f4d03f;
+  --amarillo-oscuro: #d4ac0d;
+  --blanco: #f5f5f0;
+  --negro: #1a1a1a;
+  --gris: #555555;
+  --gris-claro: #cccccc;
+  --azul: #2563eb;
+  --pixel-border: 3px solid var(--negro);
+  --sombra-pixel: 4px 4px 0px var(--negro);
+  --sombra-pixel-rojo: 4px 4px 0px var(--rojo-oscuro);
+  --sombra-pixel-verde: 4px 4px 0px var(--verde-oscuro);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: "Press Start 2P", monospace;
+  background-color: var(--verde-oscuro);
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: var(--blanco);
+  min-height: 100vh;
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── SCROLLBAR PIXELADA ── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--verde-oscuro); }
+::-webkit-scrollbar-thumb {
+  background: var(--verde-claro);
+  border: 2px solid var(--negro);
+}
+
+/* ── BOTONES PIXEL ── */
+.btn-pixel {
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  padding: 10px 16px;
+  border: 3px solid var(--negro);
+  cursor: pointer;
+  display: inline-block;
+  transition: transform 0.05s, box-shadow 0.05s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  user-select: none;
+  text-align: center;
+}
+
+.btn-pixel:active {
+  transform: translate(3px, 3px);
+  box-shadow: none !important;
+}
+
+.btn-verde {
+  background: var(--verde-claro);
+  color: var(--negro);
+  box-shadow: var(--sombra-pixel-verde);
+}
+.btn-verde:hover { background: #74c69d; }
+
+.btn-rojo {
+  background: var(--rojo-chile);
+  color: var(--blanco);
+  box-shadow: var(--sombra-pixel-rojo);
+}
+.btn-rojo:hover { background: #e74c3c; }
+
+.btn-amarillo {
+  background: var(--amarillo);
+  color: var(--negro);
+  box-shadow: 4px 4px 0px var(--amarillo-oscuro);
+}
+.btn-amarillo:hover { background: #f7dc6f; }
+
+.btn-gris {
+  background: var(--gris);
+  color: var(--blanco);
+  box-shadow: 4px 4px 0px #333;
+}
+.btn-gris:hover { background: #777; }
+
+.btn-pixel:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: var(--sombra-pixel) !important;
+}
+
+/* ── CAJAS PIXEL ── */
+.caja-pixel {
+  background: var(--verde-medio);
+  border: 3px solid var(--negro);
+  box-shadow: var(--sombra-pixel);
+  padding: 16px;
+}
+
+.caja-blanca {
+  background: var(--blanco);
+  color: var(--negro);
+  border: 3px solid var(--negro);
+  box-shadow: var(--sombra-pixel);
+  padding: 16px;
+}
+
+/* ── INPUTS PIXEL ── */
+.input-pixel {
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  padding: 10px 12px;
+  border: 3px solid var(--negro);
+  background: var(--blanco);
+  color: var(--negro);
+  width: 100%;
+  outline: none;
+  box-shadow: inset 2px 2px 0px rgba(0,0,0,0.2);
+}
+
+.input-pixel:focus {
+  border-color: var(--verde-claro);
+  box-shadow: inset 2px 2px 0px rgba(0,0,0,0.2), 0 0 0 2px var(--verde-claro);
+}
+
+/* ── TÍTULOS ── */
+h1 {
+  font-size: 18px;
+  text-shadow: 3px 3px 0px var(--negro);
+  letter-spacing: 2px;
+}
+h2 { font-size: 13px; text-shadow: 2px 2px 0px var(--negro); }
+h3 { font-size: 10px; }
+
+/* ── LAYOUT ── */
+.pantalla {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ── BARRA SUPERIOR ── */
+.topbar {
+  background: var(--negro);
+  border-bottom: 3px solid var(--verde-claro);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-logo {
+  font-size: 8px;
+  color: var(--verde-claro);
+  text-shadow: 2px 2px 0 var(--verde-oscuro);
+}
+
+/* ── AVATAR EN TOPBAR ── */
+.avatar-topbar {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-emoji {
+  font-size: 24px;
+  display: inline-block;
+  border: 2px solid var(--verde-claro);
+  padding: 2px 4px;
+  background: var(--negro);
+  line-height: 1;
+}
+
+.avatar-tooltip {
+  display: none;
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: var(--negro);
+  color: var(--verde-claro);
+  border: 2px solid var(--verde-claro);
+  padding: 6px 10px;
+  font-size: 7px;
+  white-space: nowrap;
+  z-index: 200;
+  box-shadow: var(--sombra-pixel-verde);
+}
+
+.avatar-topbar:hover .avatar-tooltip {
+  display: block;
+}
+
+.nickname-topbar {
+  font-size: 8px;
+  color: var(--amarillo);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── MENÚ INFERIOR ── */
+.menu-inferior {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--negro);
+  border-top: 3px solid var(--verde-claro);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  z-index: 100;
+}
+
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px 12px;
+  font-size: 7px;
+  color: var(--gris-claro);
+  transition: color 0.1s;
+  background: none;
+  border: none;
+  font-family: "Press Start 2P", monospace;
+}
+
+.menu-item.activo, .menu-item:hover {
+  color: var(--amarillo);
+}
+
+.menu-item-icono { font-size: 18px; }
+
+/* ── SECCIÓN DASHBOARD ── */
+.dashboard-wrapper {
+  padding-bottom: 80px; /* espacio para menú inferior */
+  padding-top: 16px;
+}
+
+.seccion-titulo {
+  font-size: 9px;
+  color: var(--amarillo);
+  text-shadow: 2px 2px 0 var(--negro);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--verde-campo);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── PODIO ── */
+.podio {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.podio-lugar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.podio-bloque {
+  border: 3px solid var(--negro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--negro);
+  font-weight: bold;
+  width: 60px;
+}
+
+.podio-1 .podio-bloque { height: 64px; background: var(--amarillo); box-shadow: var(--sombra-pixel); }
+.podio-2 .podio-bloque { height: 48px; background: var(--gris-claro); box-shadow: var(--sombra-pixel); }
+.podio-3 .podio-bloque { height: 36px; background: #cd7f32; box-shadow: var(--sombra-pixel); }
+
+.podio-nickname { font-size: 6px; text-align: center; max-width: 70px; color: var(--blanco); }
+.podio-puntos { font-size: 7px; color: var(--verde-claro); }
+.podio-avatar { font-size: 20px; }
+
+/* ── RANKING TABLE ── */
+.ranking-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ranking-tabla th, .ranking-tabla td {
+  padding: 8px 6px;
+  font-size: 7px;
+  border-bottom: 1px solid var(--verde-campo);
+  text-align: left;
+}
+
+.ranking-tabla th {
+  color: var(--amarillo);
+  font-size: 6px;
+  border-bottom: 2px solid var(--verde-campo);
+}
+
+.ranking-fila-yo {
+  background: rgba(82, 183, 136, 0.2);
+  border-left: 3px solid var(--verde-claro) !important;
+}
+
+.ranking-pos {
+  width: 28px;
+  text-align: center;
+  color: var(--amarillo);
+}
+
+/* ── PARTIDO CARD ── */
+.partido-card {
+  background: var(--verde-medio);
+  border: 3px solid var(--negro);
+  box-shadow: var(--sombra-pixel-verde);
+  padding: 14px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.partido-destacado-card {
+  border-color: var(--amarillo);
+  box-shadow: 4px 4px 0px var(--amarillo-oscuro);
+}
+
+.partido-badge {
+  position: absolute;
+  top: -2px;
+  right: 8px;
+  background: var(--amarillo);
+  color: var(--negro);
+  font-size: 6px;
+  padding: 2px 6px;
+  border: 2px solid var(--negro);
+  transform: translateY(-50%);
+}
+
+.partido-equipos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.partido-equipo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.partido-bandera { font-size: 28px; }
+.partido-nombre { font-size: 7px; text-align: center; }
+.partido-vs { font-size: 10px; color: var(--amarillo); padding: 0 8px; }
+
+.partido-hora {
+  font-size: 6px;
+  color: var(--gris-claro);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.partido-cerrado {
+  font-size: 7px;
+  color: var(--rojo-chile);
+  text-align: center;
+  padding: 6px;
+  border: 2px solid var(--rojo-chile);
+  margin-top: 8px;
+}
+
+/* Opciones de predicción */
+.pred-opciones {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.pred-btn {
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  padding: 6px 10px;
+  border: 2px solid var(--negro);
+  cursor: pointer;
+  background: var(--verde-campo);
+  color: var(--blanco);
+  transition: transform 0.05s;
+  flex: 1;
+  min-width: 60px;
+  text-align: center;
+}
+
+.pred-btn:hover { background: var(--verde-claro); color: var(--negro); }
+.pred-btn.seleccionado {
+  background: var(--amarillo);
+  color: var(--negro);
+  border-color: var(--amarillo-oscuro);
+  box-shadow: 2px 2px 0 var(--amarillo-oscuro);
+}
+.pred-btn:active { transform: translate(2px, 2px); }
+
+/* Input resultado exacto */
+.resultado-exacto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.resultado-exacto input {
+  font-family: "Press Start 2P", monospace;
+  font-size: 14px;
+  width: 48px;
+  height: 48px;
+  text-align: center;
+  border: 3px solid var(--negro);
+  background: var(--blanco);
+  color: var(--negro);
+  outline: none;
+}
+
+.resultado-exacto input:focus {
+  border-color: var(--amarillo);
+}
+
+.pred-guardado-ok {
+  font-size: 7px;
+  color: var(--verde-claro);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ── PREGUNTA CARD ── */
+.pregunta-card {
+  background: var(--negro);
+  border: 3px solid var(--amarillo);
+  box-shadow: 4px 4px 0px var(--amarillo-oscuro);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.pregunta-texto {
+  font-size: 8px;
+  margin-bottom: 14px;
+  color: var(--blanco);
+  line-height: 2;
+}
+
+.pregunta-opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ── FRASE DEL DÍA ── */
+.frase-dia {
+  background: rgba(0,0,0,0.4);
+  border-left: 4px solid var(--amarillo);
+  padding: 12px 14px;
+  font-size: 7px;
+  color: var(--amarillo);
+  line-height: 2.2;
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+/* ── SPLASH SCREEN ── */
+.splash {
+  background: var(--negro);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.splash-logo {
+  font-size: 48px;
+  animation: bounce 0.8s infinite alternate;
+}
+
+.splash-titulo {
+  font-size: 14px;
+  color: var(--verde-claro);
+  text-shadow: 4px 4px 0px var(--verde-oscuro);
+  text-align: center;
+  line-height: 2;
+  animation: parpadeo 1s step-end infinite;
+}
+
+.splash-sub {
+  font-size: 8px;
+  color: var(--amarillo);
+}
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-16px); }
+}
+
+@keyframes parpadeo {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── LOGIN ── */
+.login-box {
+  background: var(--negro);
+  border: 4px solid var(--verde-claro);
+  box-shadow: 6px 6px 0px var(--verde-oscuro);
+  padding: 32px 24px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.btn-google {
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  padding: 12px 20px;
+  border: 3px solid var(--negro);
+  background: var(--blanco);
+  color: var(--negro);
+  cursor: pointer;
+  box-shadow: 4px 4px 0px #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  transition: transform 0.05s;
+}
+.btn-google:hover { background: #f0f0f0; }
+.btn-google:active { transform: translate(4px, 4px); box-shadow: none; }
+
+/* ── REGISTRO ── */
+.registro-box {
+  background: var(--negro);
+  border: 4px solid var(--amarillo);
+  box-shadow: 6px 6px 0px var(--amarillo-oscuro);
+  padding: 28px 20px;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.avatar-opcion {
+  font-size: 28px;
+  padding: 8px;
+  border: 3px solid var(--negro);
+  background: var(--verde-campo);
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.05s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.avatar-opcion:hover { background: var(--verde-claro); transform: scale(1.05); }
+
+.avatar-opcion.seleccionado {
+  border-color: var(--amarillo);
+  background: var(--amarillo);
+  box-shadow: 3px 3px 0 var(--amarillo-oscuro);
+}
+
+.avatar-opcion-nombre { font-size: 5px; color: var(--negro); }
+
+.error-msg {
+  color: var(--rojo-chile);
+  font-size: 7px;
+  border: 2px solid var(--rojo-chile);
+  padding: 6px 10px;
+  background: rgba(214, 40, 40, 0.1);
+}
+
+/* ── PERFIL ── */
+.perfil-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: var(--negro);
+  border: 3px solid var(--verde-claro);
+  box-shadow: var(--sombra-pixel-verde);
+  margin-bottom: 16px;
+}
+
+.perfil-avatar-grande { font-size: 56px; }
+
+.cartas-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.carta {
+  border: 3px solid var(--negro);
+  padding: 12px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.carta-desbloqueada {
+  background: var(--verde-campo);
+  box-shadow: 3px 3px 0 var(--verde-oscuro);
+}
+
+.carta-bloqueada {
+  background: #333;
+  opacity: 0.6;
+  filter: grayscale(1);
+}
+
+.carta-emoji { font-size: 28px; }
+.carta-nombre { font-size: 6px; color: var(--blanco); line-height: 1.8; }
+.carta-condicion { font-size: 5px; color: var(--gris-claro); line-height: 1.8; }
+
+/* ── PUNTOS BADGE ── */
+.puntos-badge {
+  display: inline-block;
+  background: var(--amarillo);
+  color: var(--negro);
+  border: 2px solid var(--negro);
+  padding: 2px 8px;
+  font-size: 8px;
+  box-shadow: 2px 2px 0 var(--amarillo-oscuro);
+}
+
+/* ── SPINNER ── */
+.spinner {
+  display: inline-block;
+  font-size: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-pantalla {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 8px;
+  color: var(--verde-claro);
+}
+
+/* ── UTILIDADES ── */
+.mb-4 { margin-bottom: 4px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.text-center { text-align: center; }
+.text-amarillo { color: var(--amarillo); }
+.text-verde { color: var(--verde-claro); }
+.text-rojo { color: var(--rojo-chile); }
+.text-gris { color: var(--gris-claro); }
+.w-full { width: 100%; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 480px) {
+  h1 { font-size: 13px; }
+  h2 { font-size: 10px; }
+  .podio-bloque { width: 50px; }
+  .pred-opciones { flex-direction: column; }
+  .pregunta-opciones { grid-template-columns: 1fr; }
+  .cartas-grid { grid-template-columns: repeat(2, 1fr); }
+  .avatar-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.splash-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: black;
+}
+
+.splash-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in forwards;
+}
+.slide-in-right {
+  animation: slideInFromRight 0.5s ease-out forwards;
+}
+.static {
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.splash {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.texto-splash {
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: linear-gradient(45deg, #ffa500, #ffd700);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-top: 20px;
+}
+
+/* === CONTENEDOR PRINCIPAL DEL SPLASH === */
+.splash-container-unificado {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: rgb(225, 225, 225); /* fondo de seguridad mientras cargan imágenes */
+}
+
+/* TODAS las imágenes ocupan toda la pantalla */
+.splash-fondo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* para que cubra sin deformarse */
+  display: block;
+}
+
+/* Animaciones */
+.fade-in {
+  animation: fadeIn 0.5s ease-in forwards;
+}
+.slide-in-right {
+  animation: slideInFromRight 0.5s ease-out forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Texto final – centrado abajo, SOBRE la imagen */
+.splash-texto-final {
+  position: absolute;
+  bottom: 15%;           /* ← antes era 30px o 50px; ahora usa porcentaje */
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: linear-gradient(45deg, #ffcc00, #ff6600);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  z-index: 20;
+  line-height: 1.6;
+  pointer-events: none;
+  padding: 0 15px;       /* ← añade esto para que no toque los bordes laterales */
+}
+
+/* Texto START centrado, parpadeante */
+.splash-start {
+  position: absolute;
+  top: 43%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 24px;       /* más grande */
+  font-weight: bold;
+  background: linear-gradient(45deg, #ffcc00, #ff6600);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-align: center;
+  z-index: 30;
+  animation: blink 1s step-end infinite;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Ajuste del texto inferior para que no se corte */
+.splash-texto-final {
+  position: absolute;
+  bottom: 15%;          /* subir un poco */
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: linear-gradient(45deg, #ffcc00, #ff6600);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  z-index: 20;
+  line-height: 1.6;
+  pointer-events: none;
+  padding: 0 15px;
+}
+</file>
+
+</files>

@@ -1,27 +1,42 @@
+// src/App.jsx
 import React, { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import Splash from "./components/Splash";
-import Login from "./components/Login";
-import Registro from "./components/Registro";
-import Dashboard from "./components/Dashboard";
+import Splash      from "./components/Splash";
+import Login       from "./components/Login";
+import Registro    from "./components/Registro";
+import Dashboard   from "./components/Dashboard";
+import FraseCinema, { fraseCinemaYaVistahoy } from "./components/FraseCinema";
 
-// ── Núcleo de la app (usa el contexto de auth) ───────────────
 function AppCore() {
   const { firebaseUser, userProfile, loadingProfile } = useAuth();
-  const [mostrarSplash, setMostrarSplash] = useState(true);
-// 👇 NUEVO: Cambiar el título de la pestaña
+  const [mostrarSplash,  setMostrarSplash]  = useState(true);
+  const [splashListo,    setSplashListo]    = useState(false); // Splash notificó que terminó
+  const [mostrarFrase,   setMostrarFrase]   = useState(false);
+
   useEffect(() => {
     document.title = "INTERNATIONAL SUPERSTAR POLLA";
   }, []);
+
+  // El Splash llama a setSplashListo(true) cuando termina (ver Splash.jsx)
+  const handleSplashFin = () => {
+    setMostrarSplash(false);
+    setSplashListo(true);
+  };
+
+  // Cuando el perfil esté disponible y el splash haya terminado,
+  // decidir si mostrar la frase cinematográfica
   useEffect(() => {
-    const timer = setTimeout(() => setMostrarSplash(false), 8000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!splashListo) return;
+    if (!firebaseUser || !userProfile) return; // aún cargando o sin perfil
+    if (!fraseCinemaYaVistahoy()) {
+      setMostrarFrase(true);
+    }
+  }, [splashListo, firebaseUser, userProfile]);
 
-  // 1. Splash inicial (2 segundos)
-  if (mostrarSplash) return <Splash />;
+  // 1. Splash
+  if (mostrarSplash) return <Splash onFin={handleSplashFin} />;
 
-  // 2. Cargando estado de auth
+  // 2. Cargando auth
   if (firebaseUser === undefined || loadingProfile) {
     return (
       <div className="loading-pantalla">
@@ -31,18 +46,21 @@ function AppCore() {
     );
   }
 
-
-  // 3. No autenticado → Login
+  // 3. No autenticado
   if (!firebaseUser) return <Login />;
 
-  // 4. Autenticado pero sin perfil → Registro
+  // 4. Sin perfil → Registro (primera vez)
   if (!userProfile) return <Registro />;
 
-  // 5. Usuario completo → Dashboard
+  // 5. Frase cinematográfica (una vez al día)
+  if (mostrarFrase) {
+    return <FraseCinema onTerminar={() => setMostrarFrase(false)} />;
+  }
+
+  // 6. Dashboard principal
   return <Dashboard />;
 }
 
-// ── Wrapper con Provider ─────────────────────────────────────
 export default function App() {
   return (
     <AuthProvider>
