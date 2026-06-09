@@ -39,7 +39,7 @@ function SelectorCartas({ cartasDesbloqueadas, cartaSeleccionada, onSeleccionar,
           🃏 ELIGE UNA CARTA PARA ESTE PARTIDO
         </p>
         <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginBottom: "14px", lineHeight: 2 }}>
-          Si aciertas el puntaje MÁXIMO del partido, la carta multiplica tus puntos.
+          Si aciertas, cual sea el puntaje obtenido del partido donde pusiste la carta, se multiplica según la rareza de la carta. 
           Si fallas, la carta se consume igual.
         </p>
 
