@@ -1,3 +1,4 @@
+import ModalPerfilResumido from "./ModalPerfilResumido";
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "../firebase";
@@ -7,6 +8,7 @@ export default function Ranking({ onVolver }) {
   const { firebaseUser } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [perfilSeleccionado, setPerfilSeleccionado] = useState(null);
 
   useEffect(() => {
     const cargar = async () => {
@@ -62,7 +64,13 @@ export default function Ranking({ onVolver }) {
                 <tr
                   key={u.id}
                   className={u.uid === firebaseUser?.uid ? "ranking-fila-yo" : ""}
-                >
+                onClick={() => setPerfilSeleccionado({
+  avatarId: u.avatarId,
+  nickname: u.nickname,
+  puntos: u.puntosTotal
+})}
+  style={{ cursor: "pointer" }}   // ← añade esto para mostrar que es clickeable
+>
                   <td className="ranking-pos">
                     {i < 3 ? medallas[i] : `${i + 1}`}
                   </td>
@@ -109,6 +117,12 @@ export default function Ranking({ onVolver }) {
           </table>
         </div>
       )}
+      {perfilSeleccionado && (
+  <ModalPerfilResumido
+    jugador={perfilSeleccionado}
+    onCerrar={() => setPerfilSeleccionado(null)}
+  />
+)}
     </div>
   );
 }
