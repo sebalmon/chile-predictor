@@ -131,7 +131,12 @@ export default function Dashboard() {
                     <tr key={u.id} className={u.uid===firebaseUser?.uid?"ranking-fila-yo":""}>
                       <td className="ranking-pos">{i<3?medallas[i]:i+1}</td>
                       <td>
-                        <span style={{fontSize:"14px",marginRight:"6px"}}>{u.avatarEmoji||"?"}</span>
+                        <img
+  src={`/avatares/${u.avatarSlug || "default"}-1.png`}
+  alt={u.nickname}
+  style={{ width: "20px", height: "20px", imageRendering: "pixelated", marginRight: "6px" }}
+  onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
+/>
                         <span style={{fontSize:"7px"}}>{u.nickname}</span>
                         {u.uid===firebaseUser?.uid&&(
                           <span style={{marginLeft:"6px",fontSize:"5px",
@@ -265,9 +270,19 @@ function TopBar({ userProfile, onPerfil, onLogout, diaLabel }) {
       <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
         <span className="nickname-topbar">{userProfile?.nickname}</span>
         <div className="avatar-topbar" onClick={onPerfil}>
-          <span className="avatar-emoji">{userProfile?.avatarEmoji||"?"}</span>
-          <span className="avatar-tooltip">{userProfile?.nombreReal||"Usuario"}</span>
-        </div>
+  <img
+    src={`/avatares/${userProfile?.avatarSlug || "default"}-1.png`}
+    alt="avatar"
+    style={{
+      width: "28px",
+      height: "28px",
+      imageRendering: "pixelated",
+      borderRadius: "0",
+    }}
+    onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
+  />
+  <span className="avatar-tooltip">{userProfile?.nombreReal || "Usuario"}</span>
+</div>
         <button className="btn-pixel btn-rojo"
           style={{fontSize:"6px",padding:"5px 8px"}} onClick={onLogout}>
           SALIR

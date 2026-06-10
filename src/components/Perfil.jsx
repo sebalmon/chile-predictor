@@ -133,7 +133,19 @@ export default function Perfil({ onVolver }) {
 
       {/* Header */}
       <div className="perfil-header mb-16">
-        <span className="perfil-avatar-grande">{userProfile?.avatarEmoji||"?"}</span>
+        <img
+  src={`/avatares/${userProfile?.avatarSlug || "default"}-1.png`}
+  alt="avatar"
+  className="perfil-avatar-grande"
+  style={{
+    width: "80px",
+    height: "80px",
+    imageRendering: "pixelated",
+    border: "2px solid var(--verde-claro)",
+    padding: "4px",
+  }}
+  onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
+/>
         <div style={{textAlign:"center"}}>
           {!editando ? (
             <div>

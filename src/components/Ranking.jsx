@@ -68,7 +68,12 @@ export default function Ranking({ onVolver }) {
                   </td>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "16px" }}>{u.avatarEmoji}</span>
+                      <img
+  src={`/avatares/${u.avatarSlug || "default"}-1.png`}
+  alt={u.nickname}
+  style={{ width: "24px", height: "24px", imageRendering: "pixelated", marginRight: "8px" }}
+  onError={(e) => { e.target.style.display = "none"; }}
+/>
                       <div>
                         <div style={{ fontSize: "7px", color: "var(--blanco)" }}>
                           {u.nickname}
