@@ -1,6 +1,6 @@
-// src/components/ModalPerfilResumido.jsx
+// src/components/ModalPerfilResumido.jsx (versión completa)
 import React from "react";
-import { AVATARES, avatarFrame } from "../data/sampleData";
+import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
 
 function AvatarAnimado({ avatarId, size = 56 }) {
   const [frame, setFrame] = React.useState(1);
@@ -46,9 +46,7 @@ function AvatarAnimado({ avatarId, size = 56 }) {
       }}
       onError={(e) => {
         e.target.style.display = "none";
-        if (e.target.parentElement) {
-          e.target.parentElement.innerHTML = "?";
-        }
+        if (e.target.parentElement) e.target.parentElement.innerHTML = "?";
       }}
     />
   );
@@ -56,17 +54,23 @@ function AvatarAnimado({ avatarId, size = 56 }) {
 
 export default function ModalPerfilResumido({ jugador, onCerrar }) {
   if (!jugador) return null;
+
+  // Obtener las cartas desbloqueadas
+  const cartasDesbloqueadas = jugador.cartasDesbloqueadas || [];
+  const cartasInfo = CARTAS.filter(c => cartasDesbloqueadas.includes(c.id));
+
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.85)",
+        background: "rgba(0,0,0,0.95)",
         zIndex: 600,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: "20px",
+        overflowY: "auto",
       }}
       onClick={onCerrar}
     >
@@ -76,8 +80,10 @@ export default function ModalPerfilResumido({ jugador, onCerrar }) {
           border: "4px solid var(--verde-claro)",
           boxShadow: "6px 6px 0 var(--verde-oscuro)",
           padding: "24px 20px",
-          maxWidth: "320px",
+          maxWidth: "380px",
           width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
           display: "flex",
           flexDirection: "column",
           gap: "14px",
@@ -85,23 +91,75 @@ export default function ModalPerfilResumido({ jugador, onCerrar }) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Avatar */}
         {jugador.avatarId ? (
-          <AvatarAnimado avatarId={jugador.avatarId} size={72} />
+          <AvatarAnimado avatarId={jugador.avatarId} size={80} />
         ) : (
           <span style={{ fontSize: "60px" }}>?</span>
         )}
-        <p style={{ fontSize: "10px", color: "var(--amarillo)", textAlign: "center" }}>
+
+        {/* Apodo */}
+        <p style={{ fontSize: "12px", color: "var(--amarillo)", textAlign: "center" }}>
           {jugador.nickname}
         </p>
-        <div style={{ display: "flex", gap: "16px" }}>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>PUNTOS HOY</p>
-            <span className="puntos-badge" style={{ fontSize: "10px" }}>
-              {jugador.puntos}
-            </span>
-          </div>
+
+        {/* Nombre real */}
+        {jugador.nombreReal && (
+          <p style={{ fontSize: "8px", color: "var(--gris-claro)", textAlign: "center" }}>
+            {jugador.nombreReal}
+          </p>
+        )}
+
+        {/* Email */}
+        {jugador.email && (
+          <p style={{ fontSize: "7px", color: "var(--gris)", textAlign: "center" }}>
+            {jugador.email}
+          </p>
+        )}
+
+        {/* Puntos totales */}
+        <div style={{ textAlign: "center", marginTop: "4px" }}>
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)" }}>PUNTOS TOTALES</p>
+          <span className="puntos-badge" style={{ fontSize: "14px" }}>
+            {jugador.puntosTotal ?? 0}
+          </span>
         </div>
-        <button className="btn-pixel btn-gris" style={{ fontSize: "7px" }} onClick={onCerrar}>
+
+        {/* Cartas coleccionables */}
+        {cartasInfo.length > 0 && (
+          <div style={{ width: "100%", marginTop: "8px" }}>
+            <p style={{ fontSize: "7px", color: "var(--amarillo)", textAlign: "center", marginBottom: "8px" }}>
+              🃏 CARTAS ({cartasInfo.length})
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px" }}>
+              {cartasInfo.map(carta => (
+                <div key={carta.id} style={{ textAlign: "center", width: "60px" }}>
+                  <img
+                    src={`/cartas/${carta.slug}.png`}
+                    alt={carta.nombre}
+                    style={{ width: "50px", height: "50px", imageRendering: "pixelated", border: "2px solid var(--negro)" }}
+                    onError={(e) => { e.target.style.display = "none"; }}
+                  />
+                  <p style={{ fontSize: "5px", color: "var(--gris-claro)", marginTop: "4px" }}>
+                    {carta.nombre}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {cartasInfo.length === 0 && (
+          <p style={{ fontSize: "6px", color: "var(--gris)", textAlign: "center" }}>
+            Aún no tiene cartas coleccionables
+          </p>
+        )}
+
+        <button
+          className="btn-pixel btn-gris"
+          style={{ fontSize: "8px", marginTop: "8px" }}
+          onClick={onCerrar}
+        >
           CERRAR ✕
         </button>
       </div>

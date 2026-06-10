@@ -14,6 +14,7 @@ import OnboardingModal    from "./OnboardingModal";
 import NotificacionCartas from "./NotificacionCartas";
 import AvisoAdmin         from "./AvisoAdmin";
 import TabPartidos        from "./TabPartidos";
+import ModalPerfilCompleto from "./ModalPerfilCompleto";
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
@@ -34,6 +35,7 @@ export default function Dashboard() {
   
   // Estado para controlar la apertura manual del tutorial
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
   const hoy  = hoyStr();
   const ayer = ayerStr();
@@ -128,7 +130,7 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {usuariosRanking.slice(0,4).map((u,i) => (
-                    <tr key={u.id} className={u.uid===firebaseUser?.uid?"ranking-fila-yo":""}>
+                    <tr key={u.id} className={u.uid===firebaseUser?.uid?"ranking-fila-yo":""} onClick={() => setUsuarioSeleccionado(u)} style={{ cursor: "pointer" }}>
                       <td className="ranking-pos">{i<3?medallas[i]:i+1}</td>
                       <td>
                         <img
@@ -181,6 +183,13 @@ export default function Dashboard() {
           </>
         )}
       </div>
+      {/* Modal de perfil completo */}
+{usuarioSeleccionado && (
+  <ModalPerfilCompleto
+    usuario={usuarioSeleccionado}
+    onCerrar={() => setUsuarioSeleccionado(null)}
+  />
+)}
     </WithShell>
   );
 }
