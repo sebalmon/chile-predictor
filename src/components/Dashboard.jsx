@@ -1,4 +1,4 @@
-// src/components/Dashboard.jsx  — v3 (Con datos de prueba para podio)
+// src/components/Dashboard.jsx  — v3 (Final, sin datos de prueba)
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, orderBy, query, where, limit } from "firebase/firestore";
 import { signOut } from "firebase/auth";
@@ -45,27 +45,29 @@ export default function Dashboard() {
 
   const cargarDatos = async () => {
     setCargando(true);
-    
-    // 🔥 DATOS DE PRUEBA PARA EL PODIO (fuerza estos datos para ver el diseño)
-    const podioPrueba = [
-      { nickname: "El_distinto", puntos: 25, avatarId: "av7" },
-      { nickname: "Chancho Lorenzo", puntos: 20, avatarId: "av1" },
-      { nickname: "Prueba3", puntos: 15, avatarId: "av12" }
-    ];
-    setPodioAyer(podioPrueba);
-
     try {
-      // Ranking (esto sigue funcionando)
+      // Ranking (top 10)
       const qU = query(collection(db,"usuarios"), orderBy("puntosTotal","desc"), limit(10));
       const snapU = await getDocs(qU);
       setUsuariosRanking(snapU.docs.map((d) => ({ id: d.id, ...d.data() })));
 
-      // Podio de ayer (lo comentamos temporalmente para que no sobrescriba los datos de prueba)
-      // try {
-      //   const qA = query(collection(db,"puntosDelDia"), where("fecha","==",ayer), orderBy("puntos","desc"), limit(10));
-      //   const snapA = await getDocs(qA);
-      //   if (!snapA.empty) setPodioAyer(snapA.docs.map((d) => ({ ...d.data() })));
-      // } catch(_) {}
+      // Podio del día anterior (solo lectura, sin datos de prueba)
+      try {
+        const qA = query(
+          collection(db,"puntosDelDia"),
+          where("fecha","==",ayer),
+          orderBy("puntos","desc"),
+          limit(10)
+        );
+        const snapA = await getDocs(qA);
+        if (!snapA.empty) {
+          setPodioAyer(snapA.docs.map((d) => ({ ...d.data() })));
+        } else {
+          setPodioAyer([]); // Vacío para mostrar mensaje por defecto
+        }
+      } catch(_) {
+        setPodioAyer([]);
+      }
     } finally {
       setCargando(false);
     }
@@ -74,7 +76,7 @@ export default function Dashboard() {
   const handleLogout = async () => { await signOut(auth); };
   const medallas = ["🥇","🥈","🥉"];
 
-  // ── Pantallas secundarias (sin cambios) ─────────────────────
+  // ── Pantallas secundarias ─────────────────────────────────
   if (pantalla === PANTALLAS.RANKING) return (
     <WithShell userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
       onLogout={handleLogout} pantalla={pantalla} setPantalla={setPantalla}
@@ -274,7 +276,8 @@ function WithShell({ children, userProfile, onPerfil, onLogout,
 function TopBar({ userProfile, onPerfil, onLogout, diaLabel }) {
   return (
     <div className="topbar">
-      <span className="topbar-logo" style={{ color:"var(--amarillo)", fontSize:"8px" }}>
+      <span className="topbar-logo"
+        style={{ color:"var(--amarillo)", fontSize:"8px" }}>
         ⚽ {diaLabel}
       </span>
       <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
