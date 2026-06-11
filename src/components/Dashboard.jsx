@@ -1,4 +1,4 @@
-// src/components/Dashboard.jsx  — v3 (Corregido)
+// src/components/Dashboard.jsx  — v3 (Con datos de prueba para podio)
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, orderBy, query, where, limit } from "firebase/firestore";
 import { signOut } from "firebase/auth";
@@ -33,7 +33,6 @@ export default function Dashboard() {
   const [podioAyer, setPodioAyer]         = useState([]);
   const [cargando, setCargando]           = useState(true);
   
-  // Estado para controlar la apertura manual del tutorial
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
@@ -46,23 +45,27 @@ export default function Dashboard() {
 
   const cargarDatos = async () => {
     setCargando(true);
+    
+    // 🔥 DATOS DE PRUEBA PARA EL PODIO (fuerza estos datos para ver el diseño)
+    const podioPrueba = [
+      { nickname: "El_distinto", puntos: 25, avatarId: "av7" },
+      { nickname: "Chancho Lorenzo", puntos: 20, avatarId: "av1" },
+      { nickname: "Prueba3", puntos: 15, avatarId: "av12" }
+    ];
+    setPodioAyer(podioPrueba);
+
     try {
-      // Ranking
+      // Ranking (esto sigue funcionando)
       const qU = query(collection(db,"usuarios"), orderBy("puntosTotal","desc"), limit(10));
       const snapU = await getDocs(qU);
       setUsuariosRanking(snapU.docs.map((d) => ({ id: d.id, ...d.data() })));
 
-      // Podio de ayer
-      try {
-        const qA = query(
-          collection(db,"puntosDelDia"),
-          where("fecha","==",ayer),
-          orderBy("puntos","desc"),
-          limit(10)
-        );
-        const snapA = await getDocs(qA);
-        if (!snapA.empty) setPodioAyer(snapA.docs.map((d) => ({ ...d.data() })));
-      } catch(_) {}
+      // Podio de ayer (lo comentamos temporalmente para que no sobrescriba los datos de prueba)
+      // try {
+      //   const qA = query(collection(db,"puntosDelDia"), where("fecha","==",ayer), orderBy("puntos","desc"), limit(10));
+      //   const snapA = await getDocs(qA);
+      //   if (!snapA.empty) setPodioAyer(snapA.docs.map((d) => ({ ...d.data() })));
+      // } catch(_) {}
     } finally {
       setCargando(false);
     }
@@ -71,7 +74,7 @@ export default function Dashboard() {
   const handleLogout = async () => { await signOut(auth); };
   const medallas = ["🥇","🥈","🥉"];
 
-  // ── Pantallas secundarias ─────────────────────────────────
+  // ── Pantallas secundarias (sin cambios) ─────────────────────
   if (pantalla === PANTALLAS.RANKING) return (
     <WithShell userProfile={userProfile} onPerfil={() => setPantalla(PANTALLAS.PERFIL)}
       onLogout={handleLogout} pantalla={pantalla} setPantalla={setPantalla}
@@ -134,11 +137,11 @@ export default function Dashboard() {
                       <td className="ranking-pos">{i<3?medallas[i]:i+1}</td>
                       <td>
                         <img
-  src={`/avatares/${u.avatarSlug || "default"}-1.png`}
-  alt={u.nickname}
-  style={{ width: "20px", height: "20px", imageRendering: "pixelated", marginRight: "6px" }}
-  onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
-/>
+                          src={`/avatares/${u.avatarSlug || "default"}-1.png`}
+                          alt={u.nickname}
+                          style={{ width: "20px", height: "20px", imageRendering: "pixelated", marginRight: "6px" }}
+                          onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
+                        />
                         <span style={{fontSize:"7px"}}>{u.nickname}</span>
                         {u.uid===firebaseUser?.uid&&(
                           <span style={{marginLeft:"6px",fontSize:"5px",
@@ -184,17 +187,17 @@ export default function Dashboard() {
         )}
       </div>
       {/* Modal de perfil completo */}
-{usuarioSeleccionado && (
-  <ModalPerfilCompleto
-    usuario={usuarioSeleccionado}
-    onCerrar={() => setUsuarioSeleccionado(null)}
-  />
-)}
+      {usuarioSeleccionado && (
+        <ModalPerfilCompleto
+          usuario={usuarioSeleccionado}
+          onCerrar={() => setUsuarioSeleccionado(null)}
+        />
+      )}
     </WithShell>
   );
 }
 
-// ── Sistema de puntuación ─────────────────────────────────────
+// ── Sistema de puntuación (sin cambios) ─────────────────────
 function SistemaPuntuacion() {
   const grupos = [
     { pts:"+1", desc:"Ganador del partido (partido normal)" },
@@ -254,7 +257,6 @@ function WithShell({ children, userProfile, onPerfil, onLogout,
   pantalla, setPantalla, esAdmin, diaLabel, mostrarTutorial, setMostrarTutorial }) {
   return (
     <>
-      {/* Pasamos los estados del botón manual aquí */}
       <OnboardingModal isOpen={mostrarTutorial ? true : undefined} onClose={() => setMostrarTutorial(false)} />
       <NotificacionCartas />
       <AvisoAdmin />
@@ -272,26 +274,25 @@ function WithShell({ children, userProfile, onPerfil, onLogout,
 function TopBar({ userProfile, onPerfil, onLogout, diaLabel }) {
   return (
     <div className="topbar">
-      <span className="topbar-logo"
-        style={{ color:"var(--amarillo)", fontSize:"8px" }}>
+      <span className="topbar-logo" style={{ color:"var(--amarillo)", fontSize:"8px" }}>
         ⚽ {diaLabel}
       </span>
       <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
         <span className="nickname-topbar">{userProfile?.nickname}</span>
         <div className="avatar-topbar" onClick={onPerfil}>
-  <img
-    src={`/avatares/${userProfile?.avatarSlug || "default"}-1.png`}
-    alt="avatar"
-    style={{
-      width: "28px",
-      height: "28px",
-      imageRendering: "pixelated",
-      borderRadius: "0",
-    }}
-    onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
-  />
-  <span className="avatar-tooltip">{userProfile?.nombreReal || "Usuario"}</span>
-</div>
+          <img
+            src={`/avatares/${userProfile?.avatarSlug || "default"}-1.png`}
+            alt="avatar"
+            style={{
+              width: "28px",
+              height: "28px",
+              imageRendering: "pixelated",
+              borderRadius: "0",
+            }}
+            onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
+          />
+          <span className="avatar-tooltip">{userProfile?.nombreReal || "Usuario"}</span>
+        </div>
         <button className="btn-pixel btn-rojo"
           style={{fontSize:"6px",padding:"5px 8px"}} onClick={onLogout}>
           SALIR
