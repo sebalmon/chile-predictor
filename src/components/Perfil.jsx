@@ -25,7 +25,7 @@ function LightboxCarta({ carta, onCerrar }) {
       <div style={{ maxWidth:"340px", width:"100%", textAlign:"center" }}
         onClick={(e) => e.stopPropagation()}>
         <img
-          src={`/cartas/${carta.slug}.png`}
+          src={`/cartas/${carta.slug}.jpg`}
           alt={carta.nombre}
           style={{
             width:"100%", maxWidth:"280px",
@@ -281,7 +281,7 @@ export default function Perfil({ onVolver }) {
         {desbloq ? (
           <>
             <img
-              src={`/cartas/${carta.slug}.png`}
+              src={`/cartas/${carta.slug}.jpg`}
               alt={carta.nombre}
               style={{
                 width: "60px",
