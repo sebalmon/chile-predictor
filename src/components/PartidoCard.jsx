@@ -556,7 +556,7 @@ export default function PartidoCard({ partido }) {
           }}
           onClick={() => setMostrarPredicciones(true)}
         >
-          👁️ VER PREDICCIONES
+          👁️ VER PREDICCIONES DE TUS ENEMIGOS
         </button>
 
         {/* Zona de predicción (solo si está abierto y sin resultado) */}
