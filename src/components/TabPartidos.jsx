@@ -208,7 +208,7 @@ if (hoyDate < fechaInicioMundial) {
           </div>
         )}
 
-        {/* Indicador de progreso */}
+         {/* Indicador de progreso */}
         {partidos.filter(p => !p.resultado && partidoAbierto(p)).length > 0 && (
           <div style={{
             padding:"8px 12px", marginBottom:"12px",
@@ -221,7 +221,7 @@ if (hoyDate < fechaInicioMundial) {
             {todosPredecidos
               ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
               : `📝 ${prediccionesGuardadas.size} / ${
-                  partidos.filter(p => !p.resultado && partidoAbierto(p.fecha,p.horaInicio)).length
+                  partidos.filter(p => !p.resultado && partidoAbierto(p)).length
                 } PRONÓSTICOS GUARDADOS`
             }
           </div>

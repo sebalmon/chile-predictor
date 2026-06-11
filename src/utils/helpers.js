@@ -39,8 +39,27 @@ export function diaNumero() {
 }
 
 export function partidoAbierto(partido) {
-  if (!partido || !partido.cierre) return true; // si no hay cierre, asumir abierto
-  const cierreDate = partido.cierre.toDate(); // convierte timestamp de Firestore a Date
+  if (!partido || !partido.cierre) return true; // sin cierre, asumir abierto
+  let cierreDate;
+  // Si es timestamp de Firestore (tiene método toDate)
+  if (typeof partido.cierre.toDate === 'function') {
+    cierreDate = partido.cierre.toDate();
+  } 
+  // Si es un objeto con segundos (ej. {_seconds: 123})
+  else if (partido.cierre._seconds !== undefined) {
+    cierreDate = new Date(partido.cierre._seconds * 1000);
+  }
+  // Si es un número (timestamp UNIX)
+  else if (typeof partido.cierre === 'number') {
+    cierreDate = new Date(partido.cierre * 1000);
+  }
+  // Si es un string
+  else if (typeof partido.cierre === 'string') {
+    cierreDate = new Date(partido.cierre);
+  }
+  else {
+    return true; // no se pudo convertir, abierto por defecto
+  }
   return new Date() < cierreDate;
 }
 
