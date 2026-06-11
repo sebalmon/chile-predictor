@@ -545,19 +545,19 @@ export default function PartidoCard({ partido }) {
         {renderResultadoReal()}
         
         <button
-  className="btn-pixel"
-  style={{
-  fontSize: "6px",
-  padding: "4px 8px",
-  marginTop: "8px",
-  display: "block",
-  marginLeft: "auto",
-  marginRight: "auto"
-}}
-  onClick={() => setMostrarPredicciones(true)}
->
-  👁️ VER PREDICCIONES
-</button>
+          className="btn-pixel"
+          style={{
+            fontSize: "6px",
+            padding: "4px 8px",
+            marginTop: "8px",
+            display: "block",
+            marginLeft: "auto",
+            marginRight: "auto"
+          }}
+          onClick={() => setMostrarPredicciones(true)}
+        >
+          👁️ VER PREDICCIONES
+        </button>
 
         {/* Zona de predicción (solo si está abierto y sin resultado) */}
         {abierto && !tieneResultado && (
@@ -580,12 +580,12 @@ export default function PartidoCard({ partido }) {
                 {cartaAdjunta ? (
                   <span>
                     🃏 <span style={{ color: "var(--amarillo)" }}>{cartaAdjunta.emoji} {cartaAdjunta.nombre}</span>
-                    <span style={{ color: "var(--verde-claro)" }}>Sin carta adjunta</span>
+                    <span style={{ color: "var(--verde-claro)", marginLeft: "4px" }}>
                       ×{cartaAdjunta.multiplicador}
                     </span>
                   </span>
                 ) : (
-                  <span style={{ color: "var(--gris)" }}>Sin carta adjunta</span>
+                  <span style={{ color: "var(--verde-claro)" }}>Sin carta adjunta</span>
                 )}
               </div>
               <button
@@ -639,11 +639,11 @@ export default function PartidoCard({ partido }) {
           <div className="partido-cerrado">🔒 PREDICCIONES CERRADAS</div>
         )}
         {mostrarPredicciones && (
-  <ModalPrediccionesAmigos
-    partidoId={id}
-    onCerrar={() => setMostrarPredicciones(false)}
-  />
-)}
+          <ModalPrediccionesAmigos
+            partidoId={id}
+            onCerrar={() => setMostrarPredicciones(false)}
+          />
+        )}
       </div>
     </>
   );
