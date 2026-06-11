@@ -1,3 +1,4 @@
+import ModalPrediccionesAmigos from "./ModalPrediccionesAmigos";
 import React, { useState, useEffect } from "react";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -490,7 +491,7 @@ export default function PartidoCard({ partido }) {
       )}
     </div>
   );
-
+  const [mostrarPredicciones, setMostrarPredicciones] = useState(false);
   // ── Badge de fase ─────────────────────────────────────────
   const faseLabel = FASE_LABELS[fase] || fase;
 
@@ -542,6 +543,14 @@ export default function PartidoCard({ partido }) {
 
         {/* Resultado real */}
         {renderResultadoReal()}
+        
+        <button
+  className="btn-pixel"
+  style={{ fontSize: "6px", padding: "4px 8px", marginTop: "8px" }}
+  onClick={() => setMostrarPredicciones(true)}
+>
+  👁️ VER PREDICCIONES
+</button>
 
         {/* Zona de predicción (solo si está abierto y sin resultado) */}
         {abierto && !tieneResultado && (
@@ -622,6 +631,12 @@ export default function PartidoCard({ partido }) {
         {!abierto && !tieneResultado && (
           <div className="partido-cerrado">🔒 PREDICCIONES CERRADAS</div>
         )}
+        {mostrarPredicciones && (
+  <ModalPrediccionesAmigos
+    partidoId={id}
+    onCerrar={() => setMostrarPredicciones(false)}
+  />
+)}
       </div>
     </>
   );
