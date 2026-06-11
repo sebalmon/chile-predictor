@@ -115,7 +115,7 @@ export default function Perfil({ onVolver }) {
     finally { setGuardando(false); }
   };
 
-  const cartasDesbloqueadas = userProfile?.cartasDesbloqueadas || [];
+  /*const cartasDesbloqueadas = userProfile?.cartasDesbloqueadas || []; */
 
   return (
     <div style={{ padding:"16px 16px 80px" }}>
@@ -191,11 +191,11 @@ export default function Perfil({ onVolver }) {
             </span>
           </div>
           <div style={{textAlign:"center"}}>
-            <p style={{fontSize:"6px",color:"var(--gris-claro)"}}>CARTAS</p>
-            <span className="puntos-badge" style={{fontSize:"12px"}}>
-              {cartasDesbloqueadas.length}
-            </span>
-          </div>
+  <p style={{fontSize:"6px",color:"var(--gris-claro)"}}>CARTAS</p>
+  <span className="puntos-badge" style={{fontSize:"12px"}}>
+    {Object.values(userProfile?.cartas || {}).reduce((suma, cantidad) => suma + cantidad, 0)}
+  </span>
+</div>
         </div>
       </div>
 
@@ -260,55 +260,69 @@ export default function Perfil({ onVolver }) {
       {/* CARTAS COLECCIONABLES */}
       <div className="seccion-titulo">🃏 CARTAS COLECCIONABLES</div>
       <div className="cartas-grid">
-        {CARTAS.map((carta) => {
-          const desbloq = cartasDesbloqueadas.includes(carta.id);
-          const RAREZA_COLOR = {
-            comun:"var(--verde-claro)", rara:"var(--amarillo)", legendaria:"var(--rojo-chile)"
-          };
-          return (
-            <div
-              key={carta.id}
-              className={`carta ${desbloq?"carta-desbloqueada":"carta-bloqueada"}`}
-              style={desbloq ? {
-                cursor:"pointer",
-                borderColor: RAREZA_COLOR[carta.rareza]||"var(--negro)",
-              } : {}}
-              onClick={() => desbloq && setCartaLightbox(carta)}
-            >
-              {desbloq ? (
-                <img
-                  src={`/cartas/${carta.slug}.png`}
-                  alt={carta.nombre}
-                  style={{
-                    width:"60px", height:"60px", objectFit:"cover",
-                    imageRendering:"pixelated",
-                    border:"2px solid var(--negro)",
-                  }}
-                  onError={(e)=>{
-                    e.target.style.display="none";
-                    e.target.parentElement.innerHTML += `<span style="font-size:28px">🃏</span>`;
-                  }}
-                />
-              ) : (
-                <span style={{fontSize:"28px"}}>🔒</span>
-              )}
-              <p className="carta-nombre">{carta.nombre}</p>
-              {desbloq && (
-                <span style={{
-                  fontFamily:"'Press Start 2P',monospace",
-                  fontSize:"7px",
-                  color: RAREZA_COLOR[carta.rareza]||"var(--verde-claro)",
-                }}>
-                  ×{carta.multiplicador}
-                </span>
-              )}
-              {!desbloq && (
-                <p className="carta-condicion">Gana el podio del día</p>
-              )}
-            </div>
-          );
-        })}
+  {CARTAS.map((carta) => {
+    const cantidad = userProfile?.cartas?.[carta.id] || 0;
+    const desbloq = cantidad > 0;
+    const RAREZA_COLOR = {
+      comun: "var(--verde-claro)",
+      rara: "var(--amarillo)",
+      legendaria: "var(--rojo-chile)",
+    };
+    return (
+      <div
+        key={carta.id}
+        className={`carta ${desbloq ? "carta-desbloqueada" : "carta-bloqueada"}`}
+        style={desbloq ? {
+          cursor: "pointer",
+          borderColor: RAREZA_COLOR[carta.rareza] || "var(--negro)",
+        } : {}}
+        onClick={() => desbloq && setCartaLightbox(carta)}
+      >
+        {desbloq ? (
+          <>
+            <img
+              src={`/cartas/${carta.slug}.png`}
+              alt={carta.nombre}
+              style={{
+                width: "60px",
+                height: "60px",
+                objectFit: "cover",
+                imageRendering: "pixelated",
+                border: "2px solid var(--negro)",
+              }}
+              onError={(e) => {
+                e.target.style.display = "none";
+                e.target.parentElement.innerHTML += `<span style="font-size:28px">🃏</span>`;
+              }}
+            />
+            <p className="carta-nombre">{carta.nombre}</p>
+            <span style={{
+              fontFamily: "'Press Start 2P',monospace",
+              fontSize: "7px",
+              color: RAREZA_COLOR[carta.rareza] || "var(--verde-claro)",
+            }}>
+              ×{carta.multiplicador}
+            </span>
+            <span style={{
+              fontFamily: "'Press Start 2P',monospace",
+              fontSize: "6px",
+              color: "var(--gris-claro)",
+              marginLeft: "4px",
+            }}>
+              (x{cantidad})
+            </span>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: "28px" }}>🔒</span>
+            <p className="carta-nombre">{carta.nombre}</p>
+            <p className="carta-condicion">Gana el podio del día</p>
+          </>
+        )}
       </div>
+    );
+  })}
+</div>
     </div>
   );
 }

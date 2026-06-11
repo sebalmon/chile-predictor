@@ -7,11 +7,7 @@ import { partidoAbierto, formatHora } from "../utils/helpers";
 import { CARTAS, FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
 
 // ── Mini-modal selector de cartas ────────────────────────────
-function SelectorCartas({ cartasDesbloqueadas, cartaSeleccionada, onSeleccionar, onCerrar }) {
-  const cartasDisponibles = CARTAS.filter((c) =>
-    cartasDesbloqueadas.includes(c.id)
-  );
-
+function SelectorCartas({ cartasDisponibles, cartaSeleccionada, onSeleccionar, onCerrar }) {
   const RAREZA_COLOR = {
     comun: "var(--verde-claro)",
     rara: "var(--amarillo)",
@@ -40,13 +36,12 @@ function SelectorCartas({ cartasDesbloqueadas, cartaSeleccionada, onSeleccionar,
           🃏 ELIGE UNA CARTA PARA ESTE PARTIDO
         </p>
         <p style={{ fontSize: "6px", color: "var(--gris-claro)", marginBottom: "14px", lineHeight: 2 }}>
-          Si aciertas, cual sea el puntaje obtenido del partido donde pusiste la carta, se multiplica según la rareza de la carta. 
-          Si fallas, la carta se consume igual.
+          Las cartas se consumen al usarlas (cuando el partido termina). Puedes usar una por partido.
         </p>
 
         {cartasDisponibles.length === 0 ? (
           <p style={{ fontSize: "7px", color: "var(--gris-claro)", textAlign: "center", padding: "20px" }}>
-            No tienes cartas desbloqueadas todavía. ¡Sube al podio del día!
+            No tienes cartas disponibles. ¡Sube al podio del día!
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
@@ -67,7 +62,7 @@ function SelectorCartas({ cartasDesbloqueadas, cartaSeleccionada, onSeleccionar,
               ✖ Sin carta (no arriesgar)
             </button>
 
-            {cartasDisponibles.map((carta) => (
+            {cartasDisponibles.map(({ carta, cantidad }) => (
               <button
                 key={carta.id}
                 onClick={() => onSeleccionar(carta.id)}
@@ -85,17 +80,19 @@ function SelectorCartas({ cartasDesbloqueadas, cartaSeleccionada, onSeleccionar,
                   cursor: "pointer",
                   textAlign: "left",
                   display: "flex",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  gap: "10px",
                 }}
               >
-                <span style={{ fontSize: "20px" }}>{carta.emoji}</span>
                 <div>
                   <div style={{ color: RAREZA_COLOR[carta.rareza] }}>{carta.nombre}</div>
                   <div style={{ color: "var(--gris-claro)", marginTop: "4px" }}>
-                    x{carta.multiplicador} — {carta.descripcion}
+                    ×{carta.multiplicador}
                   </div>
                 </div>
+                <span style={{ fontSize: "7px", color: "var(--amarillo)" }}>
+                  x{cantidad}
+                </span>
               </button>
             ))}
           </div>
@@ -144,6 +141,15 @@ export default function PartidoCard({ partido }) {
   const [cartaSeleccionada, setCartaSeleccionada] = useState(null); // cartaId o null
   const [mostrarSelectorCartas, setMostrarSelectorCartas] = useState(false);
   const cartasDesbloqueadas = userProfile?.cartasDesbloqueadas || [];
+  
+  // Nueva lógica para cartas consumibles y acumulables
+const cartasConCantidad = Object.entries(userProfile?.cartas || {})
+  .filter(([cartaId, cantidad]) => cantidad > 0)
+  .map(([cartaId, cantidad]) => ({
+    carta: CARTAS.find(c => c.id === cartaId),
+    cantidad
+  }))
+  .filter(item => item.carta); // solo cartas que existan en la lista maestra
 
   // ── Estado general ────────────────────────────────────────
   const [guardado, setGuardado] = useState(false);
@@ -499,7 +505,7 @@ export default function PartidoCard({ partido }) {
     <>
       {mostrarSelectorCartas && (
         <SelectorCartas
-          cartasDesbloqueadas={cartasDesbloqueadas}
+          cartasDisponibles={cartasConCantidad}
           cartaSeleccionada={cartaSeleccionada}
           onSeleccionar={(id) => { setCartaSeleccionada(id); setMostrarSelectorCartas(false); }}
           onCerrar={() => setMostrarSelectorCartas(false)}
@@ -592,7 +598,7 @@ export default function PartidoCard({ partido }) {
                 className="btn-pixel"
                 style={{
                   fontSize: "6px", padding: "5px 8px",
-                  background: cartasDesbloqueadas.length > 0 ? "var(--amarillo)" : "var(--gris)",
+                  background: cartasConCantidad.length > 0 ? "var(--amarillo)" : "var(--gris)",
                   color: "var(--negro)",
                   border: "2px solid var(--negro)",
                   boxShadow: "2px 2px 0 var(--negro)",

@@ -1,58 +1,76 @@
+// src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-const AuthContext = createContext(null);
-
-export function AuthProvider({ children }) {
-  const [firebaseUser, setFirebaseUser] = useState(undefined); // undefined = cargando
-  const [userProfile, setUserProfile] = useState(null); // datos de Firestore
-  const [loadingProfile, setLoadingProfile] = useState(false);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      setFirebaseUser(user);
-      if (user) {
-        setLoadingProfile(true);
-        try {
-          const ref = doc(db, "usuarios", user.uid);
-          const snap = await getDoc(ref);
-          if (snap.exists()) {
-            setUserProfile(snap.data());
-          } else {
-            setUserProfile(null); // Nuevo usuario → va a Registro
-          }
-        } catch (e) {
-          console.error("Error cargando perfil:", e);
-          setUserProfile(null);
-        } finally {
-          setLoadingProfile(false);
-        }
-      } else {
-        setUserProfile(null);
-        setLoadingProfile(false);
-      }
-    });
-    return unsub;
-  }, []);
-
-  const refreshProfile = async () => {
-    if (!firebaseUser) return;
-    const ref = doc(db, "usuarios", firebaseUser.uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) setUserProfile(snap.data());
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{ firebaseUser, userProfile, setUserProfile, loadingProfile, refreshProfile }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}
+const AuthContext = createContext();
 
 export function useAuth() {
   return useContext(AuthContext);
+}
+
+export function AuthProvider({ children }) {
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      if (user) {
+        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        if (userDoc.exists()) {
+          let data = userDoc.data();
+          // Convertir antiguo array cartasDesbloqueadas a nuevo objeto cartas si existe
+          if (data.cartasDesbloqueadas && !data.cartas) {
+            const cartasObj = {};
+            data.cartasDesbloqueadas.forEach(cartaId => {
+              cartasObj[cartaId] = (cartasObj[cartaId] || 0) + 1;
+            });
+            data.cartas = cartasObj;
+            // Opcional: podríamos borrar cartasDesbloqueadas para limpiar, pero no es necesario
+          }
+          setUserProfile(data);
+        } else {
+          setUserProfile(null);
+        }
+      } else {
+        setUserProfile(null);
+      }
+      setLoadingProfile(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  const refreshProfile = async () => {
+    if (firebaseUser) {
+      const userDoc = await getDoc(doc(db, "usuarios", firebaseUser.uid));
+      if (userDoc.exists()) {
+        let data = userDoc.data();
+        if (data.cartasDesbloqueadas && !data.cartas) {
+          const cartasObj = {};
+          data.cartasDesbloqueadas.forEach(cartaId => {
+            cartasObj[cartaId] = (cartasObj[cartaId] || 0) + 1;
+          });
+          data.cartas = cartasObj;
+        }
+        setUserProfile(data);
+      }
+    }
+  };
+
+  const value = {
+    firebaseUser,
+    userProfile,
+    setUserProfile,
+    loadingProfile,
+    refreshProfile,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

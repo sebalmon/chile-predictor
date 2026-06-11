@@ -1,3 +1,4 @@
+// src/components/Registro.jsx
 import React, { useState } from "react";
 import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
 import { db } from "../firebase";
@@ -28,7 +29,6 @@ export default function Registro() {
     setError("");
 
     try {
-      // Verificar unicidad del nickname (insensible a mayúsculas)
       const nicknameNorm = nickname.toLowerCase();
       const q = query(
         collection(db, "usuarios"),
@@ -50,10 +50,10 @@ export default function Registro() {
         nickname: nickname,
         nicknameLower: nicknameNorm,
         avatarId: avatarId,
-        avatarSlug: avatarElegido.slug,   // ← NUEVO
+        avatarSlug: avatarElegido.slug,
         avatarNombre: avatarElegido.nombre,
         puntosTotal: 0,
-        cartasDesbloqueadas: [],
+        cartas: {},  // ← NUEVO: objeto vacío para almacenar cantidades de cartas
         creadoEn: new Date().toISOString(),
       };
 
@@ -77,7 +77,6 @@ export default function Registro() {
           Crea tu perfil para jugar
         </p>
 
-        {/* Nickname */}
         <div>
           <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "6px" }}>
             NICKNAME (único)
@@ -95,7 +94,6 @@ export default function Registro() {
           </p>
         </div>
 
-        {/* Avatar */}
         <div>
           <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "8px" }}>
             ELIGE TU AVATAR

@@ -173,24 +173,33 @@ export async function procesarResultadoPartido(
     const puntajesPorUid = {};
 
     for (const pDoc of snap.docs) {
-      try {
-        const pred = pDoc.data();
-        const uid  = pred.uid;
-        const { puntos: base, esMaximo } = calcularPuntosPartido(
-          pred, resultado, fase, estaDestacado
-        );
-        const final = aplicarMultiplicadorCarta(base, esMaximo, pred.cartaId||null);
+  try {
+    const pred = pDoc.data();
+    const uid  = pred.uid;
+    const { puntos: base, esMaximo } = calcularPuntosPartido(
+      pred, resultado, fase, estaDestacado
+    );
+    const final = aplicarMultiplicadorCarta(base, esMaximo, pred.cartaId||null);
 
-        await updateDoc(doc(db,"predicciones",pDoc.id), {
-          puntosGanados: final, puntosBase: base, esMaximo,
-          calculadoEn: new Date().toISOString(),
-        });
-        await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(final) });
+    await updateDoc(doc(db,"predicciones",pDoc.id), {
+      puntosGanados: final, puntosBase: base, esMaximo,
+      calculadoEn: new Date().toISOString(),
+    });
+    await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(final) });
 
-        puntajesPorUid[uid] = (puntajesPorUid[uid]||0) + final;
-        procesados++;
-      } catch(e) { console.error(e); errores++; }
+    // 🔥 CONSUMO DE CARTA (si se usó)
+    if (pred.cartaId) {
+      const userRef = doc(db, "usuarios", uid);
+      await updateDoc(userRef, {
+        [`cartas.${pred.cartaId}`]: increment(-1)
+      });
+      // Opcional: si quieres eliminar la clave cuando quede 0, puedes hacerlo con un segundo update (pero no necesario)
     }
+
+    puntajesPorUid[uid] = (puntajesPorUid[uid]||0) + final;
+    procesados++;
+  } catch(e) { console.error(e); errores++; }
+}
 
     for (const [uid, pts] of Object.entries(puntajesPorUid)) {
       try {
@@ -295,11 +304,12 @@ async function _asignarCarta(uid, multiplicador, fecha) {
     multiplicador: carta.multiplicador,
     rareza: carta.rareza,
     fecha,
-    visto: false, // para el modal de notificación
+    visto: false,
   });
-  // Agregar al array cartasDesbloqueadas del usuario
-  await updateDoc(doc(db,"usuarios",uid), {
-    cartasDesbloqueadas: arrayUnion(carta.id),
+  // Incrementar cantidad en el mapa cartas del usuario
+  const userRef = doc(db, "usuarios", uid);
+  await updateDoc(userRef, {
+    [`cartas.${carta.id}`]: increment(1)
   });
 }
 
