@@ -402,7 +402,7 @@ h3 { font-size: 10px; }
   flex: 1;
 }
 
-.partido-bandera { font-size: 28px; }
+.partido-bandera { font-size: 38px; }
 .partido-nombre { font-size: 7px; text-align: center; }
 .partido-vs { font-size: 10px; color: var(--amarillo); padding: 0 8px; }
 
