@@ -42,7 +42,7 @@ export default function ModalPrediccionesAmigos({ partidoId, onCerrar }) {
         overflowY: "auto",
       }} onClick={e => e.stopPropagation()}>
         <p style={{ fontSize: "8px", color: "var(--amarillo)", marginBottom: "16px" }}>
-          🕵️ PREDICCIONES DE TUS AMIGOS
+          🕵️ PREDICCIONES DE TUS ENEMIGOS
         </p>
         {cargando ? (
           <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>Cargando...</p>
