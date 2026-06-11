@@ -546,7 +546,14 @@ export default function PartidoCard({ partido }) {
         
         <button
   className="btn-pixel"
-  style={{ fontSize: "6px", padding: "4px 8px", marginTop: "8px" }}
+  style={{
+  fontSize: "6px",
+  padding: "4px 8px",
+  marginTop: "8px",
+  display: "block",
+  marginLeft: "auto",
+  marginRight: "auto"
+}}
   onClick={() => setMostrarPredicciones(true)}
 >
   👁️ VER PREDICCIONES
@@ -573,7 +580,7 @@ export default function PartidoCard({ partido }) {
                 {cartaAdjunta ? (
                   <span>
                     🃏 <span style={{ color: "var(--amarillo)" }}>{cartaAdjunta.emoji} {cartaAdjunta.nombre}</span>
-                    <span style={{ color: "var(--verde-claro)", marginLeft: "4px" }}>
+                    <span style={{ color: "var(--verde-claro)" }}>Sin carta adjunta</span>
                       ×{cartaAdjunta.multiplicador}
                     </span>
                   </span>
