@@ -342,7 +342,7 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
     <div>
       {/* Crear desde banco */}
       <div className="caja-pixel mb-16" style={{borderColor:"var(--azul)"}}>
-        <p style={{fontSize:"7px",color:"var(--azul)",marginBottom:"10px"}}>
+        <p style={{fontSize:"7px",color:"var(--verde)",marginBottom:"10px"}}>
           PUBLICAR PREGUNTA DEL DÍA
         </p>
         <p style={{fontSize:"6px",color:"var(--gris-claro)",marginBottom:"8px"}}>
