@@ -5,7 +5,7 @@
 // • Separadores de fecha cuando cambia el día.
 // • Colores de fondo rotativos con contraste garantizado.
 // • Formulario para dejar mensaje (con URL opcional).
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────_
 import React, { useState, useEffect } from "react";
 import {
   collection, getDocs, query, orderBy, addDoc, serverTimestamp,
@@ -30,7 +30,7 @@ const COLORES_MSG = [
 function colorMensaje(idx) {
   return COLORES_MSG[idx % COLORES_MSG.length];
 }
-
+//test
 function SeparadorFecha({ fecha }) {
   // Convierte "2026-06-12" → "12 de junio"
   const [, m, d] = fecha.split("-").map(Number);
