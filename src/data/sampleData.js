@@ -177,8 +177,8 @@ export const FASES_ELIMINATORIAS = [
 export const BANCO_PREGUNTAS = [
   {
     id: "bq1",
-    texto: "El partido de hoy entre Corea del sur y Rep.Checa se jugará en Guadalajara, México, Se espera una invación del cártel de Jalisco en enfrentamiento con el cártel de Sinaloa en el entretiempo,¿Cuántos muertos habrá hasta antes del pitido final del arbitro?",
-    opciones: ["0-1 muertos", "2 a infinitos muertos", "solo extranjeros muertos","0 killed"],
+    texto: "Cuántos goles se marcan hoy",
+    opciones: ["ente 0 y 1", "2", "mas de 3","100"],
   },
   {
     id: "bq2",
