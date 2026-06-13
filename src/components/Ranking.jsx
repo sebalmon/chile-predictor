@@ -214,13 +214,44 @@ export default function Ranking({ onVolver }) {
 </td>
 
                     {/* Columna puntos + flecha */}
-                    <td style={{ textAlign:"right", padding: i < 3 ? "12px 10px" : "8px 10px" }}>
-  <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"6px" }}>
-    {/* flecha */}
-    <span className="puntos-badge" style={{ fontSize: i < 3 ? "11px" : "8px", color: estilo?.texto || undefined }}>
-      {u.puntosTotal ?? 0}
-    </span>
-  </div>
+                    <{/* Columna # con número de fondo */}
+<td
+  style={{
+    position: 'relative',
+    textAlign: "center",
+    padding: isTop ? "12px 4px" : "8px 4px",
+    width: "28px",
+    fontFamily: "'Press Start 2P', monospace",
+    fontSize: isTop ? "10px" : "7px",
+    color: estilo?.texto || "var(--gris-claro)"
+  }}
+>
+  {/* Número de fondo (solo para primer lugar de cada grupo de podio) */}
+  {posicion <= 3 && esPrimero && (
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '48px',
+      fontWeight: 'bold',
+      color: estilo?.bg ? (estilo.bg.includes('#FFD966') ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)') : 'rgba(0,0,0,0.1)',
+      pointerEvents: 'none',
+      zIndex: 0,
+      fontFamily: "'Press Start 2P', monospace",
+      opacity: 0.3,
+    }}>
+      {posicion}
+    </div>
+  )}
+  {/* Contenido normal (medalla o número) */}
+  <span style={{ position: 'relative', zIndex: 1 }}>
+    {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
+  </span>
 </td>
                   </tr>
                 );
