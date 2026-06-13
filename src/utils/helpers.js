@@ -253,6 +253,15 @@ export async function calcularGanadorDelDia(fecha) {
     if (snap.empty) return { ok:false, mensaje:"Sin datos de puntosDelDia para ese día." };
 
     const jug = snap.docs.map(d=>({docId:d.id,...d.data()})).sort((a,b)=>b.puntos-a.puntos);
+
+    // ── Protección: si ya se entregaron bonus y cartas, no repetir ────
+    if (jug.some(j => j.esGanador === true)) {
+      return {
+        ok: false,
+        yaEntregado: true,
+        mensaje: `Las cartas y bonus del día ${fecha} ya fueron entregados. Para revertir, elimina el campo esGanador desde Firebase Console.`,
+      };
+    }
     const maxPts = jug[0].puntos;
     const l1 = jug.filter(j=>j.puntos===maxPts);
     const r1 = jug.filter(j=>j.puntos<maxPts);
