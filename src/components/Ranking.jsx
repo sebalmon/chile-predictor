@@ -7,7 +7,7 @@
 //   • Variable isTop para resaltar los tres primeros puestos.
 // ─────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { ayerStr } from "../utils/helpers";
@@ -98,9 +98,21 @@ export default function Ranking({ onVolver }) {
   const [rankingAyer, setRankingAyer] = useState({});
   const [cargando,    setCargando]    = useState(true);
   const [jugadorSel,  setJugadorSel]  = useState(null);
-
+  const [fechaActualizacion, setFechaActualizacion] = useState(null);
   useEffect(() => { cargar(); }, []);
-
+  useEffect(() => {
+  const cargarFecha = async () => {
+    try {
+      const snap = await getDoc(doc(db, "config", "ultimaActualizacion"));
+      if (snap.exists()) {
+        setFechaActualizacion(snap.data().fecha);
+      }
+    } catch (e) {
+      console.error("Error cargando fecha de actualización", e);
+    }
+  };
+  cargarFecha();
+}, []);
   const cargar = async () => {
     setCargando(true);
     try {
@@ -149,6 +161,18 @@ export default function Ranking({ onVolver }) {
             style={{ padding:"8px 12px",fontSize:"8px" }}>← VOLVER</button>
         )}
         <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
+        {fechaActualizacion && (
+  <p style={{
+    fontSize: "6px",
+    color: "var(--gris-claro)",
+    textAlign: "center",
+    marginTop: "4px",
+    marginBottom: "8px",
+    lineHeight: 1.5
+  }}>
+    🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
+  </p>
+)}
       </div>
 
       {Object.keys(rankingAyer).length > 0 && (

@@ -508,6 +508,9 @@ function TabCartasBonus({ preguntas, onMensaje }) {
           `✅ Cartas y bonus entregados para el ${fecha}. ` +
           `Ganador(es): ${res.ganador}. +2 pts bonus al 1° lugar.`
         );
+        await setDoc(doc(db, "config", "ultimaActualizacion"), {
+        fecha: new Date().toISOString(),
+      });
       } else if (res.yaEntregado) {
         onMensaje("error", res.mensaje);
       } else {
