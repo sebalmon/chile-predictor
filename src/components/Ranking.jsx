@@ -1,11 +1,10 @@
-// src/components/Ranking.jsx  — v7 (Patch 1)
+// src/components/Ranking.jsx  — v8 (Números de fondo en podio)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v7:
-//   • Colores de fondo por posición: oro/plata/bronce (incluye empates).
-//   • Flecha ▲▼ movida al lado IZQUIERDO de los puntos.
-//   • Numeración con empates: solo el primer usuario del grupo
-//     muestra el número; los siguientes muestran celda vacía.
-//     El número siguiente al bloque continúa correctamente (dense rank).
+// CAMBIOS v8:
+//   • Número de fondo gigante (1,2,3) en primera celda para los primeros puestos,
+//     solo en la primera fila de cada grupo de empate.
+//   • Corregida estructura de tabla (celdas duplicadas, sintaxis).
+//   • Variable isTop para resaltar los tres primeros puestos.
 // ─────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
@@ -124,19 +123,18 @@ export default function Ranking({ onVolver }) {
   };
 
   // ── Dense rank con tracking del primer del grupo ──────────
-  // Devuelve array de { posicion, esPrimeroDelGrupo }
   const filasMeta = (() => {
     const result = [];
-    let posActual = 1;
-    let contadorAcumulado = 0;
-
     for (let i = 0; i < usuarios.length; i++) {
       const u = usuarios[i];
-      if (i === 0 || u.puntosTotal < usuarios[i-1].puntosTotal) {
-        posActual = i + 1;           // posición real (standard competition ranking)
-      }
       const esPrimero = (i === 0) || (u.puntosTotal < usuarios[i-1].puntosTotal);
-      result.push({ posicion: posActual, esPrimero });
+      let posicion = i + 1;
+      if (i > 0 && u.puntosTotal === usuarios[i-1].puntosTotal) {
+        posicion = result[i-1].posicion;
+      } else {
+        posicion = i + 1;
+      }
+      result.push({ posicion, esPrimero });
     }
     return result;
   })();
@@ -178,8 +176,8 @@ export default function Ranking({ onVolver }) {
                 const { posicion, esPrimero } = filasMeta[i];
                 const estilo = FONDO_POS[posicion];
                 const posAyer   = rankingAyer[u.uid];
-                const posActual = posicion;
-                const diff = posAyer && posActual ? posAyer - posActual : 0;
+                const diff = posAyer ? posAyer - posicion : 0;
+                const isTop = i < 3; // primeras tres filas (resalte visual)
 
                 return (
                   <tr
@@ -190,69 +188,86 @@ export default function Ranking({ onVolver }) {
                       background: estilo?.bg || (i % 2 === 0 ? "rgba(255,255,255,0.03)" : "transparent"),
                       borderLeft: estilo ? `3px solid ${estilo.borde}` : "3px solid transparent",
                       borderBottom: "1px solid rgba(82,183,136,0.15)",
-                      padding: i < 3 ? "12px 0" : "8px 0",  // más padding vertical
                     }}
                   >
-                    {/* Columna # */}
-                    <td style={{
-  textAlign:"center", padding: i < 3 ? "12px 4px" : "8px 4px", width:"28px",
-  fontFamily:"'Press Start 2P',monospace", fontSize: i < 3 ? "10px" : "7px",
-  color: estilo?.texto || "var(--gris-claro)"
-}}>
-  {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
-</td>
+                    {/* Columna # con número de fondo gigante */}
+                    <td
+                      style={{
+                        position: 'relative',
+                        textAlign: "center",
+                        padding: isTop ? "12px 4px" : "8px 4px",
+                        width: "28px",
+                        fontFamily: "'Press Start 2P', monospace",
+                        fontSize: isTop ? "10px" : "7px",
+                        color: estilo?.texto || "var(--gris-claro)"
+                      }}
+                    >
+                      {/* Número de fondo (solo para puestos 1,2,3 y primera fila del grupo) */}
+                      {posicion <= 3 && esPrimero && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '48px',
+                          fontWeight: 'bold',
+                          color: estilo?.texto === "#000000" ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.2)",
+                          pointerEvents: 'none',
+                          zIndex: 0,
+                          fontFamily: "'Press Start 2P', monospace",
+                        }}>
+                          {posicion}
+                        </div>
+                      )}
+                      <span style={{ position: 'relative', zIndex: 1 }}>
+                        {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
+                      </span>
+                    </td>
 
                     {/* Columna jugador */}
-                    <td style={{ padding: i < 3 ? "12px 6px" : "8px 6px" }}>
-  <div style={{ display:"flex", alignItems:"center", gap: i < 3 ? "10px" : "6px" }}>
-    <AvatarSmall avatarId={u.avatarId} avatarSlug={u.avatarSlug} />
-    <div style={{ fontSize: i < 3 ? "9px" : "7px", color:"var(--blanco)", lineHeight:1.6 }}>
-      {u.nickname}
-      ...
-    </div>
-  </div>
-</td>
+                    <td style={{ padding: isTop ? "12px 6px" : "8px 6px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap: isTop ? "10px" : "6px" }}>
+                        <AvatarSmall avatarId={u.avatarId} avatarSlug={u.avatarSlug} />
+                        <div style={{ fontSize: isTop ? "9px" : "7px", color:"var(--blanco)", lineHeight:1.6 }}>
+                          {u.nickname}
+                          {u.uid === firebaseUser?.uid && (
+                            <span style={{
+                              marginLeft:"6px",
+                              fontSize:"5px",
+                              background:"var(--verde-claro)",
+                              color:"var(--negro)",
+                              padding:"1px 4px",
+                              border:"1px solid var(--negro)"
+                            }}>TÚ</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
 
                     {/* Columna puntos + flecha */}
-                    <{/* Columna # con número de fondo */}
-<td
-  style={{
-    position: 'relative',
-    textAlign: "center",
-    padding: isTop ? "12px 4px" : "8px 4px",
-    width: "28px",
-    fontFamily: "'Press Start 2P', monospace",
-    fontSize: isTop ? "10px" : "7px",
-    color: estilo?.texto || "var(--gris-claro)"
-  }}
->
-  {/* Número de fondo (solo para primer lugar de cada grupo de podio) */}
-  {posicion <= 3 && esPrimero && (
-    <div style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '48px',
-      fontWeight: 'bold',
-      color: estilo?.bg ? (estilo.bg.includes('#FFD966') ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)') : 'rgba(0,0,0,0.1)',
-      pointerEvents: 'none',
-      zIndex: 0,
-      fontFamily: "'Press Start 2P', monospace",
-      opacity: 0.3,
-    }}>
-      {posicion}
-    </div>
-  )}
-  {/* Contenido normal (medalla o número) */}
-  <span style={{ position: 'relative', zIndex: 1 }}>
-    {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
-  </span>
-</td>
+                    <td style={{ textAlign:"right", padding: isTop ? "12px 10px" : "8px 10px" }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"6px" }}>
+                        {diff !== 0 && (
+                          <span style={{
+                            fontFamily:"'Press Start 2P',monospace",
+                            fontSize: isTop ? "10px" : "8px",
+                            color: diff > 0 ? "#4ade80" : "var(--rojo-chile)",
+                          }}>
+                            {diff > 0 ? `▲${diff}` : `▼${Math.abs(diff)}`}
+                          </span>
+                        )}
+                        <span className="puntos-badge" style={{
+                          fontSize: isTop ? "12px" : "9px",
+                          color: estilo?.texto || undefined
+                        }}>
+                          {u.puntosTotal ?? 0}
+                        </span>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
