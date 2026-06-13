@@ -17,9 +17,9 @@ import HistorialPredicciones from "./HistorialPredicciones";
 
 // ── Colores de fondo por posición ────────────────────────────
 const FONDO_POS = {
-  1: { bg: "rgba(212,175,55,0.18)",  borde: "rgba(212,175,55,0.5)",  texto: "#f4d03f" },
-  2: { bg: "rgba(160,160,160,0.15)", borde: "rgba(160,160,160,0.4)", texto: "#c8c8c8" },
-  3: { bg: "rgba(176,107,45,0.15)",  borde: "rgba(176,107,45,0.4)",  texto: "#cd7f32" },
+  1: { bg: "#FFD966", borde: "#D4A017", texto: "#000000" },   // amarillo sólido, texto negro
+  2: { bg: "#D3D3D3", borde: "#A9A9A9", texto: "#000000" },   // gris plata, texto negro
+  3: { bg: "#CD7F32", borde: "#8B5A2B", texto: "#000000" },   // bronce sólido, texto negro
 };
 
 function AvatarSmall({ avatarId, avatarSlug }) {
