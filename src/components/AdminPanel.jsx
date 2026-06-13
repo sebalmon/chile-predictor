@@ -554,17 +554,27 @@ function TabCartasBonus({ onMensaje }) {
 }
 
 // ── Tab Aviso ─────────────────────────────────────────────────
+// Ítem i: dos tipos de aviso — "unaVez" y "permanente"
 function TabAviso({ onMensaje }) {
-  const [texto, setTexto]   = useState("");
-  const [enviando, setEnv]  = useState(false);
-  const [cerrando, setCerr] = useState(false);
+  const [texto,    setTexto]   = useState("");
+  const [tipo,     setTipo]    = useState("unaVez"); // "unaVez" | "permanente"
+  const [enviando, setEnv]     = useState(false);
+  const [cerrando, setCerr]    = useState(false);
 
   const enviar = async () => {
     if (!texto.trim()) return;
     setEnv(true);
     try {
-      await publicarAvisoAdmin(texto.trim());
-      onMensaje("ok", "Aviso publicado. Todos los participantes lo verán al recargar.");
+      await setDoc(doc(db, "config", "avisoAdmin"), {
+        texto:  texto.trim(),
+        tipo,
+        fecha:  new Date().toISOString(),
+        activo: true,
+      });
+      const desc = tipo === "permanente"
+        ? "Aviso PERMANENTE publicado. Aparecerá en cada sesión hasta que lo desactives."
+        : "Aviso publicado. Cada usuario lo verá solo una vez.";
+      onMensaje("ok", desc);
       setTexto("");
     } catch (e) {
       onMensaje("error", e.message);
@@ -588,8 +598,28 @@ function TabAviso({ onMensaje }) {
   return (
     <div>
       <p style={{ fontSize: "7px", color: "var(--amarillo)", marginBottom: "12px", lineHeight: 2 }}>
-        Escribe un mensaje para todos los participantes. Aparecerá como ventana emergente al entrar a la app.
+        Escribe un mensaje para todos los participantes.
       </p>
+
+      <p style={{ fontSize: "6px", color: "var(--verde-claro)", marginBottom: "6px" }}>TIPO DE AVISO:</p>
+      <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
+        {[
+          { val: "unaVez",     label: "📌 UNA SOLA VEZ",  desc: "Cada usuario lo ve una vez." },
+          { val: "permanente", label: "🔒 PERMANENTE",    desc: "Aparece en cada sesión." },
+        ].map((t) => (
+          <button key={t.val}
+            className={`pred-btn ${tipo === t.val ? "seleccionado" : ""}`}
+            style={{ flex: 1, fontSize: "5px", padding: "8px 4px", lineHeight: 2 }}
+            onClick={() => setTipo(t.val)}>
+            {t.label}
+            <br />
+            <span style={{ fontSize: "4px", color: tipo === t.val ? "var(--negro)" : "var(--gris-claro)" }}>
+              {t.desc}
+            </span>
+          </button>
+        ))}
+      </div>
+
       <textarea
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
@@ -605,7 +635,7 @@ function TabAviso({ onMensaje }) {
       />
       <button className="btn-pixel btn-rojo w-full" style={{ fontSize: "7px", marginBottom: "8px" }}
         onClick={enviar} disabled={enviando || !texto.trim()}>
-        {enviando ? "⚙ ENVIANDO..." : "📢 PUBLICAR AVISO"}
+        {enviando ? "⚙ ENVIANDO..." : `📢 PUBLICAR (${tipo === "permanente" ? "PERMANENTE" : "UNA VEZ"})`}
       </button>
       <button className="btn-pixel btn-gris w-full" style={{ fontSize: "7px" }}
         onClick={desactivar} disabled={cerrando}>

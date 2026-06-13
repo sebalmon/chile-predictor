@@ -1,22 +1,18 @@
-// src/utils/helpers.js  — v4 (Fase 1)
+// src/utils/helpers.js  — v5 (Fase 2)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v4:
-//   • Nueva tabla de puntos (ítem j):
-//       Partido normal: +1 ganador, +2 adicional si + diferencia (total 3)
-//       Partido destacado: +2 ganador, +5 resultado exacto
-//       Ganador del día: +2 (antes +3)
-//       Eliminatorias: alargue +3/+6, penales +3/+5/+7
-//   • procesarResultadoPartido: RECALCULA (soporta correcciones del admin)
-//   • procesarPreguntaDelDia:   RECALCULA ídem
-//   • calcularGanadorDelDia:    ahora es solo "ENTREGAR CARTAS Y BONUS"
-//                                bonus = +2, no recalcula partidos/pregunta
+// CAMBIOS v5:
+//   • procesarResultadoPartido: escribe notificación en
+//     usuarios/{uid}/notificaciones/{autoId} por cada usuario afectado.
+//   • procesarPreguntaDelDia: ídem para la pregunta.
+//   • calcularGanadorDelDia: escribe notificación del bonus diario.
+//   • Todo lo demás idéntico a v4.
 // ─────────────────────────────────────────────────────────────
 import {
   collection, getDocs, query, where, doc,
-  updateDoc, setDoc, increment, getDoc,
+  updateDoc, setDoc, increment, getDoc, addDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { CARTAS, cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+import { CARTAS, cartaAleatoriaPorMultiplicador, FASE_LABELS } from "../data/sampleData";
 
 // ──────────────────────────────────────────────────────────────
 // FECHAS
@@ -41,7 +37,6 @@ export function formatFecha(fechaStr) {
   });
 }
 
-/** Número de participación: 11/06/2026 = Día 1. Antes del mundial → 0. */
 export function diaNumero() {
   const inicio = new Date("2026-06-11T00:00:00");
   const hoy    = new Date();
@@ -50,10 +45,6 @@ export function diaNumero() {
   return diff < 0 ? 0 : diff + 1;
 }
 
-/**
- * Determina si el partido sigue abierto para predicciones.
- * Soporta Timestamp de Firestore, {_seconds}, número y string.
- */
 export function partidoAbierto(partido) {
   if (!partido || !partido.cierre) return true;
   let cierreDate;
@@ -72,41 +63,13 @@ export function partidoAbierto(partido) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// CÁLCULO DE PUNTOS — NUEVA TABLA v4
+// CÁLCULO DE PUNTOS — TABLA v4/v5
 // ──────────────────────────────────────────────────────────────
-/**
- * calcularPuntosPartido(prediccion, resultado, fase, estaDestacado)
- *
- * FASE DE GRUPOS:
- *   Partido normal:
- *     +1  acertar ganador
- *     +2  adicional si también acierta diferencia  → total 3
- *   Partido destacado ⭐:
- *     +2  solo acertar ganador
- *     +5  resultado exacto (3 por exacto + 2 por ganador)
- *
- * ELIMINATORIAS (muere-muere):
- *   Definición en 90 min:
- *     +2  acertar ganador
- *     +1  adicional si también acierta diferencia  → total 3
- *   Definición en alargue:
- *     +3  acertar que se define en alargue
- *     +3  adicional si también acierta diferencia en alargue  → total 6
- *   Definición en penales:
- *     +3  acertar que se define en penales
- *     +2  adicional si aciertas quién gana los penales  → total 5
- *     +4  en lugar de +2 si aciertas la diferencia exacta → total 7
- *         (diferencia exacta implica ganador, no se acumulan +2 y +4)
- *
- * Retorna { puntos, esMaximo }.
- * esMaximo = true si el jugador acertó algo (activa multiplicador de carta).
- */
 export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado) {
   if (!resultado || !prediccion) return { puntos: 0, esMaximo: false };
 
   const esEliminatoria = fase && fase !== "grupos";
 
-  // ── GRUPOS ────────────────────────────────────────────────────
   if (!esEliminatoria) {
     const { golesLocal, golesVisitante } = resultado;
     const ganadorReal =
@@ -132,7 +95,6 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
     }
   }
 
-  // ── ELIMINATORIAS ─────────────────────────────────────────────
   const {
     golesLocal, golesVisitante, definicion,
     golesLocalAlargue, golesVisitanteAlargue,
@@ -152,31 +114,23 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
       puntos += 2;
       if (prediccion.diferencia90 === dif90Real) puntos += 1;
     }
-
   } else if (definicion === "alargue") {
     if (prediccion.definicion === "alargue") {
-      puntos += 3; // acertar alargue
+      puntos += 3;
       const diffAlarg    = Math.abs((golesLocalAlargue ?? 0) - (golesVisitanteAlargue ?? 0));
       const difAlargReal = diffAlarg === 1 ? "1" : "2+";
       if (prediccion.ganadorAlargue === ganadorFinal &&
-          prediccion.diferenciaAlargue === difAlargReal) {
-        puntos += 3; // también acertó diferencia en alargue
-      }
+          prediccion.diferenciaAlargue === difAlargReal) puntos += 3;
     }
-
   } else if (definicion === "penales") {
     if (prediccion.definicion === "penales") {
-      puntos += 3; // acertar penales
+      puntos += 3;
       const acertaExacta =
         Number(prediccion.penalesLocal)     === penalesLocal &&
         Number(prediccion.penalesVisitante) === penalesVisitante;
       const acertaGanador = prediccion.ganadorPenales === ganadorFinal;
-
-      if (acertaExacta) {
-        puntos += 4; // diferencia exacta (implica ganador)
-      } else if (acertaGanador) {
-        puntos += 2;
-      }
+      if (acertaExacta) puntos += 4;
+      else if (acertaGanador) puntos += 2;
     }
   }
 
@@ -188,9 +142,6 @@ export function calcularPuntosPregunta(respuesta, correcta) {
   return respuesta === correcta ? 2 : 0;
 }
 
-/**
- * Aplica multiplicador de carta si esMaximo.
- */
 export function aplicarMultiplicadorCarta(puntos, esMaximo, cartaId) {
   if (!cartaId || !esMaximo || puntos === 0) return puntos;
   const carta = CARTAS.find((c) => c.id === cartaId);
@@ -198,37 +149,72 @@ export function aplicarMultiplicadorCarta(puntos, esMaximo, cartaId) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// MOTOR AUTOMÁTICO — procesar resultado de partido (con recálculo)
+// HELPER INTERNO: escribir notificación
 // ──────────────────────────────────────────────────────────────
-/**
- * procesarResultadoPartido(partidoId, resultado, fase, estaDestacado, fecha)
- *
- * ► Soporta RECÁLCULO: si ya había puntosGanados anteriores en la predicción,
- *   calcula la diferencia (nuevo − viejo) y solo aplica esa diferencia.
- *   Esto permite que el admin corrija resultados sin duplicar puntos.
- *
- * Flujo por predicción:
- *   1. Lee puntosGanados previo (null si nunca se procesó).
- *   2. Calcula puntosNuevos.
- *   3. delta = puntosNuevos − puntosViejos  (o puntosNuevos si es primera vez).
- *   4. Actualiza predicciones/{id}.
- *   5. Actualiza usuarios/{uid}.puntosTotal con increment(delta).
- *   6. Actualiza/crea puntosDelDia/{uid}_{fecha} con increment(delta).
- *
- * Retorna { procesados, errores }.
- */
+async function _crearNotificacion(uid, datos) {
+  try {
+    await addDoc(
+      collection(db, "usuarios", uid, "notificaciones"),
+      {
+        ...datos,
+        leido:     false,
+        timestamp: serverTimestamp(),
+      }
+    );
+  } catch (e) {
+    console.error("Error creando notificación para", uid, e);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// HELPER: texto legible de la predicción de un partido
+// ──────────────────────────────────────────────────────────────
+function _textoPrediccion(pred, estaDestacado) {
+  if (estaDestacado) {
+    return `${pred.golesLocalPred ?? "?"} - ${pred.golesVisitantePred ?? "?"}`;
+  }
+  const ganLabel = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
+  const difLabel = pred.diferencia ? ` (dif. ${pred.diferencia})` : "";
+  return `${ganLabel}${difLabel}`;
+}
+
+function _textoResultado(resultado, estaDestacado) {
+  const base = `${resultado.golesLocal}-${resultado.golesVisitante}`;
+  if (resultado.definicion && resultado.definicion !== "normal") {
+    const ext = resultado.definicion === "penales"
+      ? ` (penales ${resultado.penalesLocal}-${resultado.penalesVisitante})`
+      : " (alargue)";
+    return base + ext;
+  }
+  return base;
+}
+
+// ──────────────────────────────────────────────────────────────
+// PROCESAR RESULTADO DE PARTIDO (con recálculo + notificaciones)
+// ──────────────────────────────────────────────────────────────
 export async function procesarResultadoPartido(
   partidoId, resultado, fase, estaDestacado, fecha
 ) {
   let procesados = 0, errores = 0;
   try {
+    // Leer datos del partido para el mensaje
+    let nombrePartido = partidoId;
+    try {
+      const pSnap = await getDoc(doc(db, "partidos", partidoId));
+      if (pSnap.exists()) {
+        const pd = pSnap.data();
+        nombrePartido = `${pd.local?.bandera ?? ""}${pd.local?.nombre ?? ""} vs ${pd.visitante?.nombre ?? ""}${pd.visitante?.bandera ?? ""}`;
+      }
+    } catch (_) {}
+
     const snap = await getDocs(query(
       collection(db, "predicciones"),
       where("partidoId", "==", partidoId)
     ));
     if (snap.empty) return { procesados: 0, errores: 0 };
 
-    const deltasPorUid = {};
+    const deltasPorUid  = {};
+    const notifsPorUid  = {};
 
     for (const pDoc of snap.docs) {
       try {
@@ -240,12 +226,10 @@ export async function procesarResultadoPartido(
           pred, resultado, fase, estaDestacado
         );
         const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, pred.cartaId || null);
-
         const delta = puntosViejos !== null
           ? puntosNuevos - puntosViejos
           : puntosNuevos;
 
-        // Actualizar predicción
         await updateDoc(doc(db, "predicciones", pDoc.id), {
           puntosGanados: puntosNuevos,
           puntosBase:    base,
@@ -253,13 +237,24 @@ export async function procesarResultadoPartido(
           calculadoEn:  new Date().toISOString(),
         });
 
-        // Solo tocar usuarios/puntosDelDia si hay cambio real
         if (delta !== 0) {
           await updateDoc(doc(db, "usuarios", uid), {
             puntosTotal: increment(delta),
           });
           deltasPorUid[uid] = (deltasPorUid[uid] || 0) + delta;
         }
+
+        // Datos para la notificación
+        notifsPorUid[uid] = {
+          tipo:         "resultado_partido",
+          partidoId,
+          nombrePartido,
+          tuApuesta:    _textoPrediccion(pred, estaDestacado),
+          resultado:    _textoResultado(resultado, estaDestacado),
+          acertaste:    esMaximo,
+          puntosGanados: puntosNuevos,
+          fecha,
+        };
 
         procesados++;
       } catch (e) {
@@ -275,7 +270,6 @@ export async function procesarResultadoPartido(
         const diaId   = `${uid}_${fecha}`;
         const diaRef  = doc(db, "puntosDelDia", diaId);
         const diaSnap = await getDoc(diaRef);
-
         if (diaSnap.exists()) {
           await updateDoc(diaRef, { puntos: increment(delta) });
         } else {
@@ -289,8 +283,13 @@ export async function procesarResultadoPartido(
           });
         }
       } catch (e) {
-        console.error("Error actualizando puntosDelDia para", uid, e);
+        console.error("Error actualizando puntosDelDia:", uid, e);
       }
+    }
+
+    // Escribir notificaciones (solo a quienes tenían predicción)
+    for (const [uid, datos] of Object.entries(notifsPorUid)) {
+      await _crearNotificacion(uid, datos);
     }
 
     return { procesados, errores };
@@ -301,19 +300,18 @@ export async function procesarResultadoPartido(
 }
 
 // ──────────────────────────────────────────────────────────────
-// PROCESAR PREGUNTA DEL DÍA (con recálculo)
+// PROCESAR PREGUNTA DEL DÍA (con recálculo + notificaciones)
 // ──────────────────────────────────────────────────────────────
-/**
- * procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha)
- *
- * ► Soporta RECÁLCULO: si el admin cambia la respuesta correcta,
- *   recalcula la diferencia y actualiza usuarios y puntosDelDia.
- *
- * Retorna { ok, procesados, error? }.
- */
 export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha) {
   let procesados = 0;
   try {
+    // Leer texto de la pregunta
+    let textoPregunta = "Pregunta del día";
+    try {
+      const pSnap = await getDoc(doc(db, "preguntas", preguntaId));
+      if (pSnap.exists()) textoPregunta = pSnap.data().texto || textoPregunta;
+    } catch (_) {}
+
     const snap = await getDocs(query(
       collection(db, "respuestas"),
       where("preguntaId", "==", preguntaId)
@@ -331,7 +329,6 @@ export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fech
           ? puntosNuevos - puntosViejos
           : puntosNuevos;
 
-        // Actualizar respuesta
         await updateDoc(doc(db, "respuestas", rDoc.id), {
           esCorrecta,
           puntosGanados: puntosNuevos,
@@ -345,7 +342,6 @@ export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fech
           const diaId   = `${uid}_${fecha}`;
           const diaRef  = doc(db, "puntosDelDia", diaId);
           const diaSnap = await getDoc(diaRef);
-
           if (diaSnap.exists()) {
             await updateDoc(diaRef, { puntos: increment(delta) });
           } else {
@@ -359,6 +355,18 @@ export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fech
             });
           }
         }
+
+        // Notificación
+        await _crearNotificacion(uid, {
+          tipo:            "resultado_pregunta",
+          preguntaId,
+          textoPregunta,
+          tuRespuesta:     data.respuesta,
+          respuestaCorrecta,
+          acertaste:       esCorrecta,
+          puntosGanados:   puntosNuevos,
+          fecha,
+        });
 
         if (esCorrecta) procesados++;
       } catch (e) {
@@ -376,19 +384,6 @@ export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fech
 // ──────────────────────────────────────────────────────────────
 // ENTREGAR CARTAS Y BONUS DEL DÍA
 // ──────────────────────────────────────────────────────────────
-/**
- * calcularGanadorDelDia(fecha)
- *
- * ► NO recalcula puntos de partidos ni pregunta (ya se sumaron al guardar).
- * ► Solo:
- *   1. Lee puntosDelDia para la fecha.
- *   2. Determina podio (1°, 2°, 3°) con soporte de empates.
- *   3. Otorga +2 pts bonus al/los del 1° lugar.
- *   4. Asigna cartas: x4 → 1°, x3 → 2°, x2 → 3°.
- *   5. Marca esGanador: true, bonusGanador: 2 en puntosDelDia.
- *
- * Retorna { ok, ganador, lugar1, lugar2, lugar3, totalJugadores }.
- */
 export async function calcularGanadorDelDia(fecha) {
   try {
     const snap = await getDocs(query(
@@ -416,26 +411,41 @@ export async function calcularGanadorDelDia(fecha) {
     const pts3   = resto2[0]?.puntos;
     const lugar3 = pts3 !== undefined ? resto2.filter(j => j.puntos === pts3) : [];
 
-    // Bonus +2 y carta x4 al 1° lugar
     for (const j of lugar1) {
       await updateDoc(doc(db, "puntosDelDia", j.docId), {
-        esGanador:    true,
-        bonusGanador: 2,
+        esGanador: true, bonusGanador: 2,
       });
-      await updateDoc(doc(db, "usuarios", j.uid), {
-        puntosTotal: increment(2),
-      });
+      await updateDoc(doc(db, "usuarios", j.uid), { puntosTotal: increment(2) });
       await _asignarCarta(j.uid, 4, fecha);
+      await _crearNotificacion(j.uid, {
+        tipo:    "bonus_ganador",
+        lugar:   1,
+        bonus:   2,
+        fecha,
+        mensaje: `🥇 ¡Ganaste el día ${fecha}! +2 pts bonus y una carta x4.`,
+      });
     }
 
-    // Carta x3 al 2° lugar
     for (const j of lugar2) {
       await _asignarCarta(j.uid, 3, fecha);
+      await _crearNotificacion(j.uid, {
+        tipo:    "bonus_ganador",
+        lugar:   2,
+        bonus:   0,
+        fecha,
+        mensaje: `🥈 Quedaste 2° el día ${fecha}. ¡Recibiste una carta x3!`,
+      });
     }
 
-    // Carta x2 al 3° lugar
     for (const j of lugar3) {
       await _asignarCarta(j.uid, 2, fecha);
+      await _crearNotificacion(j.uid, {
+        tipo:    "bonus_ganador",
+        lugar:   3,
+        bonus:   0,
+        fecha,
+        mensaje: `🥉 Quedaste 3° el día ${fecha}. ¡Recibiste una carta x2!`,
+      });
     }
 
     return {
@@ -455,18 +465,11 @@ export async function calcularGanadorDelDia(fecha) {
 async function _asignarCarta(uid, multiplicador, fecha) {
   const carta = cartaAleatoriaPorMultiplicador(multiplicador);
   if (!carta) return;
-
   await setDoc(doc(db, "cartasDelUsuario", `${uid}_${carta.id}_${fecha}`), {
-    uid,
-    cartaId:       carta.id,
-    cartaNombre:   carta.nombre,
-    cartaSlug:     carta.slug,
-    multiplicador: carta.multiplicador,
-    rareza:        carta.rareza,
-    fecha,
-    visto: false,
+    uid, cartaId: carta.id, cartaNombre: carta.nombre,
+    cartaSlug: carta.slug, multiplicador: carta.multiplicador,
+    rareza: carta.rareza, fecha, visto: false,
   });
-
   await updateDoc(doc(db, "usuarios", uid), {
     [`cartas.${carta.id}`]: increment(1),
   });
@@ -477,9 +480,7 @@ async function _asignarCarta(uid, multiplicador, fecha) {
 // ──────────────────────────────────────────────────────────────
 export async function publicarAvisoAdmin(texto) {
   await setDoc(doc(db, "config", "avisoAdmin"), {
-    texto,
-    fecha:  new Date().toISOString(),
-    activo: true,
+    texto, fecha: new Date().toISOString(), activo: true,
   });
 }
 
