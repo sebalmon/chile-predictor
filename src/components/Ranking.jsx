@@ -190,55 +190,38 @@ export default function Ranking({ onVolver }) {
                       background: estilo?.bg || (i % 2 === 0 ? "rgba(255,255,255,0.03)" : "transparent"),
                       borderLeft: estilo ? `3px solid ${estilo.borde}` : "3px solid transparent",
                       borderBottom: "1px solid rgba(82,183,136,0.15)",
+                      padding: i < 3 ? "12px 0" : "8px 0",  // más padding vertical
                     }}
                   >
                     {/* Columna # */}
-                    <td style={{ textAlign:"center", padding:"8px 4px", width:"28px",
-                      fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                      color: estilo?.texto || "var(--gris-claro)" }}>
-                      {esPrimero
-                        ? (posicion <= 3 ? medallas[posicion - 1] : posicion)
-                        : ""
-                      }
-                    </td>
+                    <td style={{
+  textAlign:"center", padding: i < 3 ? "12px 4px" : "8px 4px", width:"28px",
+  fontFamily:"'Press Start 2P',monospace", fontSize: i < 3 ? "10px" : "7px",
+  color: estilo?.texto || "var(--gris-claro)"
+}}>
+  {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
+</td>
 
                     {/* Columna jugador */}
-                    <td style={{ padding:"8px 6px" }}>
-                      <div style={{ display:"flex",alignItems:"center",gap:"6px" }}>
-                        <AvatarSmall avatarId={u.avatarId} avatarSlug={u.avatarSlug} />
-                        <div style={{ fontSize:"7px", color:"var(--blanco)", lineHeight:1.6 }}>
-                          {u.nickname}
-                          {u.uid === firebaseUser?.uid && (
-                            <span style={{ marginLeft:"6px",fontSize:"5px",
-                              background:"var(--verde-claro)",color:"var(--negro)",
-                              padding:"1px 4px",border:"1px solid var(--negro)" }}>TÚ</span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
+                    <td style={{ padding: i < 3 ? "12px 6px" : "8px 6px" }}>
+  <div style={{ display:"flex", alignItems:"center", gap: i < 3 ? "10px" : "6px" }}>
+    <AvatarSmall avatarId={u.avatarId} avatarSlug={u.avatarSlug} />
+    <div style={{ fontSize: i < 3 ? "9px" : "7px", color:"var(--blanco)", lineHeight:1.6 }}>
+      {u.nickname}
+      ...
+    </div>
+  </div>
+</td>
 
                     {/* Columna puntos + flecha */}
-                    <td style={{ textAlign:"right", padding:"8px 10px 8px 4px" }}>
-                      <div style={{ display:"flex",alignItems:"center",justifyContent:"flex-end",gap:"6px" }}>
-                        {/* Flecha a la IZQUIERDA de los puntos */}
-                        {diff !== 0 ? (
-                          <span style={{
-                            fontFamily:"'Press Start 2P',monospace",
-                            fontSize:"9px",
-                            color: diff > 0 ? "#4ade80" : "var(--rojo-chile)",
-                            lineHeight:1,
-                          }}>
-                            {diff > 0 ? `▲${diff}` : `▼${Math.abs(diff)}`}
-                          </span>
-                        ) : posAyer ? (
-                          <span style={{ fontSize:"8px",color:"var(--gris)",lineHeight:1 }}>—</span>
-                        ) : null}
-                        <span className="puntos-badge"
-                          style={{ color: estilo?.texto || undefined }}>
-                          {u.puntosTotal ?? 0}
-                        </span>
-                      </div>
-                    </td>
+                    <td style={{ textAlign:"right", padding: i < 3 ? "12px 10px" : "8px 10px" }}>
+  <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"6px" }}>
+    {/* flecha */}
+    <span className="puntos-badge" style={{ fontSize: i < 3 ? "11px" : "8px", color: estilo?.texto || undefined }}>
+      {u.puntosTotal ?? 0}
+    </span>
+  </div>
+</td>
                   </tr>
                 );
               })}
