@@ -287,9 +287,10 @@ export default function HistorialPredicciones({ userId }) {
         const resp = rDoc.data();
         if (!resp.preguntaId) continue;
         // Inferir fecha desde preguntaId (formato YYYY-MM-DD_xxx)
-        const fechaInf = resp.preguntaId.split("_")[0];
-        if (!fechaInf || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInf)) continue;
-        if (!porFecha[fechaInf]) porFecha[fechaInf] = { predicciones:[], respuesta:null, pregunta:null, puntosDelDia:null };
+        // Intentar obtener fecha desde campo "fecha" de la respuesta, o desde preguntaId
+const fechaInf = resp.fecha || (resp.preguntaId ? resp.preguntaId.split("_")[0] : null);
+if (!fechaInf || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInf)) continue;
+if (!porFecha[fechaInf]) porFecha[fechaInf] = { predicciones:[], respuesta:null, pregunta:null, puntosDelDia:null };
         porFecha[fechaInf].respuesta = { respId: rDoc.id, ...resp };
       }
       for (const dDoc of snapPDia.docs) {
