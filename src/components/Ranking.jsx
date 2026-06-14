@@ -155,25 +155,15 @@ export default function Ranking({ onVolver }) {
 
   return (
     <div style={{ padding:"16px 16px 80px" }}>
-      <div style={{ display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px" }}>
-        {onVolver && (
-          <button className="btn-pixel btn-gris" onClick={onVolver}
-            style={{ padding:"8px 12px",fontSize:"8px" }}>← VOLVER</button>
-        )}
-        <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
-        {fechaActualizacion && (
-  <p style={{
-    fontSize: "6px",
-    color: "var(--gris-claro)",
-    textAlign: "center",
-    marginTop: "4px",
-    marginBottom: "8px",
-    lineHeight: 1.5
-  }}>
-    🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
-  </p>
-)}
-      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
+  {onVolver && <button ...>← VOLVER</button>}
+  <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
+  {fechaActualizacion && (
+    <p style={{ fontSize:"6px", color:"var(--gris-claro)", textAlign:"center", marginTop:"4px", marginBottom:"8px", lineHeight:1.5 }}>
+      🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
+    </p>
+  )}
+</div>
 
       {Object.keys(rankingAyer).length > 0 && (
         <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"10px",lineHeight:2 }}>
