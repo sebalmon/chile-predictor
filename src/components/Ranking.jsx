@@ -1,10 +1,12 @@
-// src/components/Ranking.jsx  — v8 (Números de fondo en podio)
+// src/components/Ranking.jsx  — v8 (Números de fondo en podio, corregido)
 // ─────────────────────────────────────────────────────────────
 // CAMBIOS v8:
 //   • Número de fondo gigante (1,2,3) en primera celda para los primeros puestos,
 //     solo en la primera fila de cada grupo de empate.
 //   • Corregida estructura de tabla (celdas duplicadas, sintaxis).
 //   • Variable isTop para resaltar los tres primeros puestos.
+//   • Botón VOLVER corregido.
+//   • Fecha de última actualización mostrada correctamente.
 // ─────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore";
@@ -99,20 +101,23 @@ export default function Ranking({ onVolver }) {
   const [cargando,    setCargando]    = useState(true);
   const [jugadorSel,  setJugadorSel]  = useState(null);
   const [fechaActualizacion, setFechaActualizacion] = useState(null);
+
   useEffect(() => { cargar(); }, []);
+
   useEffect(() => {
-  const cargarFecha = async () => {
-    try {
-      const snap = await getDoc(doc(db, "config", "ultimaActualizacion"));
-      if (snap.exists()) {
-        setFechaActualizacion(snap.data().fecha);
+    const cargarFecha = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "ultimaActualizacion"));
+        if (snap.exists()) {
+          setFechaActualizacion(snap.data().fecha);
+        }
+      } catch (e) {
+        console.error("Error cargando fecha de actualización", e);
       }
-    } catch (e) {
-      console.error("Error cargando fecha de actualización", e);
-    }
-  };
-  cargarFecha();
-}, []);
+    };
+    cargarFecha();
+  }, []);
+
   const cargar = async () => {
     setCargando(true);
     try {
@@ -156,14 +161,29 @@ export default function Ranking({ onVolver }) {
   return (
     <div style={{ padding:"16px 16px 80px" }}>
       <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
-  {onVolver && <button ...>← VOLVER</button>}
-  <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
-  {fechaActualizacion && (
-    <p style={{ fontSize:"6px", color:"var(--gris-claro)", textAlign:"center", marginTop:"4px", marginBottom:"8px", lineHeight:1.5 }}>
-      🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
-    </p>
-  )}
-</div>
+        {onVolver && (
+          <button
+            className="btn-pixel btn-gris"
+            onClick={onVolver}
+            style={{ padding:"8px 12px", fontSize:"8px" }}
+          >
+            ← VOLVER
+          </button>
+        )}
+        <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
+      </div>
+      {fechaActualizacion && (
+        <p style={{
+          fontSize: "6px",
+          color: "var(--gris-claro)",
+          textAlign: "center",
+          marginTop: "4px",
+          marginBottom: "12px",
+          lineHeight: 1.5
+        }}>
+          🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
+        </p>
+      )}
 
       {Object.keys(rankingAyer).length > 0 && (
         <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"10px",lineHeight:2 }}>
@@ -286,8 +306,10 @@ export default function Ranking({ onVolver }) {
                 );
               })}
               {usuarios.length === 0 && (
-                <tr><td colSpan={3} style={{ textAlign:"center",padding:"20px",
-                  fontSize:"7px",color:"var(--gris-claro)" }}>Aún no hay jugadores</td></tr>
+                <tr>
+                  <td colSpan={3} style={{ textAlign:"center",padding:"20px",
+                    fontSize:"7px",color:"var(--gris-claro)" }}>Aún no hay jugadores</td>
+                </tr>
               )}
             </tbody>
           </table>
