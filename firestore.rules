@@ -9,30 +9,24 @@ service cloud.firestore {
     }
 
     // ── usuarios ───────────────────────────────────────────────
-    // Cualquier usuario autenticado puede leer perfiles (para ranking/podio).
-    // Solo el propio usuario puede crear su documento.
-    // Update permitido a cualquier autenticado: el sistema del admin
-    //   necesita updateDoc en usuarios ajenos para sumar puntosTotal.
-    //   La lógica de negocio que impide abusos vive en el código.
     match /usuarios/{uid} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == uid;
       allow update: if request.auth != null;
       
-      // ── Subcolección de notificaciones ──────────────────────
+      // Subcolección de notificaciones
       match /notificaciones/{notifId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
     }
 
     // ── predicciones ───────────────────────────────────────────
-    // El admin procesa predicciones ajenas (añade puntosGanados, etc.)
     match /predicciones/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // ── respuestas (pregunta del día) ───────────────────────────
+    // ── respuestas ─────────────────────────────────────────────
     match /respuestas/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
@@ -60,13 +54,13 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // ── config (avisos del admin) ───────────────────────────────
+    // ── config ──────────────────────────────────────────────────
     match /config/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // ── mensajesDia (La Voz de la Hinchada) ────────────────────
+    // ── mensajesDia ────────────────────────────────────────────
     match /mensajesDia/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
@@ -74,10 +68,16 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
-    // ── admins ─────────────────────────────────────────────────
+    // ── Reacciones en mensajes ────────────────────────────────
+    match /mensajesDia/{docId}/reacciones/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── admins ──────────────────────────────────────────────────
     match /admins/{uid} {
       allow read: if request.auth != null;
-      allow write: if false; // solo desde Firebase Console
+      allow write: if false;
     }
   }
 }

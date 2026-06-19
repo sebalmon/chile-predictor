@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { MusicaProvider } from "./contexts/MusicaContext";
 import Splash      from "./components/Splash";
 import Login       from "./components/Login";
 import Registro    from "./components/Registro";
@@ -64,7 +65,9 @@ function AppCore() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppCore />
+      <MusicaProvider>
+        <AppCore />
+      </MusicaProvider>
     </AuthProvider>
   );
 }

@@ -1,20 +1,91 @@
-// src/components/PartidoCard.jsx  — v6 (Fase 3)
+// src/components/PartidoCard.jsx  — v7 (Patch 2)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v6:
-//   • Muestra ciudad y país si existen en el documento del partido
-//     (campos `ciudad` y `pais` editados desde Firebase Console).
-//     Formato: "12 jun · 15:00 · Guadalajara, México"
-//   • Botón 🃏 CARTA se desactiva cuando la predicción está guardada
-//     y solo se reactiva al hacer clic en ✏ EDITAR.
-//   • onGuardado callback para que TabPartidos sepa cuándo disparar el modal.
+// NUEVO (punto 8): EstadisticasApuestas
+//   • Muestra % y barra visual de votos: Local / Empate / Visitante.
+//   • Lee predicciones del partido filtrando por campo "ganador".
+//   • Se carga al montar la card (sin tiempo real para no sobrecargar).
+//   • Solo visible si el partido tiene al menos 1 predicción.
 // ─────────────────────────────────────────────────────────────
 import ModalPrediccionesAmigos from "./ModalPrediccionesAmigos";
 import React, { useState, useEffect } from "react";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, getDocs, query, collection, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { partidoAbierto, formatHora } from "../utils/helpers";
 import { CARTAS, FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
+
+// ── Estadísticas de apuestas (punto 8) ───────────────────────
+function EstadisticasApuestas({ partidoId, local, visitante }) {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const snap = await getDocs(query(
+          collection(db,"predicciones"), where("partidoId","==",partidoId)
+        ));
+        if (snap.empty) return;
+        const conteo = { local:0, empate:0, visitante:0 };
+        snap.docs.forEach(d => {
+          const g = d.data().ganador;
+          if (g === "local")     conteo.local++;
+          else if (g === "empate")    conteo.empate++;
+          else if (g === "visitante") conteo.visitante++;
+        });
+        const total = conteo.local + conteo.empate + conteo.visitante;
+        if (total === 0) return;
+        setStats({
+          total,
+          local:     Math.round((conteo.local / total) * 100),
+          empate:    Math.round((conteo.empate / total) * 100),
+          visitante: Math.round((conteo.visitante / total) * 100),
+        });
+      } catch(_) {}
+    };
+    cargar();
+  }, [partidoId]);
+
+  if (!stats) return null;
+
+  const COLORES = {
+    local:     "#4ade80",
+    empate:    "#facc15",
+    visitante: "#f87171",
+  };
+
+  const filas = [
+    { key:"local",     label: local?.nombre    || "Local",     pct: stats.local },
+    { key:"empate",    label: "Empate",                        pct: stats.empate },
+    { key:"visitante", label: visitante?.nombre || "Visitante", pct: stats.visitante },
+  ];
+
+  return (
+    <div style={{ marginTop:"10px",padding:"8px 10px",
+      border:"1px solid rgba(82,183,136,0.3)",background:"rgba(0,0,0,0.25)" }}>
+      <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"6px",letterSpacing:"1px" }}>
+        PRONÓSTICOS DE LA HINCHADA ({stats.total} votos)
+      </p>
+      {filas.map(({ key, label, pct }) => (
+        <div key={key} style={{ marginBottom:"4px" }}>
+          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:"2px" }}>
+            <span style={{ fontSize:"5px",color:"var(--gris-claro)" }}>{label}</span>
+            <span style={{ fontSize:"5px",color:COLORES[key],fontFamily:"'Press Start 2P',monospace" }}>
+              {pct}%
+            </span>
+          </div>
+          <div style={{ height:"5px",background:"rgba(255,255,255,0.1)",borderRadius:"0" }}>
+            <div style={{
+              height:"100%",
+              width:`${pct}%`,
+              background:COLORES[key],
+              transition:"width 0.4s ease",
+            }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ── Selector de cartas ────────────────────────────────────────
 function SelectorCartas({ cartasDisponibles, cartaSeleccionada, onSeleccionar, onCerrar }) {
@@ -31,7 +102,6 @@ function SelectorCartas({ cartasDisponibles, cartaSeleccionada, onSeleccionar, o
         <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginBottom:"14px",lineHeight:2 }}>
           La carta se consume al usar (cuando el partido termine). Una por partido.
         </p>
-
         {cartasDisponibles.length === 0 ? (
           <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"20px" }}>
             No tienes cartas. ¡Sube al podio del día!
@@ -42,7 +112,7 @@ function SelectorCartas({ cartasDisponibles, cartaSeleccionada, onSeleccionar, o
               style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
                 padding:"8px 12px",cursor:"pointer",textAlign:"left",
                 border:`2px solid ${cartaSeleccionada===null?"var(--verde-claro)":"var(--gris)"}`,
-                background: cartaSeleccionada===null?"rgba(82,183,136,0.2)":"transparent",
+                background:cartaSeleccionada===null?"rgba(82,183,136,0.2)":"transparent",
                 color:"var(--blanco)" }}>
               ✖ Sin carta (no arriesgar)
             </button>
@@ -51,7 +121,7 @@ function SelectorCartas({ cartasDisponibles, cartaSeleccionada, onSeleccionar, o
                 style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
                   padding:"10px 12px",cursor:"pointer",textAlign:"left",
                   border:`2px solid ${cartaSeleccionada===carta.id?RAREZA_COLOR[carta.rareza]:"var(--gris)"}`,
-                  background: cartaSeleccionada===carta.id
+                  background:cartaSeleccionada===carta.id
                     ? `rgba(${carta.rareza==="legendaria"?"214,40,40":carta.rareza==="rara"?"244,208,63":"82,183,136"},0.15)`
                     : "transparent",
                   color:"var(--blanco)",
@@ -80,39 +150,34 @@ export default function PartidoCard({ partido, onGuardado }) {
     ciudad, pais,
   } = partido;
 
-  const abierto      = partidoAbierto(partido);
-  const esElim       = FASES_ELIMINATORIAS.includes(fase);
-  const tieneRes     = resultado !== null && resultado !== undefined;
-  const faseLabel    = FASE_LABELS[fase] || fase;
+  const abierto   = partidoAbierto(partido);
+  const esElim    = FASES_ELIMINATORIAS.includes(fase);
+  const tieneRes  = resultado !== null && resultado !== undefined;
+  const faseLabel = FASE_LABELS[fase] || fase;
 
-  // ── Estado grupos ─────────────────────────────────────────
-  const [ganadorSel, setGanadorSel]       = useState(null);
-  const [difSel, setDifSel]               = useState(null);
-  const [golesLocalPred, setGolesLocalP]  = useState("");
-  const [golesVisPred, setGolesVisP]      = useState("");
+  const [ganadorSel, setGanadorSel] = useState(null);
+  const [difSel,     setDifSel]     = useState(null);
+  const [golesLocalPred, setGolesLocalP] = useState("");
+  const [golesVisPred,   setGolesVisP]   = useState("");
+  const [defSel,  setDefSel]  = useState(null);
+  const [gan90,   setGan90]   = useState(null);
+  const [dif90,   setDif90]   = useState(null);
+  const [ganAlg,  setGanAlg]  = useState(null);
+  const [difAlg,  setDifAlg]  = useState(null);
+  const [penL,    setPenL]    = useState("");
+  const [penV,    setPenV]    = useState("");
+  const [cartaSel, setCartaSel] = useState(null);
+  const [mostrarSelector, setMostrarSel] = useState(false);
 
-  // ── Estado eliminatoria ───────────────────────────────────
-  const [defSel, setDefSel]               = useState(null);
-  const [gan90, setGan90]                 = useState(null);
-  const [dif90, setDif90]                 = useState(null);
-  const [ganAlg, setGanAlg]               = useState(null);
-  const [difAlg, setDifAlg]               = useState(null);
-  const [penL, setPenL]                   = useState("");
-  const [penV, setPenV]                   = useState("");
-
-  // ── Carta ─────────────────────────────────────────────────
-  const [cartaSel, setCartaSel]           = useState(null);
-  const [mostrarSelector, setMostrarSel]  = useState(false);
   const cartasConCantidad = Object.entries(userProfile?.cartas || {})
     .filter(([,c]) => c > 0)
     .map(([cartaId, cantidad]) => ({ carta: CARTAS.find(c => c.id === cartaId), cantidad }))
     .filter(item => item.carta);
 
-  // ── Estado general ────────────────────────────────────────
-  const [guardado,     setGuardado]     = useState(false);
-  const [guardando,    setGuardando]    = useState(false);
-  const [predExistente,setPredExistente]= useState(null);
-  const [mostrarPreds, setMostrarPreds] = useState(false);
+  const [guardado,      setGuardado]      = useState(false);
+  const [guardando,     setGuardando]     = useState(false);
+  const [predExistente, setPredExistente] = useState(null);
+  const [mostrarPreds,  setMostrarPreds]  = useState(false);
 
   useEffect(() => {
     if (!firebaseUser) return;
@@ -127,7 +192,9 @@ export default function PartidoCard({ partido, onGuardado }) {
         setPenL(String(d.penalesLocal??"")); setPenV(String(d.penalesVisitante??""));
       } else {
         setGanadorSel(d.ganador||null); setDifSel(d.diferencia||null);
-        if (estaDestacado) { setGolesLocalP(String(d.golesLocalPred??"")); setGolesVisP(String(d.golesVisitantePred??"")); }
+        if (estaDestacado) {
+          setGolesLocalP(String(d.golesLocalPred??"")); setGolesVisP(String(d.golesVisitantePred??""));
+        }
       }
     };
     cargar();
@@ -136,13 +203,13 @@ export default function PartidoCard({ partido, onGuardado }) {
   const puedeGuardar = () => {
     if (esElim) {
       if (!defSel) return false;
-      if (defSel === "normal")  return !!gan90 && !!dif90;
-      if (defSel === "alargue") return !!ganAlg && !!difAlg;
-      if (defSel === "penales") return penL !== "" && penV !== "";
+      if (defSel==="normal")  return !!gan90 && !!dif90;
+      if (defSel==="alargue") return !!ganAlg && !!difAlg;
+      if (defSel==="penales") return penL!=="" && penV!=="";
       return false;
     }
-    if (estaDestacado) return golesLocalPred !== "" && golesVisPred !== "";
-    if (ganadorSel === "empate") return true;
+    if (estaDestacado) return golesLocalPred!=="" && golesVisPred!=="";
+    if (ganadorSel==="empate") return true;
     return !!ganadorSel && !!difSel;
   };
 
@@ -156,24 +223,21 @@ export default function PartidoCard({ partido, onGuardado }) {
       };
       if (esElim) {
         predData.definicion = defSel;
-        if (defSel === "normal") {
-          predData.ganador90 = gan90; predData.diferencia90 = dif90; predData.ganador = gan90;
-        } else if (defSel === "alargue") {
-          predData.ganadorAlargue = ganAlg; predData.diferenciaAlargue = difAlg; predData.ganador = ganAlg;
-        } else if (defSel === "penales") {
-          predData.penalesLocal = Number(penL); predData.penalesVisitante = Number(penV);
-          predData.ganadorPenales = Number(penL) > Number(penV) ? "local" : "visitante";
+        if (defSel==="normal") { predData.ganador90=gan90; predData.diferencia90=dif90; predData.ganador=gan90; }
+        else if (defSel==="alargue") { predData.ganadorAlargue=ganAlg; predData.diferenciaAlargue=difAlg; predData.ganador=ganAlg; }
+        else if (defSel==="penales") {
+          predData.penalesLocal=Number(penL); predData.penalesVisitante=Number(penV);
+          predData.ganadorPenales = Number(penL)>Number(penV)?"local":"visitante";
           predData.ganador = predData.ganadorPenales;
         }
       } else {
         if (estaDestacado) {
-          predData.golesLocalPred = Number(golesLocalPred);
-          predData.golesVisitantePred = Number(golesVisPred);
-          const gl = Number(golesLocalPred), gv = Number(golesVisPred);
-          predData.ganador = gl > gv ? "local" : gv > gl ? "visitante" : "empate";
+          predData.golesLocalPred=Number(golesLocalPred); predData.golesVisitantePred=Number(golesVisPred);
+          const gl=Number(golesLocalPred),gv=Number(golesVisPred);
+          predData.ganador = gl>gv?"local":gv>gl?"visitante":"empate";
         } else {
-          predData.ganador = ganadorSel;
-          predData.diferencia = ganadorSel === "empate" ? null : difSel;
+          predData.ganador    = ganadorSel;
+          predData.diferencia = ganadorSel==="empate" ? null : difSel;
         }
       }
       await setDoc(doc(db,"predicciones",`${firebaseUser.uid}_${id}`), predData);
@@ -183,11 +247,8 @@ export default function PartidoCard({ partido, onGuardado }) {
     finally { setGuardando(false); }
   };
 
-  const handleEditar = () => setGuardado(false);
-
   const cartaAdjunta = cartaSel ? CARTAS.find(c => c.id === cartaSel) : null;
 
-  // ── Label de ubicación/hora ───────────────────────────────
   const mesesCortos = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
   let labelFechaHora = `🕐 ${formatHora(horaInicio)}`;
   if (fecha) {
@@ -195,11 +256,9 @@ export default function PartidoCard({ partido, onGuardado }) {
     labelFechaHora = `${d} ${mesesCortos[m-1]} · ${horaInicio}`;
   }
   if (ciudad || pais) {
-    const ubicacion = [ciudad, pais].filter(Boolean).join(", ");
-    labelFechaHora += ` · 📍${ubicacion}`;
+    labelFechaHora += ` · 📍${[ciudad,pais].filter(Boolean).join(", ")}`;
   }
 
-  // ── Render resultado real ─────────────────────────────────
   const renderResultado = () => {
     if (!tieneRes) return null;
     return (
@@ -207,10 +266,10 @@ export default function PartidoCard({ partido, onGuardado }) {
         padding:"10px",margin:"8px 0",textAlign:"center" }}>
         <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginBottom:"4px" }}>RESULTADO FINAL</p>
         <p style={{ fontSize:"18px" }}>{resultado.golesLocal} - {resultado.golesVisitante}</p>
-        {resultado.definicion && resultado.definicion !== "normal" && (
+        {resultado.definicion && resultado.definicion!=="normal" && (
           <p style={{ fontSize:"6px",color:"var(--amarillo)",marginTop:"4px" }}>
-            {resultado.definicion === "alargue" ? "⏱ ALARGUE" : "🎯 PENALES"}
-            {resultado.penalesLocal !== undefined && ` (${resultado.penalesLocal}-${resultado.penalesVisitante})`}
+            {resultado.definicion==="alargue" ? "⏱ ALARGUE" : "🎯 PENALES"}
+            {resultado.penalesLocal!==undefined && ` (${resultado.penalesLocal}-${resultado.penalesVisitante})`}
           </p>
         )}
         {predExistente?.puntosGanados !== undefined && (
@@ -227,7 +286,6 @@ export default function PartidoCard({ partido, onGuardado }) {
     );
   };
 
-  // ── Render predicción grupos ──────────────────────────────
   const renderGrupos = () => (
     <div>
       {estaDestacado ? (
@@ -237,10 +295,10 @@ export default function PartidoCard({ partido, onGuardado }) {
           </p>
           <div className="resultado-exacto">
             <input type="number" min="0" max="20" value={golesLocalPred}
-              onChange={e => setGolesLocalP(e.target.value)} placeholder="0" />
+              onChange={e=>setGolesLocalP(e.target.value)} placeholder="0" />
             <span style={{ fontSize:"18px",color:"var(--amarillo)" }}>-</span>
             <input type="number" min="0" max="20" value={golesVisPred}
-              onChange={e => setGolesVisP(e.target.value)} placeholder="0" />
+              onChange={e=>setGolesVisP(e.target.value)} placeholder="0" />
           </div>
           <p style={{ fontSize:"6px",color:"var(--gris-claro)",textAlign:"center",marginTop:"6px" }}>
             Exacto: +5 pts | Solo ganador: +2 pts
@@ -261,14 +319,14 @@ export default function PartidoCard({ partido, onGuardado }) {
               {visitante.bandera} {visitante.nombre}
             </button>
           </div>
-          {ganadorSel && ganadorSel !== "empate" && (
+          {ganadorSel && ganadorSel!=="empate" && (
             <div style={{ marginTop:"8px" }}>
               <p style={{ fontSize:"7px",color:"var(--verde-claro)",marginBottom:"6px" }}>¿POR CUÁNTO?</p>
               <div className="pred-opciones">
                 <button className={`pred-btn ${difSel==="1"?"seleccionado":""}`}
-                  onClick={() => setDifSel("1")}>1 GOL</button>
+                  onClick={()=>setDifSel("1")}>1 GOL</button>
                 <button className={`pred-btn ${difSel==="2+"?"seleccionado":""}`}
-                  onClick={() => setDifSel("2+")}>2+ GOLES</button>
+                  onClick={()=>setDifSel("2+")}>2+ GOLES</button>
               </div>
             </div>
           )}
@@ -280,18 +338,16 @@ export default function PartidoCard({ partido, onGuardado }) {
     </div>
   );
 
-  // ── Render predicción eliminatoria ────────────────────────
   const renderElim = () => (
     <div>
       <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"8px" }}>¿CÓMO SE DECIDE?</p>
       <div className="pred-opciones" style={{ flexWrap:"wrap" }}>
         {[
-          {val:"normal", label:"⚽ 90 MIN", sub:"+2/+3 pts"},
-          {val:"alargue",label:"⏱ ALARGUE",sub:"+3/+6 pts"},
-          {val:"penales",label:"🎯 PENALES",sub:"+3/+5/+7 pts"},
+          {val:"normal", label:"⚽ 90 MIN",  sub:"+2/+3 pts"},
+          {val:"alargue",label:"⏱ ALARGUE", sub:"+3/+6 pts"},
+          {val:"penales",label:"🎯 PENALES", sub:"+3/+5/+7 pts"},
         ].map(({val,label,sub}) => (
-          <button key={val}
-            className={`pred-btn ${defSel===val?"seleccionado":""}`}
+          <button key={val} className={`pred-btn ${defSel===val?"seleccionado":""}`}
             onClick={() => { setDefSel(val); setGan90(null); setDif90(null); setGanAlg(null); setDifAlg(null); setPenL(""); setPenV(""); }}
             style={{ flex:"1 0 28%",flexDirection:"column",gap:"4px" }}>
             <span>{label}</span>
@@ -299,8 +355,7 @@ export default function PartidoCard({ partido, onGuardado }) {
           </button>
         ))}
       </div>
-
-      {defSel === "normal" && (
+      {defSel==="normal" && (
         <div style={{ marginTop:"10px" }}>
           <p style={{ fontSize:"7px",color:"var(--verde-claro)",marginBottom:"6px" }}>¿QUIÉN GANA EN 90 MIN?</p>
           <div className="pred-opciones">
@@ -317,17 +372,14 @@ export default function PartidoCard({ partido, onGuardado }) {
             <div style={{ marginTop:"8px" }}>
               <p style={{ fontSize:"7px",color:"var(--verde-claro)",marginBottom:"6px" }}>¿DIFERENCIA?</p>
               <div className="pred-opciones">
-                <button className={`pred-btn ${dif90==="1"?"seleccionado":""}`}
-                  onClick={() => setDif90("1")}>1 GOL</button>
-                <button className={`pred-btn ${dif90==="2+"?"seleccionado":""}`}
-                  onClick={() => setDif90("2+")}>2+ GOLES</button>
+                <button className={`pred-btn ${dif90==="1"?"seleccionado":""}`} onClick={()=>setDif90("1")}>1 GOL</button>
+                <button className={`pred-btn ${dif90==="2+"?"seleccionado":""}`} onClick={()=>setDif90("2+")}>2+ GOLES</button>
               </div>
             </div>
           )}
         </div>
       )}
-
-      {defSel === "alargue" && (
+      {defSel==="alargue" && (
         <div style={{ marginTop:"10px" }}>
           <p style={{ fontSize:"7px",color:"var(--verde-claro)",marginBottom:"6px" }}>¿QUIÉN GANA EN ALARGUE?</p>
           <div className="pred-opciones">
@@ -344,31 +396,23 @@ export default function PartidoCard({ partido, onGuardado }) {
             <div style={{ marginTop:"8px" }}>
               <p style={{ fontSize:"7px",color:"var(--verde-claro)",marginBottom:"6px" }}>¿DIFERENCIA EN ALARGUE?</p>
               <div className="pred-opciones">
-                <button className={`pred-btn ${difAlg==="1"?"seleccionado":""}`}
-                  onClick={() => setDifAlg("1")}>1 GOL</button>
-                <button className={`pred-btn ${difAlg==="2+"?"seleccionado":""}`}
-                  onClick={() => setDifAlg("2+")}>2+ GOLES</button>
+                <button className={`pred-btn ${difAlg==="1"?"seleccionado":""}`} onClick={()=>setDifAlg("1")}>1 GOL</button>
+                <button className={`pred-btn ${difAlg==="2+"?"seleccionado":""}`} onClick={()=>setDifAlg("2+")}>2+ GOLES</button>
               </div>
             </div>
           )}
         </div>
       )}
-
-      {defSel === "penales" && (
+      {defSel==="penales" && (
         <div style={{ marginTop:"10px" }}>
           <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"8px" }}>TANDA DE PENALES</p>
           <div className="resultado-exacto">
-            <input type="number" min="0" max="20" value={penL}
-              onChange={e => setPenL(e.target.value)} placeholder="0" />
+            <input type="number" min="0" max="20" value={penL} onChange={e=>setPenL(e.target.value)} placeholder="0" />
             <span style={{ fontSize:"12px",color:"var(--gris-claro)",padding:"0 8px" }}>
               {local.bandera}PEN{visitante.bandera}
             </span>
-            <input type="number" min="0" max="20" value={penV}
-              onChange={e => setPenV(e.target.value)} placeholder="0" />
+            <input type="number" min="0" max="20" value={penV} onChange={e=>setPenV(e.target.value)} placeholder="0" />
           </div>
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)",textAlign:"center",marginTop:"6px" }}>
-            Acertar penales: +3 | + ganador tanda: +2 | + diferencia exacta: +4
-          </p>
         </div>
       )}
     </div>
@@ -377,37 +421,25 @@ export default function PartidoCard({ partido, onGuardado }) {
   return (
     <>
       {mostrarSelector && (
-        <SelectorCartas
-          cartasDisponibles={cartasConCantidad}
-          cartaSeleccionada={cartaSel}
+        <SelectorCartas cartasDisponibles={cartasConCantidad} cartaSeleccionada={cartaSel}
           onSeleccionar={id => { setCartaSel(id); setMostrarSel(false); }}
-          onCerrar={() => setMostrarSel(false)}
-        />
+          onCerrar={() => setMostrarSel(false)} />
       )}
 
       <div className={`partido-card ${estaDestacado?"partido-destacado-card":""}`}
         style={esElim?{borderColor:"var(--rojo-chile)",boxShadow:"4px 4px 0 var(--rojo-oscuro)"}:{}}>
 
-        {/* Badges */}
         <div style={{ display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"4px" }}>
           {estaDestacado && <span className="partido-badge" style={{ position:"static",transform:"none" }}>⭐ DESTACADO</span>}
-          {esElim && (
-            <span className="partido-badge" style={{ position:"static",transform:"none",
-              background:"var(--rojo-chile)",color:"var(--blanco)" }}>
-              💀 {faseLabel.toUpperCase()}
-            </span>
-          )}
+          {esElim && <span className="partido-badge" style={{ position:"static",transform:"none",
+            background:"var(--rojo-chile)",color:"var(--blanco)" }}>💀 {faseLabel.toUpperCase()}</span>}
         </div>
 
-        {/* Fecha · hora · ciudad */}
         <div className="partido-hora" style={{ fontSize:"6px",lineHeight:2 }}>
           {labelFechaHora}
-          {!abierto && !tieneRes && (
-            <span style={{ color:"var(--rojo-chile)",marginLeft:"8px" }}>[CERRADO]</span>
-          )}
+          {!abierto && !tieneRes && <span style={{ color:"var(--rojo-chile)",marginLeft:"8px" }}>[CERRADO]</span>}
         </div>
 
-        {/* Equipos */}
         <div className="partido-equipos">
           <div className="partido-equipo">
             <span className="partido-bandera">{local.bandera}</span>
@@ -420,87 +452,61 @@ export default function PartidoCard({ partido, onGuardado }) {
           </div>
         </div>
 
-        {/* Resultado */}
+        {/* Estadísticas de apuestas (punto 8) */}
+        <EstadisticasApuestas partidoId={id} local={local} visitante={visitante} />
+
         {renderResultado()}
 
-        {/* Ver predicciones de rivales */}
         <button className="btn-pixel" style={{ fontSize:"6px",padding:"4px 8px",
           marginTop:"8px",display:"block",marginLeft:"auto",marginRight:"auto" }}
           onClick={() => setMostrarPreds(true)}>
           👁️ VER PREDICCIONES DE TUS ENEMIGOS
         </button>
 
-        {/* Zona de predicción */}
         {abierto && !tieneRes && (
           <div>
             <div style={{ borderTop:"2px dashed var(--verde-campo)",paddingTop:"12px",marginTop:"4px" }}>
               {esElim ? renderElim() : renderGrupos()}
             </div>
-
-            {/* Selector de carta — desactivado cuando guardado */}
             <div style={{ marginTop:"12px",borderTop:"1px solid var(--verde-campo)",
-              paddingTop:"10px",display:"flex",alignItems:"center",
-              justifyContent:"space-between",gap:"8px" }}>
+              paddingTop:"10px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px" }}>
               <div style={{ fontSize:"6px",color:"var(--gris-claro)" }}>
-                {cartaAdjunta ? (
-                  <span>
-                    🃏 <span style={{ color:"var(--amarillo)" }}>{cartaAdjunta.nombre}</span>
-                    <span style={{ color:"var(--verde-claro)",marginLeft:"4px" }}>×{cartaAdjunta.multiplicador}</span>
-                  </span>
-                ) : (
-                  <span style={{ color:"var(--verde-claro)" }}>Sin carta adjunta</span>
-                )}
+                {cartaAdjunta
+                  ? <span>🃏 <span style={{ color:"var(--amarillo)" }}>{cartaAdjunta.nombre}</span>
+                      <span style={{ color:"var(--verde-claro)",marginLeft:"4px" }}>×{cartaAdjunta.multiplicador}</span>
+                    </span>
+                  : <span style={{ color:"var(--verde-claro)" }}>Sin carta adjunta</span>
+                }
               </div>
-              <button
-                className="btn-pixel"
-                style={{
-                  fontSize:"6px",padding:"5px 8px",
-                  background: guardado
-                    ? "var(--gris)"          // desactivado cuando guardado
-                    : cartasConCantidad.length > 0 ? "var(--amarillo)" : "var(--gris)",
-                  color: "var(--negro)",
-                  border:"2px solid var(--negro)",boxShadow:"2px 2px 0 var(--negro)",
-                  cursor: guardado ? "not-allowed" : "pointer",
-                  opacity: guardado ? 0.5 : 1,
-                }}
-                onClick={() => !guardado && setMostrarSel(true)}
-                disabled={guardado}
-                title={guardado ? "Haz clic en EDITAR para cambiar la carta" : "Seleccionar carta"}
-              >
+              <button className="btn-pixel"
+                style={{ fontSize:"6px",padding:"5px 8px",
+                  background:guardado?"var(--gris)":cartasConCantidad.length>0?"var(--amarillo)":"var(--gris)",
+                  color:"var(--negro)",border:"2px solid var(--negro)",boxShadow:"2px 2px 0 var(--negro)",
+                  cursor:guardado?"not-allowed":"pointer",opacity:guardado?0.5:1 }}
+                onClick={() => !guardado && setMostrarSel(true)} disabled={guardado}>
                 🃏 CARTA
               </button>
             </div>
-
-            {/* Guardar */}
             <button className="btn-pixel btn-verde w-full" style={{ marginTop:"12px" }}
               onClick={handleGuardar} disabled={guardando||guardado||!puedeGuardar()}>
-              {guardando ? "GUARDANDO..." : guardado ? "✅ GUARDADO" : "💾 GUARDAR PREDICCIÓN"}
+              {guardando?"GUARDANDO...":guardado?"✅ GUARDADO":"💾 GUARDAR PREDICCIÓN"}
             </button>
-
             {guardado && (
               <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:"6px" }}>
                 <p className="pred-guardado-ok">✓ Puedes cambiarla antes del cierre</p>
-                <button
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-                    background:"none",border:"1px solid var(--gris)",
-                    color:"var(--gris-claro)",padding:"3px 6px",cursor:"pointer" }}
-                  onClick={handleEditar}>
-                  ✏ EDITAR
-                </button>
+                <button style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+                  background:"none",border:"1px solid var(--gris)",
+                  color:"var(--gris-claro)",padding:"3px 6px",cursor:"pointer" }}
+                  onClick={() => setGuardado(false)}>✏ EDITAR</button>
               </div>
             )}
           </div>
         )}
 
-        {!abierto && !tieneRes && (
-          <div className="partido-cerrado">🔒 PREDICCIONES CERRADAS</div>
-        )}
+        {!abierto && !tieneRes && <div className="partido-cerrado">🔒 PREDICCIONES CERRADAS</div>}
 
         {mostrarPreds && (
-          <ModalPrediccionesAmigos
-            partidoId={id}
-            onCerrar={() => setMostrarPreds(false)}
-          />
+          <ModalPrediccionesAmigos partidoId={id} onCerrar={() => setMostrarPreds(false)} />
         )}
       </div>
     </>
