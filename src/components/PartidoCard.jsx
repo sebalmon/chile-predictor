@@ -16,6 +16,62 @@ import { useAuth } from "../contexts/AuthContext";
 import { partidoAbierto, formatHora } from "../utils/helpers";
 import { CARTAS, FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
 
+// ── Estadísticas de apuestas (bug 2) ─────────────────────────
+function EstadisticasApuestas({ partidoId, local, visitante }) {
+  const [stats, setStats] = React.useState(null);
+  React.useEffect(() => {
+    if (!partidoId) return;
+    const cargar = async () => {
+      try {
+        const { getDocs, query, collection, where } = await import("firebase/firestore");
+        const { db } = await import("../firebase");
+        const snap = await getDocs(query(collection(db,"predicciones"),where("partidoId","==",partidoId)));
+        if (snap.empty) return;
+        const c = {local:0,empate:0,visitante:0};
+        snap.docs.forEach(d => {
+          const g = d.data().ganador;
+          if (g==="local") c.local++; else if (g==="empate") c.empate++; else if (g==="visitante") c.visitante++;
+        });
+        const total = c.local+c.empate+c.visitante;
+        if (total===0) return;
+        setStats({
+          total,
+          local:     Math.round((c.local/total)*100),
+          empate:    Math.round((c.empate/total)*100),
+          visitante: Math.round((c.visitante/total)*100),
+        });
+      } catch(_) {}
+    };
+    cargar();
+  }, [partidoId]);
+
+  if (!stats) return null;
+  const filas = [
+    {key:"local",    label:local?.nombre||"Local",     pct:stats.local,    color:"#4ade80"},
+    {key:"empate",   label:"Empate",                   pct:stats.empate,   color:"#facc15"},
+    {key:"visitante",label:visitante?.nombre||"Visit.", pct:stats.visitante,color:"#f87171"},
+  ];
+  return (
+    <div style={{ marginTop:"10px",padding:"8px 10px",
+      border:"1px solid rgba(82,183,136,0.3)",background:"rgba(0,0,0,0.25)" }}>
+      <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"6px",letterSpacing:"1px" }}>
+        PRONÓSTICOS DE LA HINCHADA ({stats.total} votos)
+      </p>
+      {filas.map(({key,label,pct,color}) => (
+        <div key={key} style={{ marginBottom:"4px" }}>
+          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:"2px" }}>
+            <span style={{ fontSize:"5px",color:"var(--gris-claro)" }}>{label}</span>
+            <span style={{ fontSize:"5px",color,fontFamily:"'Press Start 2P',monospace" }}>{pct}%</span>
+          </div>
+          <div style={{ height:"5px",background:"rgba(255,255,255,0.1)" }}>
+            <div style={{ height:"100%",width:`${pct}%`,background:color,transition:"width 0.4s" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Selector de cartas ────────────────────────────────────────
 function SelectorCartas({ cartasDisponibles, cartaSeleccionada, onSeleccionar, onCerrar }) {
   const RAREZA_COLOR = { comun:"var(--verde-claro)", rara:"var(--amarillo)", legendaria:"var(--rojo-chile)" };
@@ -103,28 +159,30 @@ export default function PartidoCard({ partido, onGuardado }) {
   // ── Carta ─────────────────────────────────────────────────
   const [cartaSel, setCartaSel]           = useState(null);
   const [mostrarSelector, setMostrarSel]  = useState(false);
-  // Bug 3 fix: leer cartas fresco de Firestore para evitar stale data de userProfile
-  const [cartasConCantidad, setCartasConCantidad] = useState([]);
-
-  useEffect(() => {
+  // Fix 5: leer cartas frescas de Firestore (evita stale userProfile)
+  const [cartasConCantidad, setCartasConCantidad] = React.useState([]);
+  React.useEffect(() => {
     const cargarCartas = async () => {
       if (!firebaseUser) return;
       try {
-        const uSnap = await getDoc(doc(db,"usuarios",firebaseUser.uid));
-        const cartasMap = uSnap.exists() ? (uSnap.data().cartas || {}) : {};
-        const lista = Object.entries(cartasMap)
-          .filter(([,cant]) => cant > 0)
-          .map(([cartaId, cantidad]) => ({ carta: CARTAS.find(c => c.id === cartaId), cantidad }))
-          .filter(item => item.carta);
-        setCartasConCantidad(lista);
-      } catch(e) {
-        // Fallback a userProfile si Firestore falla
-        const cartasMap = userProfile?.cartas || {};
-        const lista = Object.entries(cartasMap)
-          .filter(([,cant]) => cant > 0)
-          .map(([cartaId, cantidad]) => ({ carta: CARTAS.find(c => c.id === cartaId), cantidad }))
-          .filter(item => item.carta);
-        setCartasConCantidad(lista);
+        const { getDoc, doc } = await import("firebase/firestore");
+        const { db } = await import("../firebase");
+        const snap = await getDoc(doc(db,"usuarios",firebaseUser.uid));
+        const map  = snap.exists() ? (snap.data().cartas||{}) : (userProfile?.cartas||{});
+        setCartasConCantidad(
+          Object.entries(map)
+            .filter(([,cnt]) => cnt > 0)
+            .map(([cartaId, cantidad]) => ({ carta: CARTAS.find(c => c.id === cartaId), cantidad }))
+            .filter(item => item.carta)
+        );
+      } catch(_) {
+        // fallback
+        setCartasConCantidad(
+          Object.entries(userProfile?.cartas||{})
+            .filter(([,cnt]) => cnt > 0)
+            .map(([cartaId, cantidad]) => ({ carta: CARTAS.find(c => c.id === cartaId), cantidad }))
+            .filter(item => item.carta)
+        );
       }
     };
     cargarCartas();
@@ -441,6 +499,9 @@ export default function PartidoCard({ partido, onGuardado }) {
             <span className="partido-nombre">{visitante.nombre}</span>
           </div>
         </div>
+
+        {/* Estadísticas de apuestas */}
+        <EstadisticasApuestas partidoId={id} local={local} visitante={visitante} />
 
         {/* Resultado */}
         {renderResultado()}

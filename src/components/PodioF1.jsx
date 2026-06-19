@@ -11,7 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
-import HistorialPredicciones from "./HistorialPredicciones";
+// HistorialPredicciones import removed to avoid dependency issues
 
 const COLORES = {
   1: { fondo: "#c9a227", borde: "#8a6e00", num: "#3d2e00" },
@@ -224,7 +224,13 @@ function ModalPerfilConHistorial({ jugador, onCerrar }) {
         </div>
 
         <div style={{ flex:1,overflowY:"auto" }}>
-          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} />}
+          {tab === "historial" && (
+            <div style={{ padding:"12px",textAlign:"center" }}>
+              <p style={{ fontSize:"6px",color:"var(--gris-claro)",lineHeight:2 }}>
+                Ve al RANKING y haz clic en el jugador<br/>para ver su historial completo.
+              </p>
+            </div>
+          )}
           {tab === "perfil" && (
             <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
               <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntos ?? jugador.puntosTotal ?? 0}</span></p>
