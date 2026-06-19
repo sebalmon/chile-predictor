@@ -129,6 +129,23 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
   const [glA, setGlA] = useState(""); const [gvA, setGvA] = useState("");
   const [pL, setPL] = useState(""); const [pV, setPV] = useState("");
   const [ganFin, setGanFin] = useState("");
+  const [toggling, setToggling]  = useState(null); // id del partido siendo toggled
+
+  const toggleSuperDestacado = async (p, e) => {
+    e.stopPropagation(); // no abrir/cerrar el panel del partido
+    setToggling(p.id);
+    try {
+      const nuevoValor = !p.esSuperDestacado;
+      await updateDoc(doc(db,"partidos",p.id), { esSuperDestacado: nuevoValor });
+      onMensaje("ok",
+        nuevoValor
+          ? `🔴 ${p.local?.nombre} vs ${p.visitante?.nombre} es ahora SUPER DESTACADO. Los usuarios verán preguntas en vivo.`
+          : `${p.local?.nombre} vs ${p.visitante?.nombre} ya no es Super Destacado.`
+      );
+      onActualizar();
+    } catch(err) { onMensaje("error", err.message); }
+    finally { setToggling(null); }
+  };
 
   const seleccionar = p => {
     setSel(p);
@@ -188,26 +205,46 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
       <div style={{ display:"flex",flexDirection:"column",gap:"6px" }}>
         {partidos.map(p => (
           <React.Fragment key={p.id}>
-            <button onClick={() => sel?.id===p.id ? setSel(null) : seleccionar(p)}
-              style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",padding:"10px 12px",
-                border:`2px solid ${sel?.id===p.id?"var(--amarillo)":p.resultado?"var(--verde-campo)":"var(--gris)"}`,
-                background:sel?.id===p.id?"rgba(244,208,63,0.1)":"var(--negro)",
-                color:"var(--blanco)",cursor:"pointer",textAlign:"left",
-                display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-              <span>
-                {p.local?.bandera} vs {p.visitante?.bandera}{" "}
-                <span style={{ color:"var(--gris-claro)" }}>({p.fecha})</span>
-                {p.fase&&p.fase!=="grupos"&&(
-                  <span style={{ color:"var(--rojo-chile)",marginLeft:"4px" }}>
-                    [{FASE_LABELS[p.fase]||p.fase}]
-                  </span>
-                )}
-              </span>
-              {p.resultado
-                ? <span style={{ color:"var(--verde-claro)" }}>{p.resultado.golesLocal}-{p.resultado.golesVisitante} ✓</span>
-                : <span style={{ color:"var(--gris)" }}>Pendiente</span>
-              }
-            </button>
+            {/* Fila del partido + toggle Super Destacado */}
+            <div style={{ display:"flex",gap:"4px",alignItems:"stretch" }}>
+              <button onClick={() => sel?.id===p.id ? setSel(null) : seleccionar(p)}
+                style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",padding:"10px 12px",
+                  border:`2px solid ${sel?.id===p.id?"var(--amarillo)":p.resultado?"var(--verde-campo)":"var(--gris)"}`,
+                  background:sel?.id===p.id?"rgba(244,208,63,0.1)":"var(--negro)",
+                  color:"var(--blanco)",cursor:"pointer",textAlign:"left",
+                  display:"flex",justifyContent:"space-between",alignItems:"center",flex:1 }}>
+                <span>
+                  {p.esSuperDestacado && <span style={{ color:"var(--rojo-chile)",marginRight:"5px" }}>🔴</span>}
+                  {p.local?.bandera} vs {p.visitante?.bandera}{" "}
+                  <span style={{ color:"var(--gris-claro)" }}>({p.fecha})</span>
+                  {p.fase&&p.fase!=="grupos"&&(
+                    <span style={{ color:"var(--rojo-chile)",marginLeft:"4px" }}>
+                      [{FASE_LABELS[p.fase]||p.fase}]
+                    </span>
+                  )}
+                </span>
+                {p.resultado
+                  ? <span style={{ color:"var(--verde-claro)" }}>{p.resultado.golesLocal}-{p.resultado.golesVisitante} ✓</span>
+                  : <span style={{ color:"var(--gris)" }}>Pendiente</span>
+                }
+              </button>
+              {/* Botón toggle Super Destacado */}
+              <button
+                onClick={(e) => toggleSuperDestacado(p, e)}
+                disabled={toggling === p.id}
+                title={p.esSuperDestacado ? "Desactivar Super Destacado" : "Activar Super Destacado (preguntas en vivo)"}
+                style={{
+                  fontFamily:"'Press Start 2P',monospace",
+                  fontSize:"8px", padding:"0 10px",
+                  border:`2px solid ${p.esSuperDestacado?"var(--rojo-chile)":"var(--gris)"}`,
+                  background: p.esSuperDestacado?"rgba(214,40,40,0.15)":"var(--negro)",
+                  color: p.esSuperDestacado?"var(--rojo-chile)":"var(--gris)",
+                  cursor:"pointer", flexShrink:0,
+                  transition:"all 0.15s",
+                }}>
+                {toggling===p.id ? "⚙" : p.esSuperDestacado ? "🔴" : "⚪"}
+              </button>
+            </div>
 
             {sel?.id===p.id && (
               <div className="caja-pixel" style={{ borderColor:"var(--amarillo)",marginBottom:"6px" }}>
@@ -279,10 +316,8 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
 }
 
 // ── Tab Preguntas ─────────────────────────────────────────────
-// Punto 2: ahora soporta modo "editar" para modificar texto/opciones
-// de una pregunta existente sin borrar sus respuestas.
 function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
-  const [modo, setModo] = useState("marcar"); // "marcar" | "crear" | "editar"
+  const [modo, setModo] = useState("marcar"); // "marcar" | "crear"
   const [pregSel, setPregSel]   = useState(null);
   const [respCorrecta, setResp] = useState("");
   const [procesando, setProc]   = useState(false);
@@ -348,23 +383,19 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
   return (
     <div>
       {/* Selector de modo */}
-      <div style={{ display:"flex",gap:"4px",marginBottom:"14px",flexWrap:"wrap" }}>
+      <div style={{ display:"flex",gap:"6px",marginBottom:"14px" }}>
         {[
-          {id:"marcar", label:"✅ MARCAR RESP."},
-          {id:"crear",  label:"✏ CREAR NUEVA"},
-          {id:"editar", label:"✎ EDITAR EXISTENTE"},
+          {id:"marcar",label:"✅ MARCAR RESPUESTA"},
+          {id:"crear", label:"✏ CREAR NUEVA"},
         ].map(m => (
           <button key={m.id}
             className={`btn-pixel ${modo===m.id?"btn-amarillo":"btn-gris"}`}
-            style={{ flex:"1 0 auto",fontSize:"5px",padding:"5px 6px" }}
+            style={{ flex:1,fontSize:"6px" }}
             onClick={() => setModo(m.id)}>
             {m.label}
           </button>
         ))}
       </div>
-
-      {/* ── Editar pregunta existente (punto 2) ──────────── */}
-      {modo === "editar" && <EditarPregunta preguntas={preguntas} onActualizar={onActualizar} onMensaje={onMensaje} />}
 
       {/* ── Crear pregunta nueva ─────────────────────────── */}
       {modo === "crear" && (
@@ -487,137 +518,6 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
             )}
           </div>
         </>
-      )}
-    </div>
-  );
-}
-
-// ── Editar pregunta existente ─────────────────────────────────
-function EditarPregunta({ preguntas, onActualizar, onMensaje }) {
-  const [sel,       setSel]       = useState(null);
-  const [texto,     setTexto]     = useState("");
-  const [opciones,  setOpciones]  = useState([]);
-  const [fecha,     setFecha]     = useState("");
-  const [guardando, setGuardando] = useState(false);
-
-  const seleccionar = (p) => {
-    setSel(p);
-    setTexto(p.texto || "");
-    setOpciones([...( p.opciones || ["",""])]);
-    setFecha(p.fecha || "");
-  };
-
-  const cambiarOpcion = (i, val) =>
-    setOpciones(prev => prev.map((o,idx) => idx===i ? val : o));
-  const agregarOpcion = () => {
-    if (opciones.length < 5) setOpciones(prev => [...prev,""]);
-  };
-  const quitarOpcion = (i) => {
-    if (opciones.length > 2) setOpciones(prev => prev.filter((_,idx) => idx!==i));
-  };
-
-  const guardar = async () => {
-    if (!sel) return;
-    const textOk = texto.trim().length >= 5;
-    const optsOk = opciones.filter(o=>o.trim()).length >= 2;
-    if (!textOk || !optsOk) {
-      onMensaje("error","La pregunta necesita texto (mín 5 chars) y al menos 2 opciones.");
-      return;
-    }
-    setGuardando(true);
-    try {
-      await updateDoc(doc(db,"preguntas",sel.id), {
-        texto:   texto.trim(),
-        opciones: opciones.filter(o=>o.trim()),
-        fecha,
-      });
-      onMensaje("ok",`Pregunta actualizada. Texto, opciones y fecha guardados.`);
-      onActualizar(); setSel(null);
-    } catch(e) { onMensaje("error",e.message); }
-    finally { setGuardando(false); }
-  };
-
-  return (
-    <div>
-      <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"8px" }}>
-        EDITAR PREGUNTA EXISTENTE
-      </p>
-      <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginBottom:"10px",lineHeight:2 }}>
-        Puedes cambiar el texto, las opciones o la fecha. Las respuestas ya guardadas NO se borran.
-        La respuesta correcta sigue igual hasta que vayas a MARCAR RESPUESTA.
-      </p>
-
-      <div style={{ display:"flex",flexDirection:"column",gap:"6px",marginBottom:"14px" }}>
-        {preguntas.map(p => (
-          <button key={p.id}
-            onClick={() => sel?.id===p.id ? setSel(null) : seleccionar(p)}
-            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",padding:"8px 10px",
-              border:`2px solid ${sel?.id===p.id?"var(--amarillo)":"var(--gris)"}`,
-              background:sel?.id===p.id?"rgba(244,208,63,0.1)":"var(--negro)",
-              color:"var(--blanco)",cursor:"pointer",textAlign:"left",lineHeight:2 }}>
-            {p.fecha} — {p.texto?.slice(0,50)}{p.texto?.length>50?"...":""}
-          </button>
-        ))}
-        {preguntas.length === 0 && (
-          <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
-            No hay preguntas en Firestore. Crea una primero.
-          </p>
-        )}
-      </div>
-
-      {sel && (
-        <div className="caja-pixel" style={{ borderColor:"var(--amarillo)" }}>
-          <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"12px" }}>
-            EDITANDO: {sel.fecha}
-          </p>
-
-          <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"4px" }}>FECHA</p>
-          <input type="date" value={fecha} onChange={e=>setFecha(e.target.value)}
-            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
-              padding:"6px 10px",border:"3px solid var(--negro)",
-              background:"var(--blanco)",color:"var(--negro)",width:"100%",
-              marginBottom:"12px",outline:"none" }} />
-
-          <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"4px" }}>TEXTO</p>
-          <textarea value={texto} onChange={e=>setTexto(e.target.value)} rows={3}
-            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-              width:"100%",padding:"8px",border:"3px solid var(--negro)",
-              background:"var(--blanco)",color:"var(--negro)",
-              outline:"none",resize:"vertical",lineHeight:2,marginBottom:"12px" }} />
-
-          <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"6px" }}>
-            OPCIONES ({opciones.length}/5)
-          </p>
-          <div style={{ display:"flex",flexDirection:"column",gap:"6px",marginBottom:"10px" }}>
-            {opciones.map((op,i) => (
-              <div key={i} style={{ display:"flex",gap:"6px",alignItems:"center" }}>
-                <input value={op} onChange={e=>cambiarOpcion(i,e.target.value)}
-                  placeholder={`Opción ${i+1}`}
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-                    flex:1,padding:"6px 8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
-                {opciones.length > 2 && (
-                  <button onClick={()=>quitarOpcion(i)}
-                    style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
-                      background:"var(--rojo-chile)",color:"var(--blanco)",
-                      border:"none",cursor:"pointer",padding:"4px 8px" }}>✕</button>
-                )}
-              </div>
-            ))}
-          </div>
-          {opciones.length < 5 && (
-            <button className="btn-pixel btn-gris w-full" style={{ fontSize:"6px",marginBottom:"10px" }}
-              onClick={agregarOpcion}>+ AGREGAR OPCIÓN</button>
-          )}
-          <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
-            onClick={guardar} disabled={guardando}>
-            {guardando?"⚙ GUARDANDO...":"💾 GUARDAR CAMBIOS"}
-          </button>
-          <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginTop:"8px",lineHeight:2 }}>
-            ⚠ Cambiar las opciones no afecta las respuestas ya guardadas de los usuarios,
-            pero sí cambia las opciones visibles en la pregunta.
-          </p>
-        </div>
       )}
     </div>
   );

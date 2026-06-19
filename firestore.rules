@@ -1,83 +1,95 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ── Helpers ────────────────────────────────────────────────
-    function esAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
 
-    // ── usuarios ───────────────────────────────────────────────
+    // ── usuarios ───────────────────────────────────────────
     match /usuarios/{uid} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == uid;
       allow update: if request.auth != null;
-      
-      // Subcolección de notificaciones
-      match /notificaciones/{notifId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
-      }
     }
 
-    // ── predicciones ───────────────────────────────────────────
+    // ── predicciones ──────────────────────────────────────
     match /predicciones/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
 
-    // ── respuestas ─────────────────────────────────────────────
+    // ── respuestas (pregunta del día) ──────────────────────
     match /respuestas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
 
-    // ── partidos ───────────────────────────────────────────────
+    // ── partidos ──────────────────────────────────────────
     match /partidos/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // ── preguntas ──────────────────────────────────────────────
+    // ── preguntas ─────────────────────────────────────────
     match /preguntas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
 
-    // ── puntosDelDia ───────────────────────────────────────────
+    // ── puntosDelDia ──────────────────────────────────────
     match /puntosDelDia/{docId} {
       allow read, write: if request.auth != null;
     }
 
-    // ── cartasDelUsuario ───────────────────────────────────────
+    // ── cartasDelUsuario ──────────────────────────────────
     match /cartasDelUsuario/{docId} {
       allow read, write: if request.auth != null;
     }
 
-    // ── config ──────────────────────────────────────────────────
+    // ── config ────────────────────────────────────────────
     match /config/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // ── mensajesDia ────────────────────────────────────────────
+    // ── mensajesDia ───────────────────────────────────────
     match /mensajesDia/{docId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
+      allow create, update: if request.auth != null;
       allow delete: if request.auth != null;
     }
 
-    // ── Reacciones en mensajes ────────────────────────────────
+    // ── Reacciones a mensajes (subcolección) ──────────────
     match /mensajesDia/{docId}/reacciones/{uid} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // ── admins ──────────────────────────────────────────────────
+    // ── admins ────────────────────────────────────────────
     match /admins/{uid} {
       allow read: if request.auth != null;
       allow write: if false;
+    }
+
+    // ── NUEVO: Preguntas en vivo (Super Destacado) ────────
+    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
+      allow read: if request.auth != null;
+      // Solo admin puede crear/modificar preguntas en vivo
+      allow write: if request.auth != null;
+    }
+
+    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
+      allow read: if request.auth != null;
+      // Usuarios pueden crear su propia respuesta (una vez)
+      allow create: if request.auth != null &&
+        respId.matches(request.auth.uid + '_.*');
+      // No se puede editar una respuesta ya enviada
+      allow update, delete: if false;
+    }
+
+    // ── NUEVO: Carta diaria ────────────────────────────────
+    match /cartaDiaria/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── NUEVO: Notificaciones de usuario ──────────────────
+    match /usuarios/{uid}/notificaciones/{nId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
     }
   }
 }

@@ -1,11 +1,10 @@
-// src/components/TabPartidos.jsx  — v7 (Patch 1)
+// src/components/TabPartidos.jsx  — v8 (Fase 4)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v7:
-//   • Sonido ambiental diario: lee config/sonidoDia desde Firestore.
-//     Si hay un archivo configurado, lo reproduce en bucle con
-//     fade-in al montar. Respeta el botón 🔊/🔇 global (useSonidos).
-//     Se detiene al desmontar el componente.
-//   • Todo lo demás igual a v5/v6.
+// CAMBIOS v8:
+//   Punto 10: Integra <SuperDestacado> para partidos con
+//             esSuperDestacado:true. El componente escucha en
+//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
+//   Todo lo demás idéntico a v7.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
@@ -16,31 +15,25 @@ import { useAuth } from "../contexts/AuthContext";
 import { hoyStr, partidoAbierto } from "../utils/helpers";
 import PartidoCard from "./PartidoCard";
 import PreguntaCard from "./PreguntaCard";
+import SuperDestacado from "./SuperDestacado";
 
 const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
 
 // ── Hook: sonido ambiental ────────────────────────────────────
 function useSonidoAmbiental(activado) {
   const audioRef = useRef(null);
-
   useEffect(() => {
     let activo = true;
-
     const iniciar = async () => {
       try {
         const snap = await getDoc(doc(db, "config", "sonidoDia"));
         if (!snap.exists() || !activo) return;
         const { archivo, volumen = 0.4 } = snap.data();
         if (!archivo || !activado) return;
-
         const audio = new Audio(`/sounds/${archivo}`);
-        audio.loop   = true;
-        audio.volume = 0;
+        audio.loop = true; audio.volume = 0;
         audioRef.current = audio;
-
-        await audio.play().catch(() => {}); // autoplay puede estar bloqueado
-
-        // Fade-in suave
+        await audio.play().catch(() => {});
         let vol = 0;
         const target = Math.min(1, Math.max(0, Number(volumen)));
         const fade = setInterval(() => {
@@ -51,34 +44,20 @@ function useSonidoAmbiental(activado) {
         }, 80);
       } catch(_) {}
     };
-
     iniciar();
-
     return () => {
       activo = false;
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     };
   }, [activado]);
-
-  // Pausar/reanudar según preferencia del usuario
   useEffect(() => {
     if (!audioRef.current) return;
-    if (activado) {
-      audioRef.current.play().catch(() => {});
-    } else {
-      audioRef.current.pause();
-    }
+    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
   }, [activado]);
 }
 
-// ── Componente principal ──────────────────────────────────────
-export default function TabPartidos() {
+export default function TabPartidos({ onGuardado }) {
   const { firebaseUser } = useAuth();
-
-  // Leer preferencia de sonidos del localStorage
   const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
   useSonidoAmbiental(sonidosActivados);
 
@@ -88,30 +67,24 @@ export default function TabPartidos() {
   const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
   const [respuestaUsuario, setRespuestaUsuario] = useState(null);
 
-  // Modal "¿Mensaje a la hinchada?"
+  // Partido super destacado activo (para preguntas en vivo)
+  const [superDestacado, setSuperDestacado] = useState(null);
+
   const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
   const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
   const [textoMensaje, setTextoMensaje] = useState("");
   const [urlMensaje,   setUrlMensaje]   = useState("");
   const [enviandoMsg,  setEnviandoMsg]  = useState(false);
   const [msgEnviado,   setMsgEnviado]   = useState(false);
-
   const hoy = hoyStr();
 
   useEffect(() => { cargarDatos(); }, []);
-
-  useEffect(() => {
-    if (firebaseUser && partidos.length > 0) verificarPredicciones();
-  }, [partidos, firebaseUser]);
-
-  useEffect(() => {
-    if (firebaseUser && pregunta) verificarRespuestaPregunta();
-  }, [pregunta, firebaseUser]);
+  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
+  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
 
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      // Partidos del día
       let lista = [];
       try {
         const snap = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
@@ -119,7 +92,10 @@ export default function TabPartidos() {
       } catch(_) {}
       setPartidos(lista);
 
-      // Pregunta del día
+      // Detectar partido super destacado activo (sin resultado)
+      const sd = lista.find(p => p.esSuperDestacado && !p.resultado);
+      setSuperDestacado(sd || null);
+
       try {
         const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
         if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
@@ -149,14 +125,14 @@ export default function TabPartidos() {
 
   const handlePrediccionGuardada = useCallback(() => {
     setTimeout(verificarPredicciones, 500);
+    if (onGuardado) onGuardado();
     const lsKey = LS_HINCHADA_KEY + hoy;
     if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
   }, [partidos, firebaseUser, hoy]);
 
   const cerrarModalHinchada = () => {
     localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
-    setMostrarModalHinchada(false);
-    setMostrarFormHinchada(false);
+    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
     setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
   };
 
@@ -164,38 +140,40 @@ export default function TabPartidos() {
     if (!textoMensaje.trim() || !firebaseUser) return;
     setEnviandoMsg(true);
     try {
-      const { addDoc, collection: col, serverTimestamp } = await import("firebase/firestore");
+      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
       const ahora = new Date();
       await addDoc(col(db,"mensajesDia"), {
-        autor:     firebaseUser.displayName?.split(" ")[0] || "Anónimo",
-        texto:     textoMensaje.trim().slice(0,200),
-        url:       urlMensaje.trim() || null,
-        timestamp: serverTimestamp(),
-        fecha:     hoy,
-        hora:      `${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
-        uid:       firebaseUser.uid,
+        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
+        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
+        timestamp:serverTimestamp(), fecha:hoy,
+        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
+        uid:firebaseUser.uid,
       });
-      setMsgEnviado(true);
-      setTimeout(cerrarModalHinchada, 1500);
+      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
     } catch(e) { console.error(e); }
     finally { setEnviandoMsg(false); }
   };
 
-  const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
-  const todosPredecidos = abiertos.length > 0 && abiertos.every(p => prediccionesGuardadas.has(p.id));
+  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
+  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
 
-  if (cargando) {
-    return (
-      <div className="loading-pantalla" style={{ minHeight:"200px" }}>
-        <span className="spinner">⚙</span><p>CARGANDO...</p>
-      </div>
-    );
-  }
+  if (cargando) return (
+    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
+      <span className="spinner">⚙</span><p>CARGANDO...</p>
+    </div>
+  );
 
   return (
     <div style={{ paddingBottom:"80px" }}>
+      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
+      {superDestacado && (
+        <SuperDestacado
+          partidoId={superDestacado.id}
+          nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
+        />
+      )}
 
-      {/* Modal "¿Mensaje a la hinchada?" */}
+      {/* Modal hinchada */}
       {mostrarModalHinchada && (
         <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
           display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
@@ -211,27 +189,24 @@ export default function TabPartidos() {
                 </p>
                 <div style={{ display:"flex",gap:"8px" }}>
                   <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
-                    onClick={() => setMostrarFormHinchada(true)}>SÍ</button>
+                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
                   <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
                     onClick={cerrarModalHinchada}>NO</button>
                 </div>
               </>
             ) : msgEnviado ? (
-              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>
-                ✅ ¡Mensaje enviado!
-              </p>
+              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
             ) : (
               <>
                 <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
-                <textarea value={textoMensaje}
-                  onChange={e => setTextoMensaje(e.target.value.slice(0,200))}
+                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
                   placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
                   style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
                     width:"100%",padding:"8px",border:"2px solid var(--negro)",
                     background:"var(--blanco)",color:"var(--negro)",
                     outline:"none",resize:"none",lineHeight:2 }} />
                 <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
-                <input value={urlMensaje} onChange={e => setUrlMensaje(e.target.value)}
+                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
                   placeholder="URL opcional"
                   style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
                     width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
@@ -252,11 +227,8 @@ export default function TabPartidos() {
       )}
 
       <div className="contenedor">
-        <div className="seccion-titulo" style={{ marginTop:"16px" }}>
-          ⚽ PARTIDOS DE HOY
-        </div>
-
-        {partidos.length > 0 ? (
+        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
+        {partidos.length>0 ? (
           partidos.map(p => (
             <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
           ))
@@ -265,8 +237,7 @@ export default function TabPartidos() {
             <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
           </div>
         )}
-
-        {abiertos.length > 0 && (
+        {abiertos.length>0 && (
           <div style={{ padding:"8px 12px",marginBottom:"12px",
             border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
             fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
@@ -277,17 +248,14 @@ export default function TabPartidos() {
             }
           </div>
         )}
-
         {pregunta && (
           <>
             <div className="seccion-titulo">
               ❓ PREGUNTA DEL DÍA
               {respuestaUsuario && (
-                <span style={{ marginLeft:"8px",fontSize:"6px",
-                  color:"var(--verde-claro)",background:"rgba(82,183,136,0.15)",
-                  border:"1px solid var(--verde-claro)",padding:"2px 6px" }}>
-                  ✓ RESPONDIDA
-                </span>
+                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
+                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
+                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
               )}
             </div>
             <PreguntaCard pregunta={pregunta} />
