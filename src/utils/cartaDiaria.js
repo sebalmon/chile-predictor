@@ -1,90 +1,99 @@
-// src/utils/cartaDiaria.js  — v1 (Fase 4)
+// src/utils/cartaDiaria.js  — v2 (Bugfix 1)
 // ─────────────────────────────────────────────────────────────
-// Entrega automática de carta diaria según posición en el
-// ranking ACUMULADO (puntosTotal) del día anterior.
-//
-// TABLA (corregida según brief):
-//   Puestos 1-3:  Sin carta diaria (ya reciben carta del podio)
-//   Puestos 4-6:  carta ×2
-//   Puestos 7-12: carta ×3
-//   Puestos 13-22:carta ×4
-//   Puestos 23+:  2 cartas ×4
-//
-// Guarda en Firestore: cartaDiaria/{uid}_{fecha} → { uid, fecha, entregada:true }
-// Retrocompatible: si ya existe ese documento, no entrega de nuevo.
+// BUG 5 CORREGIDO: protección triple contra duplicados
+//   1. Singleton en memoria (evita doble llamada en StrictMode)
+//   2. localStorage (evita repetición al refrescar)
+//   3. Firestore (fuente de verdad entre dispositivos)
+//   + Escritura optimista: marca en Firestore ANTES de dar cartas
 // ─────────────────────────────────────────────────────────────
 import {
   collection, getDocs, query, orderBy,
   doc, getDoc, setDoc, updateDoc, increment,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { hoyStr, ayerStr } from "./helpers";
+import { hoyStr } from "./helpers";
 import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
 
-/**
- * entregarCartaDiaria(uid)
- *
- * Llamar al montar Dashboard (una sola vez por sesión/día).
- * Retorna { ok, carta?, cantidad?, skip? }.
- */
+// Singleton por sesión JS — previene doble ejecución en StrictMode/re-renders
+const _ejecutadoEnSesion = new Set();
+
 export async function entregarCartaDiaria(uid) {
   if (!uid) return { ok: false, skip: true };
 
-  const hoy = hoyStr();
-  const diaId = `${uid}_${hoy}`;
+  const hoy   = hoyStr();
+  const key   = `${uid}_${hoy}`;
+  const lsKey = `cp8b_cartadiaria_${key}`;
 
-  // 1. Verificar si ya recibió carta hoy
+  // Capa 1: memoria
+  if (_ejecutadoEnSesion.has(key)) return { ok: false, skip: true };
+  _ejecutadoEnSesion.add(key);
+
+  // Capa 2: localStorage
+  if (localStorage.getItem(lsKey)) return { ok: false, skip: true };
+
+  // Capa 3: Firestore
   try {
-    const yaRef  = doc(db, "cartaDiaria", diaId);
-    const yaSnap = await getDoc(yaRef);
-    if (yaSnap.exists() && yaSnap.data().entregada) {
-      return { ok: false, skip: true, mensaje: "Ya recibiste tu carta de hoy." };
+    const snap = await getDoc(doc(db, "cartaDiaria", key));
+    if (snap.exists() && snap.data().entregada) {
+      localStorage.setItem(lsKey, "1");
+      return { ok: false, skip: true };
     }
-  } catch (_) {}
+  } catch (e) {
+    console.error("cartaDiaria: verificación fallida", e);
+    return { ok: false, skip: true };
+  }
 
-  // 2. Leer ranking acumulado actual (ordenado por puntosTotal desc)
+  // Obtener posición en ranking
   let posicion = null;
   try {
     const snapU = await getDocs(query(
       collection(db, "usuarios"), orderBy("puntosTotal", "desc")
     ));
-    const lista = snapU.docs.map(d => d.id);
-    const idx   = lista.indexOf(uid);
-    posicion    = idx >= 0 ? idx + 1 : null; // posición base-1
+    const idx = snapU.docs.findIndex(d => d.id === uid);
+    posicion  = idx >= 0 ? idx + 1 : null;
   } catch (e) {
-    console.error("cartaDiaria: error leyendo ranking", e);
+    console.error("cartaDiaria: error ranking", e);
+    _ejecutadoEnSesion.delete(key);
+    return { ok: false, skip: true };
+  }
+
+  if (posicion === null) {
+    _ejecutadoEnSesion.delete(key);
+    return { ok: false, skip: true };
+  }
+
+  // Tabla de cartas por posición
+  // 1-3: sin carta diaria (ya tienen la del podio)
+  // 4-6: ×2 | 7-12: ×3 | 13-22: ×4 | 23+: 2×4
+  let multiplicador = null, cantidad = 1;
+  if      (posicion <= 3)  {
+    await _marcarEntregada(key, uid, hoy, null, 0);
+    localStorage.setItem(lsKey, "1");
+    return { ok: false, skip: true };
+  }
+  else if (posicion <= 6)  { multiplicador = 2; cantidad = 1; }
+  else if (posicion <= 12) { multiplicador = 3; cantidad = 1; }
+  else if (posicion <= 22) { multiplicador = 4; cantidad = 1; }
+  else                     { multiplicador = 4; cantidad = 2; }
+
+  // Escritura optimista en Firestore ANTES de dar las cartas
+  try {
+    await _marcarEntregada(key, uid, hoy, multiplicador, cantidad);
+    localStorage.setItem(lsKey, "1");
+  } catch (e) {
+    console.error("cartaDiaria: error marcando", e);
+    _ejecutadoEnSesion.delete(key);
     return { ok: false, error: e.message };
   }
 
-  if (posicion === null) return { ok: false, skip: true };
-
-  // 3. Determinar qué carta corresponde
-  let multiplicador = null;
-  let cantidad      = 1;
-
-  if (posicion <= 3) {
-    // Sin carta diaria (ya tienen la del podio)
-    await _marcarEntregada(diaId, uid, hoy, null, 0);
-    return { ok: false, skip: true, mensaje: "Estás en el podio, tu carta la recibirás al cerrar el día." };
-  } else if (posicion <= 6) {
-    multiplicador = 2; cantidad = 1;
-  } else if (posicion <= 12) {
-    multiplicador = 3; cantidad = 1;
-  } else if (posicion <= 22) {
-    multiplicador = 4; cantidad = 1;
-  } else {
-    multiplicador = 4; cantidad = 2;
-  }
-
-  // 4. Asignar carta(s)
+  // Asignar carta(s)
   const cartasEntregadas = [];
   for (let i = 0; i < cantidad; i++) {
     const carta = cartaAleatoriaPorMultiplicador(multiplicador);
     if (!carta) continue;
     try {
-      // Guardar en cartasDelUsuario
-      const cartaDocId = `${uid}_${carta.id}_${hoy}_diaria_${i}`;
-      await setDoc(doc(db, "cartasDelUsuario", cartaDocId), {
+      await setDoc(doc(db, "cartasDelUsuario",
+        `${uid}_${carta.id}_${hoy}_diaria_${i}`), {
         uid,
         cartaId:       carta.id,
         cartaNombre:   carta.nombre,
@@ -95,7 +104,6 @@ export async function entregarCartaDiaria(uid) {
         visto:         false,
         origen:        "cartaDiaria",
       });
-      // Incrementar mapa cartas en usuario
       await updateDoc(doc(db, "usuarios", uid), {
         [`cartas.${carta.id}`]: increment(1),
       });
@@ -105,28 +113,17 @@ export async function entregarCartaDiaria(uid) {
     }
   }
 
-  // 5. Marcar como entregada
-  await _marcarEntregada(diaId, uid, hoy, multiplicador, cantidad);
-
   return {
-    ok:       cartasEntregadas.length > 0,
-    cartas:   cartasEntregadas,
-    posicion,
-    multiplicador,
-    cantidad,
+    ok: cartasEntregadas.length > 0,
+    cartas: cartasEntregadas,
+    posicion, multiplicador, cantidad,
   };
 }
 
 async function _marcarEntregada(diaId, uid, fecha, multiplicador, cantidad) {
-  try {
-    await setDoc(doc(db, "cartaDiaria", diaId), {
-      uid, fecha,
-      entregada:    true,
-      multiplicador,
-      cantidad,
-      entregadaEn:  new Date().toISOString(),
-    });
-  } catch (e) {
-    console.error("cartaDiaria: error marcando entregada", e);
-  }
+  await setDoc(doc(db, "cartaDiaria", diaId), {
+    uid, fecha, entregada: true,
+    multiplicador, cantidad,
+    entregadaEn: new Date().toISOString(),
+  });
 }

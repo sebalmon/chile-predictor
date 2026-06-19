@@ -26,10 +26,43 @@ const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
 export default function AdminPanel({ onVolver }) {
   const { firebaseUser } = useAuth();
-  if (!ADMIN_EMAILS.includes(firebaseUser?.email)) {
+  const [esAdmin,     setEsAdmin]     = React.useState(null); // null=verificando
+  const [verificando, setVerificando] = React.useState(true);
+
+  React.useEffect(() => {
+    const verificar = async () => {
+      if (!firebaseUser) { setEsAdmin(false); setVerificando(false); return; }
+      // Verificación 1: email hardcodeado (rápida)
+      if (ADMIN_EMAILS.includes(firebaseUser.email)) {
+        setEsAdmin(true); setVerificando(false); return;
+      }
+      // Verificación 2: colección admins en Firestore (fallback)
+      try {
+        const snap = await getDoc(doc(db, "admins", firebaseUser.uid));
+        setEsAdmin(snap.exists());
+      } catch(_) { setEsAdmin(false); }
+      setVerificando(false);
+    };
+    verificar();
+  }, [firebaseUser]);
+
+  if (verificando) {
+    return (
+      <div style={{ padding:"40px",textAlign:"center" }}>
+        <span className="spinner" style={{ fontSize:"20px" }}>⚙</span>
+        <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
+          color:"var(--verde-claro)",marginTop:"12px" }}>Verificando acceso...</p>
+      </div>
+    );
+  }
+  if (!esAdmin) {
     return (
       <div style={{ padding:"20px",textAlign:"center" }}>
         <p style={{ color:"var(--rojo-chile)",fontSize:"8px" }}>🔒 ACCESO DENEGADO</p>
+        <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+          color:"var(--gris-claro)",marginTop:"8px",lineHeight:2 }}>
+          Usuario: {firebaseUser?.email || "no autenticado"}
+        </p>
         <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop:"16px" }}>← VOLVER</button>
       </div>
     );
@@ -129,23 +162,6 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
   const [glA, setGlA] = useState(""); const [gvA, setGvA] = useState("");
   const [pL, setPL] = useState(""); const [pV, setPV] = useState("");
   const [ganFin, setGanFin] = useState("");
-  const [toggling, setToggling]  = useState(null); // id del partido siendo toggled
-
-  const toggleSuperDestacado = async (p, e) => {
-    e.stopPropagation(); // no abrir/cerrar el panel del partido
-    setToggling(p.id);
-    try {
-      const nuevoValor = !p.esSuperDestacado;
-      await updateDoc(doc(db,"partidos",p.id), { esSuperDestacado: nuevoValor });
-      onMensaje("ok",
-        nuevoValor
-          ? `🔴 ${p.local?.nombre} vs ${p.visitante?.nombre} es ahora SUPER DESTACADO. Los usuarios verán preguntas en vivo.`
-          : `${p.local?.nombre} vs ${p.visitante?.nombre} ya no es Super Destacado.`
-      );
-      onActualizar();
-    } catch(err) { onMensaje("error", err.message); }
-    finally { setToggling(null); }
-  };
 
   const seleccionar = p => {
     setSel(p);
@@ -205,46 +221,26 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
       <div style={{ display:"flex",flexDirection:"column",gap:"6px" }}>
         {partidos.map(p => (
           <React.Fragment key={p.id}>
-            {/* Fila del partido + toggle Super Destacado */}
-            <div style={{ display:"flex",gap:"4px",alignItems:"stretch" }}>
-              <button onClick={() => sel?.id===p.id ? setSel(null) : seleccionar(p)}
-                style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",padding:"10px 12px",
-                  border:`2px solid ${sel?.id===p.id?"var(--amarillo)":p.resultado?"var(--verde-campo)":"var(--gris)"}`,
-                  background:sel?.id===p.id?"rgba(244,208,63,0.1)":"var(--negro)",
-                  color:"var(--blanco)",cursor:"pointer",textAlign:"left",
-                  display:"flex",justifyContent:"space-between",alignItems:"center",flex:1 }}>
-                <span>
-                  {p.esSuperDestacado && <span style={{ color:"var(--rojo-chile)",marginRight:"5px" }}>🔴</span>}
-                  {p.local?.bandera} vs {p.visitante?.bandera}{" "}
-                  <span style={{ color:"var(--gris-claro)" }}>({p.fecha})</span>
-                  {p.fase&&p.fase!=="grupos"&&(
-                    <span style={{ color:"var(--rojo-chile)",marginLeft:"4px" }}>
-                      [{FASE_LABELS[p.fase]||p.fase}]
-                    </span>
-                  )}
-                </span>
-                {p.resultado
-                  ? <span style={{ color:"var(--verde-claro)" }}>{p.resultado.golesLocal}-{p.resultado.golesVisitante} ✓</span>
-                  : <span style={{ color:"var(--gris)" }}>Pendiente</span>
-                }
-              </button>
-              {/* Botón toggle Super Destacado */}
-              <button
-                onClick={(e) => toggleSuperDestacado(p, e)}
-                disabled={toggling === p.id}
-                title={p.esSuperDestacado ? "Desactivar Super Destacado" : "Activar Super Destacado (preguntas en vivo)"}
-                style={{
-                  fontFamily:"'Press Start 2P',monospace",
-                  fontSize:"8px", padding:"0 10px",
-                  border:`2px solid ${p.esSuperDestacado?"var(--rojo-chile)":"var(--gris)"}`,
-                  background: p.esSuperDestacado?"rgba(214,40,40,0.15)":"var(--negro)",
-                  color: p.esSuperDestacado?"var(--rojo-chile)":"var(--gris)",
-                  cursor:"pointer", flexShrink:0,
-                  transition:"all 0.15s",
-                }}>
-                {toggling===p.id ? "⚙" : p.esSuperDestacado ? "🔴" : "⚪"}
-              </button>
-            </div>
+            <button onClick={() => sel?.id===p.id ? setSel(null) : seleccionar(p)}
+              style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",padding:"10px 12px",
+                border:`2px solid ${sel?.id===p.id?"var(--amarillo)":p.resultado?"var(--verde-campo)":"var(--gris)"}`,
+                background:sel?.id===p.id?"rgba(244,208,63,0.1)":"var(--negro)",
+                color:"var(--blanco)",cursor:"pointer",textAlign:"left",
+                display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+              <span>
+                {p.local?.bandera} vs {p.visitante?.bandera}{" "}
+                <span style={{ color:"var(--gris-claro)" }}>({p.fecha})</span>
+                {p.fase&&p.fase!=="grupos"&&(
+                  <span style={{ color:"var(--rojo-chile)",marginLeft:"4px" }}>
+                    [{FASE_LABELS[p.fase]||p.fase}]
+                  </span>
+                )}
+              </span>
+              {p.resultado
+                ? <span style={{ color:"var(--verde-claro)" }}>{p.resultado.golesLocal}-{p.resultado.golesVisitante} ✓</span>
+                : <span style={{ color:"var(--gris)" }}>Pendiente</span>
+              }
+            </button>
 
             {sel?.id===p.id && (
               <div className="caja-pixel" style={{ borderColor:"var(--amarillo)",marginBottom:"6px" }}>
