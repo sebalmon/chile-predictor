@@ -22,6 +22,7 @@ import NotificacionCartas from "./NotificacionCartas";
 import AvisoAdmin from "./AvisoAdmin";
 import NotificacionesModal from "./NotificacionesModal";
 import VozHinchada from "./VozHinchada";
+import SeccionLaminas from "./SeccionLaminas";
 
 // ── Contexto de sonidos ───────────────────────────────────────
 const SonidosCtx = createContext({ activado: false, playSound: () => {} });
