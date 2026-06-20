@@ -148,10 +148,10 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // Fix: esAdmin must be state-derived because firebaseUser is null on first render
-  // (Firebase Auth is async). Using state ensures it updates when auth resolves.
-  const [esAdmin, setEsAdmin] = useState(false);
-  useEffect(() => {
+  // FIX ADMIN: firebaseUser es null al inicio (Firebase Auth es async).
+  // Usando useState+useEffect para que se recalcule cuando llegue el usuario real.
+  const [esAdmin, setEsAdmin] = React.useState(false);
+  React.useEffect(() => {
     setEsAdmin(firebaseUser?.email === "xtokesu@gmail.com");
   }, [firebaseUser]);
   const diaNum   = diaNumero();
