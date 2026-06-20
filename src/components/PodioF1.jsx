@@ -11,7 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
-// HistorialPredicciones import removed to avoid dependency issues
+import HistorialPredicciones from "./HistorialPredicciones";
 
 const COLORES = {
   1: { fondo: "#c9a227", borde: "#8a6e00", num: "#3d2e00" },
@@ -180,14 +180,38 @@ function Confeti() {
 
 // ── Modal perfil + historial ──────────────────────────────────
 function ModalPerfilConHistorial({ jugador, onCerrar }) {
-  const [tab, setTab] = useState("historial");
-  const [frame, setFrame] = useState(1);
+  const [tab, setTab]       = useState("historial");
+  const [frame, setFrame]   = useState(1);
+  const [userData, setUserData] = useState(null); // datos adicionales de Firestore
+
   const av = jugador?.avatarId ? AVATARES.find(a => a.id === jugador.avatarId) : null;
+
   useEffect(() => {
     const iv = setInterval(() => setFrame(f => f===3?1:f+1), 200);
     return () => clearInterval(iv);
   }, []);
+
+  // Fix 1: cargar datos completos del usuario desde Firestore
+  useEffect(() => {
+    if (!jugador?.uid) return;
+    const cargar = async () => {
+      try {
+        const { getDoc, doc } = await import("firebase/firestore");
+        const { db } = await import("../firebase");
+        const snap = await getDoc(doc(db, "usuarios", jugador.uid));
+        if (snap.exists()) setUserData(snap.data());
+      } catch(_) {}
+    };
+    cargar();
+  }, [jugador?.uid]);
+
   if (!jugador) return null;
+
+  // Merge: puntosDelDia data + Firestore user data
+  const displayNickname  = userData?.nickname  || jugador.nickname  || "—";
+  const displayNombreReal= userData?.nombreReal || "";
+  const displayPuntos    = jugador.puntos ?? userData?.puntosTotal ?? 0;
+  const displayCartas    = userData?.cartas || jugador.cartas || {};
 
   return (
     <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:600,
@@ -206,10 +230,11 @@ function ModalPerfilConHistorial({ jugador, onCerrar }) {
                 onError={e => { e.target.style.display="none"; }} />
             : <div style={{ width:64,height:64,background:"#333",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32 }}>?</div>
           }
-          <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{jugador.nickname}</p>
-          <span className="puntos-badge" style={{ fontSize:"11px" }}>
-            {jugador.puntos ?? jugador.puntosTotal ?? 0} pts
-          </span>
+          <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{displayNickname}</p>
+          {displayNombreReal && (
+            <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>👤 {displayNombreReal}</p>
+          )}
+          <span className="puntos-badge" style={{ fontSize:"11px" }}>{displayPuntos} pts</span>
         </div>
 
         <div style={{ display:"flex",borderTop:"2px solid var(--verde-campo)",borderBottom:"2px solid var(--verde-campo)" }}>
@@ -224,19 +249,13 @@ function ModalPerfilConHistorial({ jugador, onCerrar }) {
         </div>
 
         <div style={{ flex:1,overflowY:"auto" }}>
-          {tab === "historial" && (
-            <div style={{ padding:"12px",textAlign:"center" }}>
-              <p style={{ fontSize:"6px",color:"var(--gris-claro)",lineHeight:2 }}>
-                Ve al RANKING y haz clic en el jugador<br/>para ver su historial completo.
-              </p>
-            </div>
-          )}
+          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} />}
           {tab === "perfil" && (
             <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
               <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntos ?? jugador.puntosTotal ?? 0}</span></p>
-              {Object.keys(jugador.cartas||{}).length > 0 && (
+              {Object.keys(displayCartas).length > 0 && (
                 <p>🃏 Cartas: <span style={{ color:"var(--amarillo)" }}>
-                  {Object.values(jugador.cartas||{}).reduce((s,c)=>s+c,0)}
+                  {Object.values(displayCartas).reduce((s,v)=>s+v,0)}
                 </span></p>
               )}
             </div>

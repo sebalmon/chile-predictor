@@ -134,6 +134,7 @@ const PANTALLAS = {
   PARTIDOS: "partidos",
   RANKING:  "ranking",
   PERFIL:   "perfil",
+  LAMINAS:  "laminas",
   ADMIN:    "admin",
 };
 
@@ -147,31 +148,11 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // Fix 3: compute esAdmin reactively (firebaseUser may be null on first render)
-  const esAdmin = React.useMemo(
-    () => firebaseUser?.email === "xtokesu@gmail.com",
-    [firebaseUser]
-  );
+  const esAdmin  = firebaseUser?.email === "xtokesu@gmail.com";
   const diaNum   = diaNumero();
   const diaLabel = diaNum > 0 ? `DÍA ${diaNum}` : "MUNDIAL 2026";
 
   useEffect(() => { cargarInicio(); }, []);
-
-  // Fix 6: carta diaria - one per day guard
-  const _cartaDisparada = React.useRef(false);
-  React.useEffect(() => {
-    if (!firebaseUser || _cartaDisparada.current) return;
-    _cartaDisparada.current = true;
-    const hoy   = new Date().toISOString().split('T')[0];
-    const lsKey = `cp8b_cartadiaria_${firebaseUser.uid}_${hoy}`;
-    if (localStorage.getItem(lsKey)) return;
-    // Mark immediately to prevent race
-    localStorage.setItem(lsKey, '1');
-    // Fire and forget — actual logic in cartaDiaria.js if it exists
-    import('../utils/cartaDiaria')
-      .then(m => m.entregarCartaDiaria(firebaseUser.uid))
-      .catch(() => {}); // graceful - module may not exist yet
-  }, [firebaseUser]);
 
   const cargarInicio = async () => {
     setCargando(true);
@@ -232,6 +213,17 @@ function DashboardInterno() {
       </WithShell>
     );
   }
+  if (pantalla === PANTALLAS.LAMINAS) {
+    return (
+      <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+        onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+        esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+        mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+        <SeccionLaminas />
+      </WithShell>
+    );
+  }
+
   if (pantalla === PANTALLAS.ADMIN && esAdmin) {
     return (
       <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
@@ -394,6 +386,7 @@ function MenuInferior({ pantalla, setPantalla, esAdmin }) {
     { id: PANTALLAS.PARTIDOS, label: "PARTIDOS", icono: "⚽" },
     { id: PANTALLAS.RANKING,  label: "RANKING",  icono: "📊" },
     { id: PANTALLAS.PERFIL,   label: "PERFIL",   icono: "👤" },
+    { id: PANTALLAS.LAMINAS,  label: "LAMINAS",  icono: "🃏" },
     ...(esAdmin ? [{ id: PANTALLAS.ADMIN, label: "ADMIN", icono: "⚙" }] : []),
   ];
   return (
