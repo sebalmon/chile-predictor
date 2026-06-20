@@ -26,11 +26,44 @@ const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
 export default function AdminPanel({ onVolver }) {
   const { firebaseUser } = useAuth();
-  if (!ADMIN_EMAILS.includes(firebaseUser?.email)) {
+  const [verificando, setVerificando] = React.useState(true);
+  const [esAdmin,     setEsAdmin]     = React.useState(false);
+
+  React.useEffect(() => {
+    // firebaseUser empieza como null (Firebase Auth es async).
+    // Esperamos a que AuthContext resuelva antes de decidir.
+    if (firebaseUser === null) {
+      // Damos 3 segundos por si todavía está cargando
+      const t = setTimeout(() => setVerificando(false), 3000);
+      return () => clearTimeout(t);
+    }
+    // firebaseUser ya llegó (puede ser usuario real o seguir null tras timeout)
+    setEsAdmin(ADMIN_EMAILS.includes(firebaseUser.email));
+    setVerificando(false);
+  }, [firebaseUser]);
+
+  if (verificando) {
+    return (
+      <div style={{ padding:"40px",textAlign:"center" }}>
+        <span className="spinner" style={{ fontSize:"20px" }}>⚙</span>
+        <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
+          color:"var(--verde-claro)",marginTop:"12px" }}>
+          Verificando acceso...
+        </p>
+      </div>
+    );
+  }
+  if (!esAdmin) {
     return (
       <div style={{ padding:"20px",textAlign:"center" }}>
         <p style={{ color:"var(--rojo-chile)",fontSize:"8px" }}>🔒 ACCESO DENEGADO</p>
-        <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop:"16px" }}>← VOLVER</button>
+        <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+          color:"var(--gris-claro)",marginTop:"8px",lineHeight:2 }}>
+          {firebaseUser?.email || "No autenticado"}
+        </p>
+        <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop:"16px" }}>
+          ← VOLVER
+        </button>
       </div>
     );
   }
@@ -70,7 +103,6 @@ function AdminPanelInterno({ onVolver }) {
     { id:"aviso",     label:"📢 AVISO" },
     { id:"mensajes",  label:"💬 MENSAJES" },
     { id:"sonido",    label:"🎵 SONIDO" },
-    { id:"superdes",  label:"🔴 EN VIVO" },
   ];
 
   return (
@@ -115,7 +147,6 @@ function AdminPanelInterno({ onVolver }) {
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
           {tab==="mensajes"  && <TabMensajes onMensaje={msg} />}
           {tab==="sonido"    && <TabSonido onMensaje={msg} />}
-          {tab==="superdes"  && <TabSuperDestacado partidos={partidos} onMensaje={msg} />}
         </>
       )}
     </div>
@@ -844,272 +875,6 @@ function TabSonido({ onMensaje }) {
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-// ── Tab Super Destacado (preguntas en vivo) ───────────────────
-// Fix 6: Panel completo para gestionar preguntas en vivo
-// Colecciones: preguntasEnVivo/{partidoId}/preguntas/{pregId}
-//              preguntasEnVivo/{partidoId}/respuestasEnVivo/{uid}_{pregId}
-// ─────────────────────────────────────────────────────────────
-function TabSuperDestacado({ partidos, onMensaje }) {
-  const [partidoSel,    setPartidoSel]    = React.useState(null);
-  const [preguntas,     setPreguntas]     = React.useState([]);
-  const [textoNueva,    setTextoNueva]    = React.useState("");
-  const [opcionesNv,    setOpcionesNv]    = React.useState(["",""]);
-  const [creando,       setCreando]       = React.useState(false);
-  const [cerrando,      setCerrando]      = React.useState(null);
-  const [respSel,       setRespSel]       = React.useState({});
-  const unsubRef = React.useRef(null);
-
-  // Filtrar solo super destacados
-  const superDestacados = partidos.filter(p => p.esSuperDestacado);
-
-  const seleccionar = React.useCallback(async (p) => {
-    if (unsubRef.current) unsubRef.current();
-    setPartidoSel(p);
-    setPreguntas([]);
-
-    const { collection: col, query: q, orderBy, onSnapshot } = await import("firebase/firestore");
-    const ref = col(db, "preguntasEnVivo", p.id, "preguntas");
-    const qr  = q(ref, orderBy("creadaEn","desc"));
-    unsubRef.current = onSnapshot(qr, snap => {
-      setPreguntas(snap.docs.map(d => ({ id:d.id, ...d.data() })));
-    });
-  }, []);
-
-  React.useEffect(() => () => { if (unsubRef.current) unsubRef.current(); }, []);
-
-  const abierta = preguntas.find(p => p.estado === "abierta");
-
-  const toggleSuperDestacado = async (p) => {
-    try {
-      await updateDoc(doc(db,"partidos",p.id), { esSuperDestacado: !p.esSuperDestacado });
-      onMensaje("ok", p.esSuperDestacado
-        ? `${p.local?.nombre} vs ${p.visitante?.nombre} ya NO es Super Destacado.`
-        : `🔴 ${p.local?.nombre} vs ${p.visitante?.nombre} ahora es SUPER DESTACADO.`
-      );
-    } catch(e) { onMensaje("error", e.message); }
-  };
-
-  const crear = async () => {
-    if (!textoNueva.trim() || opcionesNv.filter(o=>o.trim()).length < 2) {
-      onMensaje("error","Necesitas texto y al menos 2 opciones."); return;
-    }
-    if (abierta) { onMensaje("error","Hay una pregunta abierta. Ciérrala primero."); return; }
-    setCreando(true);
-    try {
-      const { collection: col, doc: fsDoc, setDoc, serverTimestamp } = await import("firebase/firestore");
-      const pregId = `pev_${Date.now()}`;
-      await setDoc(fsDoc(db,"preguntasEnVivo",partidoSel.id,"preguntas",pregId), {
-        texto:  textoNueva.trim(),
-        opciones: opcionesNv.filter(o=>o.trim()),
-        estado: "abierta",
-        respuestaCorrecta: null,
-        creadaEn: serverTimestamp(),
-        puntosEnVivo: 3,
-      });
-      onMensaje("ok","¡Pregunta publicada! Los usuarios ya pueden responder.");
-      setTextoNueva(""); setOpcionesNv(["",""]);
-    } catch(e) { onMensaje("error",e.message); }
-    finally { setCreando(false); }
-  };
-
-  const cerrar = async (pregunta) => {
-    const rc = respSel[pregunta.id];
-    if (!rc) { onMensaje("error","Selecciona la respuesta correcta."); return; }
-    setCerrando(pregunta.id);
-    try {
-      const { collection: col, getDocs: gd, updateDoc: upd, doc: fsDoc, increment: inc } = await import("firebase/firestore");
-      await upd(fsDoc(db,"preguntasEnVivo",partidoSel.id,"preguntas",pregunta.id),
-        { estado:"cerrada", respuestaCorrecta: rc });
-      const snapR = await gd(col(db,"preguntasEnVivo",partidoSel.id,"respuestasEnVivo"));
-      let acertaron = 0;
-      for (const r of snapR.docs) {
-        const d = r.data();
-        if (d.preguntaId === pregunta.id && d.respuesta === rc) {
-          await upd(fsDoc(db,"usuarios",d.uid), { puntosTotal: inc(3) });
-          acertaron++;
-        }
-      }
-      onMensaje("ok",`Pregunta cerrada. ${acertaron} usuario(s) acertaron → +3 pts c/u.`);
-    } catch(e) { onMensaje("error",e.message); }
-    finally { setCerrando(null); }
-  };
-
-  return (
-    <div>
-      <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"10px",lineHeight:2 }}>
-        🔴 PREGUNTAS EN VIVO — SUPER DESTACADO
-      </p>
-
-      {/* Sección 1: Marcar partidos como Super Destacado */}
-      <div className="caja-pixel" style={{ marginBottom:"14px",borderColor:"var(--gris)" }}>
-        <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"8px" }}>
-          ACTIVAR / DESACTIVAR SUPER DESTACADO
-        </p>
-        {partidos.length === 0 && (
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>
-            No hay partidos cargados.
-          </p>
-        )}
-        {partidos.map(p => (
-          <div key={p.id} style={{ display:"flex",justifyContent:"space-between",
-            alignItems:"center",padding:"6px 0",
-            borderBottom:"1px solid rgba(82,183,136,0.15)" }}>
-            <span style={{ fontSize:"6px",color:"var(--blanco)" }}>
-              {p.esSuperDestacado && <span style={{ color:"var(--rojo-chile)",marginRight:"5px" }}>🔴</span>}
-              {p.local?.bandera} {p.local?.nombre} vs {p.visitante?.nombre} {p.visitante?.bandera}
-              <span style={{ color:"var(--gris-claro)",marginLeft:"4px" }}>({p.fecha})</span>
-            </span>
-            <button
-              onClick={() => toggleSuperDestacado(p)}
-              style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-                padding:"3px 8px",cursor:"pointer",
-                background:p.esSuperDestacado?"rgba(214,40,40,0.2)":"transparent",
-                border:`1px solid ${p.esSuperDestacado?"var(--rojo-chile)":"var(--gris)"}`,
-                color:p.esSuperDestacado?"var(--rojo-chile)":"var(--gris-claro)" }}>
-              {p.esSuperDestacado ? "🔴 ACTIVO" : "⚪ INACTIVO"}
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* Sección 2: Gestión de preguntas en vivo */}
-      <div className="caja-pixel" style={{ borderColor:"var(--rojo-chile)" }}>
-        <p style={{ fontSize:"6px",color:"var(--rojo-chile)",marginBottom:"8px" }}>
-          CREAR PREGUNTAS EN VIVO
-        </p>
-
-        {superDestacados.length === 0 ? (
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)",lineHeight:2 }}>
-            Ningún partido está marcado como Super Destacado. Actívalo arriba.
-          </p>
-        ) : (
-          <>
-            {/* Selector de partido */}
-            <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"6px" }}>
-              PARTIDO:
-            </p>
-            <div style={{ display:"flex",flexDirection:"column",gap:"4px",marginBottom:"12px" }}>
-              {superDestacados.map(p => (
-                <button key={p.id}
-                  onClick={() => seleccionar(p)}
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-                    padding:"6px 8px",cursor:"pointer",textAlign:"left",
-                    border:`2px solid ${partidoSel?.id===p.id?"var(--rojo-chile)":"var(--gris)"}`,
-                    background:partidoSel?.id===p.id?"rgba(214,40,40,0.1)":"var(--negro)",
-                    color:"var(--blanco)" }}>
-                  🔴 {p.local?.bandera} {p.local?.nombre} vs {p.visitante?.nombre} {p.visitante?.bandera}
-                </button>
-              ))}
-            </div>
-
-            {partidoSel && (
-              <>
-                {/* Pregunta activa */}
-                {abierta && (
-                  <div style={{ padding:"10px",border:"2px solid var(--rojo-chile)",
-                    marginBottom:"12px",background:"rgba(214,40,40,0.05)" }}>
-                    <p style={{ fontSize:"6px",color:"var(--rojo-chile)",marginBottom:"8px" }}>
-                      🔴 PREGUNTA ACTIVA — RESPONDIENDO...
-                    </p>
-                    <p style={{ fontSize:"7px",color:"var(--blanco)",lineHeight:2,marginBottom:"10px" }}>
-                      {abierta.texto}
-                    </p>
-                    <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"6px" }}>
-                      MARCAR RESPUESTA CORRECTA:
-                    </p>
-                    <div style={{ display:"flex",flexDirection:"column",gap:"5px",marginBottom:"10px" }}>
-                      {(abierta.opciones||[]).map((op,i) => (
-                        <button key={i}
-                          className={`pred-btn ${respSel[abierta.id]===op?"seleccionado":""}`}
-                          onClick={() => setRespSel(prev=>({...prev,[abierta.id]:op}))}
-                          style={{ fontSize:"7px",padding:"7px" }}>
-                          {op}
-                        </button>
-                      ))}
-                    </div>
-                    <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
-                      onClick={() => cerrar(abierta)}
-                      disabled={!respSel[abierta.id] || cerrando===abierta.id}>
-                      {cerrando===abierta.id ? "⚙ CERRANDO..." : "🔒 CERRAR Y DAR +3 PTS"}
-                    </button>
-                  </div>
-                )}
-
-                {/* Crear nueva pregunta */}
-                {!abierta && (
-                  <div>
-                    <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"4px" }}>
-                      NUEVA PREGUNTA:
-                    </p>
-                    <textarea value={textoNueva} onChange={e=>setTextoNueva(e.target.value)} rows={2}
-                      placeholder="Ej: ¿Gol en los próximos 10 min?"
-                      style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-                        width:"100%",padding:"8px",border:"3px solid var(--negro)",
-                        background:"var(--blanco)",color:"var(--negro)",
-                        outline:"none",resize:"none",lineHeight:2,marginBottom:"8px" }} />
-                    <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"4px" }}>
-                      OPCIONES:
-                    </p>
-                    <div style={{ display:"flex",flexDirection:"column",gap:"4px",marginBottom:"8px" }}>
-                      {opcionesNv.map((op,i) => (
-                        <div key={i} style={{ display:"flex",gap:"4px" }}>
-                          <input value={op}
-                            onChange={e=>setOpcionesNv(prev=>prev.map((o,idx)=>idx===i?e.target.value:o))}
-                            placeholder={`Opción ${i+1}`}
-                            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-                              flex:1,padding:"5px 8px",border:"2px solid var(--negro)",
-                              background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
-                          {opcionesNv.length>2 && (
-                            <button
-                              onClick={()=>setOpcionesNv(prev=>prev.filter((_,idx)=>idx!==i))}
-                              style={{ background:"var(--rojo-chile)",color:"var(--blanco)",
-                                border:"none",cursor:"pointer",padding:"4px 8px",
-                                fontFamily:"'Press Start 2P',monospace",fontSize:"8px" }}>✕</button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {opcionesNv.length<5 && (
-                      <button className="btn-pixel btn-gris w-full"
-                        style={{ fontSize:"6px",marginBottom:"8px" }}
-                        onClick={()=>setOpcionesNv(prev=>[...prev,""])}>
-                        + AGREGAR OPCIÓN
-                      </button>
-                    )}
-                    <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
-                      onClick={crear} disabled={creando}>
-                      {creando?"⚙ PUBLICANDO...":"🔴 PUBLICAR PREGUNTA EN VIVO"}
-                    </button>
-                  </div>
-                )}
-
-                {/* Historial preguntas cerradas */}
-                {preguntas.filter(p=>p.estado==="cerrada").length > 0 && (
-                  <div style={{ marginTop:"12px" }}>
-                    <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"6px" }}>
-                      HISTORIAL:
-                    </p>
-                    {preguntas.filter(p=>p.estado==="cerrada").map(pq => (
-                      <div key={pq.id} style={{ padding:"6px 8px",
-                        border:"1px solid var(--verde-campo)",marginBottom:"4px",
-                        fontSize:"6px",color:"var(--gris-claro)",lineHeight:2 }}>
-                        <p style={{ color:"var(--blanco)" }}>{pq.texto}</p>
-                        <p>✅ Correcta: <span style={{ color:"var(--verde-claro)" }}>
-                          {pq.respuestaCorrecta}
-                        </span></p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
     </div>
   );
 }
