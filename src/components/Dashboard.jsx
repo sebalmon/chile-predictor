@@ -148,7 +148,12 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  const esAdmin  = firebaseUser?.email === "xtokesu@gmail.com";
+  // Fix: esAdmin must be state-derived because firebaseUser is null on first render
+  // (Firebase Auth is async). Using state ensures it updates when auth resolves.
+  const [esAdmin, setEsAdmin] = useState(false);
+  useEffect(() => {
+    setEsAdmin(firebaseUser?.email === "xtokesu@gmail.com");
+  }, [firebaseUser]);
   const diaNum   = diaNumero();
   const diaLabel = diaNum > 0 ? `DÍA ${diaNum}` : "MUNDIAL 2026";
 
@@ -386,7 +391,7 @@ function MenuInferior({ pantalla, setPantalla, esAdmin }) {
     { id: PANTALLAS.PARTIDOS, label: "PARTIDOS", icono: "⚽" },
     { id: PANTALLAS.RANKING,  label: "RANKING",  icono: "📊" },
     { id: PANTALLAS.PERFIL,   label: "PERFIL",   icono: "👤" },
-    { id: PANTALLAS.LAMINAS,  label: "LAMINAS",  icono: "🃏" },
+    { id: PANTALLAS.LAMINAS,  label: "LÁMINAS",  icono: "🃏" },
     ...(esAdmin ? [{ id: PANTALLAS.ADMIN, label: "ADMIN", icono: "⚙" }] : []),
   ];
   return (
