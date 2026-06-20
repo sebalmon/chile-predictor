@@ -22,7 +22,6 @@ import NotificacionCartas from "./NotificacionCartas";
 import AvisoAdmin from "./AvisoAdmin";
 import NotificacionesModal from "./NotificacionesModal";
 import VozHinchada from "./VozHinchada";
-import SeccionLaminas from "./SeccionLaminas";
 
 // ── Contexto de sonidos ───────────────────────────────────────
 const SonidosCtx = createContext({ activado: false, playSound: () => {} });
@@ -134,7 +133,6 @@ const PANTALLAS = {
   PARTIDOS: "partidos",
   RANKING:  "ranking",
   PERFIL:   "perfil",
-  LAMINAS:  "laminas",
   ADMIN:    "admin",
 };
 
@@ -148,10 +146,8 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // FIX ADMIN: firebaseUser es null al inicio (Firebase Auth es async).
-  // Usando useState+useEffect para que se recalcule cuando llegue el usuario real.
-  const [esAdmin, setEsAdmin] = React.useState(false);
-  React.useEffect(() => {
+  const [esAdmin, setEsAdmin] = useState(false);
+  useEffect(() => {
     setEsAdmin(firebaseUser?.email === "xtokesu@gmail.com");
   }, [firebaseUser]);
   const diaNum   = diaNumero();
@@ -218,17 +214,6 @@ function DashboardInterno() {
       </WithShell>
     );
   }
-  if (pantalla === PANTALLAS.LAMINAS) {
-    return (
-      <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
-        onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
-        esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
-        mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
-        <SeccionLaminas />
-      </WithShell>
-    );
-  }
-
   if (pantalla === PANTALLAS.ADMIN && esAdmin) {
     return (
       <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
@@ -391,7 +376,6 @@ function MenuInferior({ pantalla, setPantalla, esAdmin }) {
     { id: PANTALLAS.PARTIDOS, label: "PARTIDOS", icono: "⚽" },
     { id: PANTALLAS.RANKING,  label: "RANKING",  icono: "📊" },
     { id: PANTALLAS.PERFIL,   label: "PERFIL",   icono: "👤" },
-    { id: PANTALLAS.LAMINAS,  label: "LÁMINAS",  icono: "🃏" },
     ...(esAdmin ? [{ id: PANTALLAS.ADMIN, label: "ADMIN", icono: "⚙" }] : []),
   ];
   return (

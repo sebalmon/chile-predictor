@@ -26,28 +26,24 @@ const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
 export default function AdminPanel({ onVolver }) {
   const { firebaseUser } = useAuth();
-  const [verificando, setVerificando] = React.useState(true);
-  const [esAdmin,     setEsAdmin]     = React.useState(false);
+  const [esAdmin,     setEsAdmin]     = useState(false);
+  const [verificando, setVerificando] = useState(true);
 
-  React.useEffect(() => {
-    // firebaseUser empieza como null (Firebase Auth es async).
-    // Esperamos a que AuthContext resuelva antes de decidir.
+  useEffect(() => {
     if (firebaseUser === null) {
-      // Damos 3 segundos por si todavía está cargando
-      const t = setTimeout(() => setVerificando(false), 3000);
+      const t = setTimeout(() => setVerificando(false), 4000);
       return () => clearTimeout(t);
     }
-    // firebaseUser ya llegó (puede ser usuario real o seguir null tras timeout)
     setEsAdmin(ADMIN_EMAILS.includes(firebaseUser.email));
     setVerificando(false);
   }, [firebaseUser]);
 
   if (verificando) {
     return (
-      <div style={{ padding:"40px",textAlign:"center" }}>
-        <span className="spinner" style={{ fontSize:"20px" }}>⚙</span>
-        <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-          color:"var(--verde-claro)",marginTop:"12px" }}>
+      <div style={{ padding:"40px", textAlign:"center" }}>
+        <span className="spinner" style={{ fontSize:"24px" }}>⚙</span>
+        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+          color:"var(--verde-claro)", marginTop:"16px" }}>
           Verificando acceso...
         </p>
       </div>
@@ -55,11 +51,11 @@ export default function AdminPanel({ onVolver }) {
   }
   if (!esAdmin) {
     return (
-      <div style={{ padding:"20px",textAlign:"center" }}>
-        <p style={{ color:"var(--rojo-chile)",fontSize:"8px" }}>🔒 ACCESO DENEGADO</p>
-        <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-          color:"var(--gris-claro)",marginTop:"8px",lineHeight:2 }}>
-          {firebaseUser?.email || "No autenticado"}
+      <div style={{ padding:"20px", textAlign:"center" }}>
+        <p style={{ color:"var(--rojo-chile)", fontSize:"8px" }}>🔒 ACCESO DENEGADO</p>
+        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
+          Email: {firebaseUser?.email || "no autenticado"}
         </p>
         <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop:"16px" }}>
           ← VOLVER
