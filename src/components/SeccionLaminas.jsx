@@ -381,19 +381,22 @@ function CanjeLaminas({ laminasUsuario, uid, onCanje }) {
     if (!ok) { setMsg({ tipo:"error", texto:`Te faltan repetidas (tenés ${sobranteTotal}).` }); return; }
     setCanjeando(true);
     try {
+      const carta = cartaAleatoriaPorMultiplicador(regla.mult);
       const updates = {};
       for (const [file, d] of Object.entries(decrementos)) updates[`laminas.${file}`] = fbIncrement(d);
-      await updateDoc(doc(db, "usuarios", uid), updates);
+      if (carta) updates[`cartas.${carta.id}`] = fbIncrement(1);
 
-      const carta = cartaAleatoriaPorMultiplicador(regla.mult);
+      const batch = writeBatch(db);
+      batch.update(doc(db, "usuarios", uid), updates);
       if (carta) {
-        await setDoc(doc(db, "cartasDelUsuario", `${uid}_${carta.id}_canje_${Date.now()}`), {
+        batch.set(doc(db, "cartasDelUsuario", `${uid}_${carta.id}_canje_${Date.now()}`), {
           uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
           multiplicador:carta.multiplicador, rareza:carta.rareza,
           fecha:hoyStr(), visto:false, origen:"canje",
         });
-        await updateDoc(doc(db, "usuarios", uid), { [`cartas.${carta.id}`]: fbIncrement(1) });
       }
+      await batch.commit();
+
       setMsg({ tipo:"ok", texto:`✅ ${regla.cantidad} repetidas → carta ×${regla.mult}!` });
       onCanje();
     } catch (e) {
@@ -760,11 +763,7 @@ export default function SeccionLaminas() {
 
       {/* ── TAB CANJE ───────────────────────────────────────── */}
       {tab === "canje" && (
-        cargandoCat
-          ? <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
-              Cargando...
-            </p>
-          : <CanjeLaminas laminasUsuario={laminasUsuario} uid={uid} onCanje={refreshProfile} />
+        <CanjeLaminas laminasUsuario={laminasUsuario} uid={uid} onCanje={refreshProfile} />
       )}
     </div>
   );
