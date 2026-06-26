@@ -1,15 +1,10 @@
-// src/components/SeccionLaminas.jsx  — v4 (Hotfix 1)
+// src/components/SeccionLaminas.jsx  — v13 (Mapeo de abreviaturas a nombres completos)
 // ─────────────────────────────────────────────────────────────
-// FIXES en esta versión:
-//   • Colección: las láminas que el usuario tiene se marcan
-//     visualmente (borde verde, sin filtro gris, con contador ×N).
-//     Las que NO tiene aparecen en escala de grises con candado.
-//   • Lightbox: clic en cualquier lámina que el usuario TIENE
-//     abre un modal grande con la imagen y datos.
-//   • Persistencia del sobre: las 4 láminas del día se guardan
-//     en localStorage por uid+fecha. Al recargar, las mismas.
-//   • Una sola entrega por día: localStorage + Firestore.
-//   • Botón GUARDAR: escribe en Firestore sin recargar la app.
+// CAMBIOS v13:
+//   • Mapeo de abreviaturas (BA, CA, CU, FO, HA, ME, OB, RE) a nombres completos.
+//   • Asignación de íconos para cada categoría.
+//   • Muestra el nombre completo en los cuadros del álbum.
+//   • Persistencia, guardado y canje intactos.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
@@ -70,6 +65,15 @@ function Lightbox({ lamina, cantidad, onCerrar }) {
             #{lamina.categoria}
           </p>
         )}
+        {lamina.descripcion && (
+          <p style={{
+            fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+            color:"var(--verde-claro)", marginBottom:"14px",
+            lineHeight:1.8, maxHeight:"100px", overflow:"auto",
+          }}>
+            {lamina.descripcion}
+          </p>
+        )}
         <p style={{
           fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
           color:"var(--verde-claro)", marginBottom:"14px",
@@ -102,7 +106,6 @@ function SobreAnimado({ onAbrir }) {
         onClick={!abierto ? abrir : undefined}
         style={{ display:"inline-block", cursor:abierto?"default":"pointer" }}
       >
-        {/* Imagen del sobre — con fallback CSS */}
         <div style={{ position:"relative", width:"160px", height:"120px", margin:"0 auto 16px" }}>
           <img
             src={abierto ? "/sobre/sobre-abierto.png" : "/sobre/sobre-cerrado.png"}
@@ -143,13 +146,13 @@ function SobreAnimado({ onAbrir }) {
   );
 }
 
-// ── Lámina con flip (dentro del sobre) ───────────────────────
+// ── Lámina con flip ───────────────────────────────────────
 function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick }) {
   const [volteada, setVolteada] = useState(yaVolteada);
 
   const dar = () => {
     if (volteada) {
-      onClick(lamina); // ya volteada → abrir lightbox
+      onClick(lamina);
       return;
     }
     setVolteada(true);
@@ -197,9 +200,9 @@ function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick }) {
   );
 }
 
-// ── Colección ─────────────────────────────────────────────────
+// ── Colección (Álbum + Detalle) ──────────────────────────────
 function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
-  const [selCat, setSelCat] = useState("todas");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
 
   if (!todasLaminas || todasLaminas.length === 0) {
     return (
@@ -209,140 +212,389 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
     );
   }
 
-  const categorias = ["todas", ...new Set(todasLaminas.map(l => l.categoria).filter(Boolean))];
-  const filtradas  = selCat === "todas"
-    ? todasLaminas
-    : todasLaminas.filter(l => l.categoria === selCat);
+  // ─── MAPEO DE ABREVIATURAS A NOMBRES COMPLETOS ─────────────
+  const mapaCategorias = {
+    "BA": "BARRIO",
+    "CA": "CANTERA",
+    "CU": "CULTO",
+    "FO": "FOSIL",
+    "HA": "HAZARA",
+    "ME": "MEMORIA",
+    "OB": "OBRERO",
+    "RE": "REBELDE",
+  };
 
-  const total     = todasLaminas.length;
-  const obtenidas = todasLaminas.filter(l => (laminasUsuario?.[l.file]||0) > 0).length;
+  const iconosPorCategoria = {
+    "BARRIO": "🏘️",
+    "CANTERA": "🌱",
+    "CULTO": "⛪",
+    "FOSIL": "🦴",
+    "HAZARA": "⚡",
+    "MEMORIA": "📜",
+    "OBRERO": "🔧",
+    "REBELDE": "✊",
+  };
 
-  return (
-    <div>
-      {/* Progreso */}
+  // Obtener abreviatura única de los datos
+  const categoriasAbr = [...new Set(todasLaminas.map(l => l.categoria?.trim() || "Sin"))].sort();
+
+  // Crear lista de categorías con nombre completo
+  const categoriasCompletas = categoriasAbr.map(abr => ({
+    abreviatura: abr,
+    nombre: mapaCategorias[abr] || abr,
+  }));
+
+  // Agrupar por abreviatura para contar láminas
+  const categoriasMap = {};
+  todasLaminas.forEach(l => {
+    const cat = l.categoria?.trim() || "Sin";
+    categoriasMap[cat] = (categoriasMap[cat] || 0) + 1;
+  });
+
+  // Función para obtener nombre completo desde abreviatura
+  const getNombreCompleto = (abr) => mapaCategorias[abr] || abr;
+
+  // Función para obtener ícono desde nombre completo
+  const getIcono = (nombre) => iconosPorCategoria[nombre] || "🃏";
+
+  // ─── VISTA DETALLE (categoría seleccionada) ──────────────
+  if (categoriaSeleccionada) {
+    const abreviaturaSel = categoriaSeleccionada;
+    const nombreCompleto = getNombreCompleto(abreviaturaSel);
+    const icono = getIcono(nombreCompleto);
+
+    const laminasCategoria = todasLaminas
+      .filter(l => (l.categoria?.trim() || "Sin") === abreviaturaSel)
+      .sort((a, b) => {
+        const numA = parseInt(a.file.match(/\d+/)?.[0] || 0);
+        const numB = parseInt(b.file.match(/\d+/)?.[0] || 0);
+        return numA - numB;
+      });
+
+    const total = categoriasMap[abreviaturaSel] || 0;
+    const obtenidas = laminasCategoria.filter(l => (laminasUsuario?.[l.file] || 0) > 0).length;
+
+    return (
       <div style={{
-        padding:"8px 10px", marginBottom:"12px",
-        border:"1px solid var(--verde-campo)",
-        background:"rgba(82,183,136,0.08)",
-        display:"flex", justifyContent:"space-between", alignItems:"center",
+        background: "#0a0a0a",
+        backgroundImage: `
+          linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: "16px 16px",
+        padding: "20px 16px",
+        borderRadius: "4px",
+        border: "2px solid var(--verde-campo)",
+        minHeight: "400px",
       }}>
-        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px", color:"var(--gris-claro)" }}>
-          COLECCIÓN
-        </span>
-        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px", color:"var(--amarillo)" }}>
-          {obtenidas}/{total}
-        </span>
-      </div>
+        <button
+          onClick={() => setCategoriaSeleccionada(null)}
+          style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "6px",
+            background: "rgba(255,255,255,0.05)",
+            color: "var(--amarillo)",
+            border: "1px solid var(--amarillo)",
+            padding: "4px 10px",
+            cursor: "pointer",
+            marginBottom: "16px",
+            boxShadow: "2px 2px 0 var(--negro)",
+          }}
+        >
+          ← VOLVER
+        </button>
 
-      {/* Categorías */}
-      <div style={{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"12px" }}>
-        {categorias.map(cat => (
-          <button
-            key={cat}
-            className={`btn-pixel ${selCat===cat?"btn-amarillo":"btn-gris"}`}
-            style={{ fontSize:"5px", padding:"4px 7px", flex:"0 0 auto" }}
-            onClick={() => setSelCat(cat)}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+        <div style={{
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize: "12px",
+          color: "var(--amarillo)",
+          textAlign: "center",
+          paddingBottom: "8px",
+          borderBottom: "2px solid var(--verde-campo)",
+          marginBottom: "12px",
+          letterSpacing: "2px",
+          textShadow: "2px 2px 0 var(--negro)",
+        }}>
+          {icono} {nombreCompleto}
+        </div>
 
-      {/* Cuadrícula */}
-      <div style={{ display:"flex", flexWrap:"wrap", gap:"6px" }}>
-        {filtradas.map(lam => {
-          const cantidad = laminasUsuario?.[lam.file] || 0;
-          const tiene    = cantidad > 0;
+        <div style={{
+          padding:"4px 10px",
+          marginBottom:"16px",
+          display:"flex",
+          justifyContent:"space-between",
+          alignItems:"center",
+          background: "rgba(0,0,0,0.5)",
+          border: "1px solid rgba(255,255,255,0.05)",
+        }}>
+          <span style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "5px",
+            color: "var(--gris-claro)",
+          }}>
+            COLECCIÓN
+          </span>
+          <span style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "6px",
+            color: "var(--amarillo)",
+            background: "rgba(0,0,0,0.6)",
+            padding: "2px 8px",
+            border: "1px solid var(--amarillo)",
+          }}>
+            {obtenidas} / {total}
+          </span>
+        </div>
 
-          return (
-            <div
-              key={lam.file}
-              onClick={() => tiene && onClickLamina(lam, cantidad)}
-              style={{
-                width:"64px",
-                cursor: tiene ? "pointer" : "default",
-                textAlign:"center",
-                position:"relative",
-              }}
-              title={tiene ? `${lam.nombre} — clic para ampliar` : lam.nombre}
-            >
-              {/* Marco de la lámina */}
-              <div style={{
-                width:"64px", height:"88px",
-                border: tiene
-                  ? "3px solid var(--verde-claro)"
-                  : "2px solid rgba(255,255,255,0.1)",
-                boxShadow: tiene ? "2px 2px 0 var(--negro)" : "none",
-                overflow:"hidden",
-                background:"#111",
-                position:"relative",
-              }}>
-                <img
-                  src={lam.url}
-                  alt={lam.nombre}
-                  style={{
-                    width:"100%", height:"100%", objectFit:"cover",
-                    imageRendering:"pixelated",
-                    filter: tiene ? "none" : "grayscale(100%) brightness(0.35)",
-                    transition:"filter 0.2s",
-                  }}
-                  onError={e => { e.target.src = "/sobre/lamina-placeholder.png"; }}
-                />
-                {/* Candado para no obtenidas */}
-                {!tiene && (
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "16px",
+          padding: "4px 0",
+        }}>
+          {laminasCategoria.map((lam) => {
+            const cantidad = laminasUsuario?.[lam.file] || 0;
+            const tiene = cantidad > 0;
+            const anio = lam.file.match(/\d+/)?.[0] || "";
+
+            return (
+              <div
+                key={lam.file}
+                onClick={() => tiene && onClickLamina(lam, cantidad)}
+                style={{
+                  width: "140px",
+                  cursor: tiene ? "pointer" : "default",
+                  textAlign: "center",
+                  transition: "transform 0.15s",
+                  transform: tiene ? "scale(1)" : "scale(0.95)",
+                  background: "rgba(0,0,0,0.4)",
+                  padding: "8px 6px 10px",
+                  border: tiene
+                    ? "2px solid var(--verde-claro)"
+                    : "2px solid rgba(255,255,255,0.05)",
+                  boxShadow: tiene
+                    ? "4px 4px 0 var(--negro)"
+                    : "2px 2px 0 rgba(0,0,0,0.5)",
+                }}
+                title={tiene ? `${lam.nombre} — clic para ampliar` : lam.nombre}
+              >
+                <div style={{
+                  width: "100%",
+                  aspectRatio: "5/7",
+                  overflow: "hidden",
+                  background: tiene ? "transparent" : "rgba(0,0,0,0.6)",
+                  position: "relative",
+                  imageRendering: "pixelated",
+                  marginBottom: "6px",
+                }}>
+                  <img
+                    src={lam.url}
+                    alt={lam.nombre}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      imageRendering: "pixelated",
+                      filter: tiene ? "none" : "grayscale(100%) brightness(0.25)",
+                      transition: "filter 0.2s",
+                    }}
+                    onError={(e) => { e.target.src = "/sobre/lamina-placeholder.png"; }}
+                  />
+                  {!tiene && (
+                    <div style={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(0,0,0,0.4)",
+                    }}>
+                      <span style={{ fontSize: "28px", opacity: 0.4 }}>🔒</span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{
+                  fontFamily: "'Press Start 2P', monospace",
+                  fontSize: "6px",
+                  color: tiene ? "var(--amarillo)" : "rgba(255,255,255,0.15)",
+                  textShadow: tiene ? "2px 2px 0 var(--negro)" : "none",
+                  marginBottom: "4px",
+                  letterSpacing: "0.5px",
+                }}>
+                  {nombreCompleto} {anio}
+                </div>
+
+                <div style={{
+                  fontFamily: "'Press Start 2P', monospace",
+                  fontSize: "5px",
+                  color: tiene ? "var(--blanco)" : "rgba(255,255,255,0.1)",
+                  textShadow: tiene ? "1px 1px 0 var(--negro)" : "none",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  marginBottom: "4px",
+                }}>
+                  {lam.nombre}
+                </div>
+
+                {lam.descripcion && tiene && (
                   <div style={{
-                    position:"absolute", inset:0,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    background:"rgba(0,0,0,0.3)",
+                    fontFamily: "'Press Start 2P', monospace",
+                    fontSize: "4px",
+                    color: "var(--gris-claro)",
+                    lineHeight: 1.6,
+                    maxHeight: "40px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                    opacity: 0.8,
                   }}>
-                    <span style={{ fontSize:"20px", opacity:0.5 }}>🔒</span>
-                  </div>
-                )}
-                {/* Contador de duplicados */}
-                {cantidad > 1 && (
-                  <div style={{
-                    position:"absolute", top:"2px", right:"2px",
-                    background:"var(--rojo-chile)", color:"var(--blanco)",
-                    fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
-                    padding:"1px 4px", border:"1px solid var(--negro)",
-                    lineHeight:1.5,
-                  }}>
-                    ×{cantidad}
-                  </div>
-                )}
-                {/* Check de obtenida */}
-                {tiene && cantidad === 1 && (
-                  <div style={{
-                    position:"absolute", top:"2px", right:"2px",
-                    background:"var(--verde-claro)", color:"var(--negro)",
-                    fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
-                    padding:"1px 3px", border:"1px solid var(--negro)",
-                    lineHeight:1.5,
-                  }}>
-                    ✓
+                    {lam.descripcion}
                   </div>
                 )}
               </div>
-              {/* Nombre */}
-              <p style={{
-                fontFamily:"'Press Start 2P',monospace", fontSize:"4px",
-                color: tiene ? "var(--blanco)" : "rgba(255,255,255,0.2)",
-                marginTop:"3px", lineHeight:1.4,
-                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── VISTA ÁLBUM ──────────────────────────────────────────
+  const totalGlobal = todasLaminas.length;
+  const obtenidasGlobal = todasLaminas.filter(l => (laminasUsuario?.[l.file] || 0) > 0).length;
+
+  return (
+    <div style={{
+      background: "#0a0a0a",
+      backgroundImage: `
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+      `,
+      backgroundSize: "16px 16px",
+      padding: "24px 16px",
+      borderRadius: "4px",
+      border: "2px solid var(--verde-campo)",
+      minHeight: "400px",
+      textAlign: "center",
+    }}>
+      {/* Título con degradado */}
+      <div style={{
+        fontFamily: "'Press Start 2P', monospace",
+        fontSize: "28px",
+        fontWeight: "bold",
+        background: "linear-gradient(135deg, #f4d03f 40%, #e74c3c 60%)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        textShadow: "4px 4px 0 rgba(0,0,0,0.8)",
+        letterSpacing: "6px",
+        paddingBottom: "6px",
+        marginBottom: "4px",
+      }}>
+        ALBUM
+      </div>
+
+      <div style={{
+        fontFamily: "'Press Start 2P', monospace",
+        fontSize: "7px",
+        color: "var(--gris-claro)",
+        letterSpacing: "2px",
+        marginBottom: "24px",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+        paddingBottom: "12px",
+      }}>
+        SELECCIONA CATEGORIA
+      </div>
+
+      <div style={{
+        display: "flex",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: "16px",
+      }}>
+        {categoriasCompletas.map(({ abreviatura, nombre }) => {
+          const count = categoriasMap[abreviatura] || 0;
+          const icono = getIcono(nombre);
+
+          return (
+            <div
+              key={abreviatura}
+              onClick={() => setCategoriaSeleccionada(abreviatura)}
+              style={{
+                width: "180px",
+                padding: "16px 8px",
+                background: "rgba(0,0,0,0.5)",
+                border: "2px solid rgba(255,255,255,0.1)",
+                boxShadow: "3px 3px 0 var(--negro)",
+                cursor: "pointer",
+                transition: "transform 0.1s, border-color 0.1s",
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "4px",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = "var(--amarillo)";
+                e.currentTarget.style.transform = "scale(1.03)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                e.currentTarget.style.transform = "scale(1)";
+              }}
+            >
+              <div style={{
+                fontSize: "34px",
+                lineHeight: 1.2,
+                filter: "drop-shadow(2px 2px 0 var(--negro))",
               }}>
-                {lam.nombre}
-              </p>
+                {icono}
+              </div>
+
+              <div style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: "5px",
+                color: "var(--amarillo)",
+                letterSpacing: "0.5px",
+                textShadow: "2px 2px 0 var(--negro)",
+                wordWrap: "break-word",
+                whiteSpace: "normal",
+                maxWidth: "100%",
+                lineHeight: 1.6,
+              }}>
+                {nombre}
+              </div>
+
+              <div style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: "5px",
+                color: "var(--gris-claro)",
+                background: "rgba(0,0,0,0.6)",
+                padding: "2px 8px",
+                border: "1px solid rgba(255,255,255,0.05)",
+                marginTop: "2px",
+              }}>
+                {count} {count === 1 ? "LÁMINA" : "LÁMINAS"}
+              </div>
             </div>
           );
         })}
       </div>
 
-      <style>{`
-        @keyframes laminaSale {
-          0%  { opacity:0; transform:translateY(30px) scale(.8); }
-          100%{ opacity:1; transform:translateY(0) scale(1); }
-        }
-      `}</style>
+      <div style={{
+        marginTop: "24px",
+        padding: "6px 12px",
+        borderTop: "1px solid rgba(255,255,255,0.05)",
+        fontFamily: "'Press Start 2P', monospace",
+        fontSize: "5px",
+        color: "var(--gris-claro)",
+      }}>
+        COLECCIÓN: {obtenidasGlobal} / {totalGlobal} LÁMINAS
+      </div>
     </div>
   );
 }
@@ -479,18 +731,16 @@ function CanjeLaminas({ laminasUsuario, todasLaminas, uid, onCanje }) {
 
 // ── Componente principal ──────────────────────────────────────
 export default function SeccionLaminas() {
-  const { firebaseUser, userProfile, refreshProfile } = useAuth();
+  const { firebaseUser } = useAuth();
 
   const [tab,          setTab]          = useState("sobre");
   const [todasLaminas, setTodasLaminas] = useState([]);
   const [cargandoCat,  setCargandoCat]  = useState(true);
   const [errorCat,     setErrorCat]     = useState(null);
 
-  // Estado del lightbox
   const [lightboxLamina,   setLightboxLamina]   = useState(null);
   const [lightboxCantidad, setLightboxCantidad] = useState(0);
 
-  // Estado del sobre
   const [sobreDisponible, setSobreDisponible] = useState(false);
   const [laminasNuevas,   setLaminasNuevas]   = useState([]);
   const [sobreAbierto,    setSobreAbierto]     = useState(false);
@@ -498,22 +748,27 @@ export default function SeccionLaminas() {
   const [guardando,       setGuardando]        = useState(false);
   const [sobreGuardado,   setSobreGuardado]    = useState(false);
   const [msgGuardado,     setMsgGuardado]      = useState(null);
-  const iniciadoRef = useRef(false);
 
+  const [laminasLocal, setLaminasLocal] = useState(() => {
+    const stored = localStorage.getItem("cp8b_mis_laminas");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (_) {}
+    }
+    return {};
+  });
+
+  const iniciadoRef = useRef(false);
   const uid  = firebaseUser?.uid;
   const hoy  = hoyStr();
   const lsKeyOver = uid ? `cp8b_sobre_${uid}_${hoy}` : null;
   const lsKeyLams = uid ? `cp8b_lams_${uid}_${hoy}`  : null;
 
-  // Láminas que el usuario tiene (mapa file→cantidad)
-  const laminasUsuario = userProfile?.laminas || {};
-
-  // 1. Cargar catálogo de GitHub Pages
   useEffect(() => {
     fetch(CARDS_URL)
       .then(r => r.json())
       .then(d => {
-        // API: { laminas: [...] } o array directo
         const lista = Array.isArray(d) ? d : (d.laminas || []);
         setTodasLaminas(lista);
       })
@@ -524,17 +779,14 @@ export default function SeccionLaminas() {
       .finally(() => setCargandoCat(false));
   }, []);
 
-  // 2. Verificar disponibilidad del sobre (una vez por uid+hoy)
   useEffect(() => {
     if (!uid || iniciadoRef.current) return;
     iniciadoRef.current = true;
 
     const verificar = async () => {
-      // a) ¿Ya guardadas láminas hoy? (Firestore es fuente de verdad)
       if (localStorage.getItem(lsKeyOver) === "guardado") {
         setSobreGuardado(true);
         setSobreDisponible(false);
-        // Restaurar láminas del día desde localStorage
         const lamsGuardadas = localStorage.getItem(lsKeyLams);
         if (lamsGuardadas) {
           try { setLaminasNuevas(JSON.parse(lamsGuardadas)); } catch(_) {}
@@ -542,7 +794,6 @@ export default function SeccionLaminas() {
         return;
       }
 
-      // b) ¿Ya marcado en Firestore?
       try {
         const uSnap = await getDoc(doc(db,"usuarios",uid));
         if (uSnap.exists() && uSnap.data().ultimoSobre === hoy) {
@@ -557,28 +808,25 @@ export default function SeccionLaminas() {
         }
       } catch(_) {}
 
-      // c) ¿Hay láminas preparadas en localStorage (no guardadas aún)?
       const lamsPrep = localStorage.getItem(lsKeyLams);
       if (lamsPrep) {
         try {
           setLaminasNuevas(JSON.parse(lamsPrep));
-          setSobreDisponible(false); // ya se abrió
-          setSobreAbierto(true);     // mostrar láminas
+          setSobreDisponible(false);
+          setSobreAbierto(true);
           return;
         } catch(_) {}
       }
 
-      // d) Sobre disponible
       setSobreDisponible(true);
     };
 
     verificar();
   }, [uid, hoy, lsKeyOver, lsKeyLams]);
 
-  // 3. Cuando el catálogo carga y el sobre es disponible, preparar láminas
   useEffect(() => {
     if (!sobreDisponible || todasLaminas.length === 0 || !uid) return;
-    if (laminasNuevas.length > 0) return; // ya preparadas
+    if (laminasNuevas.length > 0) return;
 
     const seleccionadas = [...todasLaminas]
       .sort(() => Math.random() - 0.5)
@@ -588,8 +836,8 @@ export default function SeccionLaminas() {
     localStorage.setItem(lsKeyLams, JSON.stringify(seleccionadas));
   }, [sobreDisponible, todasLaminas, uid, laminasNuevas.length, lsKeyLams]);
 
-  // 4. Guardar láminas en Firestore (sin recargar)
-  const guardarLaminas = async () => {
+  const guardarLaminas = async (e) => {
+    if (e) e.preventDefault();
     if (!uid || laminasNuevas.length === 0 || guardando) return;
     setGuardando(true);
     setMsgGuardado(null);
@@ -598,19 +846,37 @@ export default function SeccionLaminas() {
       for (const lam of laminasNuevas) {
         updates[`laminas.${lam.file}`] = fbIncrement(1);
       }
-      await updateDoc(doc(db,"usuarios",uid), updates);
+      await updateDoc(doc(db, "usuarios", uid), updates);
+
+      const nuevasLaminas = { ...laminasLocal };
+      for (const lam of laminasNuevas) {
+        nuevasLaminas[lam.file] = (nuevasLaminas[lam.file] || 0) + 1;
+      }
+      setLaminasLocal(nuevasLaminas);
+      localStorage.setItem("cp8b_mis_laminas", JSON.stringify(nuevasLaminas));
+
       localStorage.setItem(lsKeyOver, "guardado");
       setSobreGuardado(true);
       setMsgGuardado("✅ ¡Láminas guardadas en tu colección!");
-      if (refreshProfile) await refreshProfile();
-    } catch(e) {
+    } catch (e) {
       setMsgGuardado(`❌ Error: ${e.message}`);
     } finally {
       setGuardando(false);
     }
   };
 
-  // Abrir lightbox
+  const handleCanje = useCallback(async () => {
+    try {
+      const userDoc = await getDoc(doc(db, "usuarios", uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        const nuevasLaminas = data.laminas || {};
+        setLaminasLocal(nuevasLaminas);
+        localStorage.setItem("cp8b_mis_laminas", JSON.stringify(nuevasLaminas));
+      }
+    } catch (_) {}
+  }, [uid]);
+
   const handleClickLamina = (lamina, cantidad) => {
     setLightboxLamina(lamina);
     setLightboxCantidad(cantidad);
@@ -620,7 +886,23 @@ export default function SeccionLaminas() {
 
   return (
     <div style={{ padding:"16px 16px 80px" }}>
-      {/* Lightbox */}
+      <div style={{ marginBottom:"12px", padding:"8px", border:"2px solid red", textAlign:"center" }}>
+        <button
+          onClick={() => {
+            setSobreDisponible(true);
+            setSobreGuardado(false);
+            setSobreAbierto(false);
+          }}
+          className="btn-pixel btn-rojo"
+          style={{ fontSize:"8px" }}
+        >
+          🔴 FORZAR SOBRE
+        </button>
+        <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"4px" }}>
+          Haz clic para activar un sobre nuevo (solo para pruebas)
+        </p>
+      </div>
+
       <Lightbox
         lamina={lightboxLamina}
         cantidad={lightboxCantidad}
@@ -629,7 +911,6 @@ export default function SeccionLaminas() {
 
       <div className="seccion-titulo">🃏 LÁMINAS COLECCIONABLES</div>
 
-      {/* Tabs */}
       <div style={{ display:"flex",gap:"4px",marginBottom:"14px" }}>
         {[
           { id:"sobre",     label:"📦 SOBRE"     },
@@ -650,7 +931,6 @@ export default function SeccionLaminas() {
         ))}
       </div>
 
-      {/* ── TAB SOBRE ──────────────────────────────────────── */}
       {tab === "sobre" && (
         <div>
           {cargandoCat ? (
@@ -665,7 +945,6 @@ export default function SeccionLaminas() {
               <p style={{ fontSize:"6px",color:"var(--rojo-chile)",lineHeight:2 }}>{errorCat}</p>
             </div>
           ) : sobreGuardado && !sobreAbierto ? (
-            // Ya guardadas, mostrar láminas obtenidas hoy (modo solo lectura)
             <div>
               <div className="caja-pixel text-center" style={{ marginBottom:"12px" }}>
                 <p style={{ fontSize:"7px",color:"var(--verde-claro)",lineHeight:2 }}>
@@ -686,7 +965,7 @@ export default function SeccionLaminas() {
                   <div style={{ display:"flex",flexWrap:"wrap",justifyContent:"center",gap:"8px" }}>
                     {laminasNuevas.map((lam,i) => (
                       <div key={i}
-                        onClick={() => handleClickLamina(lam, laminasUsuario[lam.file]||1)}
+                        onClick={() => handleClickLamina(lam, laminasLocal[lam.file]||1)}
                         style={{ width:"76px",cursor:"pointer",textAlign:"center" }}>
                         <div style={{ width:"76px",height:"106px",
                           border:"3px solid var(--verde-claro)",overflow:"hidden" }}>
@@ -705,10 +984,8 @@ export default function SeccionLaminas() {
               )}
             </div>
           ) : sobreDisponible && !sobreAbierto ? (
-            // Sobre disponible para abrir
             <SobreAnimado onAbrir={() => setSobreAbierto(true)} />
           ) : laminasNuevas.length > 0 ? (
-            // Sobre abierto — mostrar láminas con flip
             <div>
               <p style={{
                 fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
@@ -727,7 +1004,7 @@ export default function SeccionLaminas() {
                     idx={i}
                     yaVolteada={sobreGuardado}
                     onVoltear={() => setVolteadas(v => v+1)}
-                    onClick={(l) => handleClickLamina(l, laminasUsuario[l.file]||1)}
+                    onClick={(l) => handleClickLamina(l, laminasLocal[l.file]||1)}
                   />
                 ))}
               </div>
@@ -782,7 +1059,6 @@ export default function SeccionLaminas() {
         </div>
       )}
 
-      {/* ── TAB COLECCIÓN ───────────────────────────────────── */}
       {tab === "coleccion" && (
         cargandoCat
           ? <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
@@ -791,23 +1067,22 @@ export default function SeccionLaminas() {
           : errorCat
             ? <p style={{ fontSize:"6px",color:"var(--rojo-chile)",padding:"8px" }}>{errorCat}</p>
             : <Coleccion
-                laminasUsuario={laminasUsuario}
+                laminasUsuario={laminasLocal}
                 todasLaminas={todasLaminas}
                 onClickLamina={handleClickLamina}
               />
       )}
 
-      {/* ── TAB CANJE ───────────────────────────────────────── */}
       {tab === "canje" && (
         cargandoCat
           ? <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
               Cargando...
             </p>
           : <CanjeLaminas
-              laminasUsuario={laminasUsuario}
+              laminasUsuario={laminasLocal}
               todasLaminas={todasLaminas}
               uid={uid}
-              onCanje={refreshProfile}
+              onCanje={handleCanje}
             />
       )}
     </div>

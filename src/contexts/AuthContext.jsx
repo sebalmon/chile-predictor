@@ -29,7 +29,6 @@ export function AuthProvider({ children }) {
               cartasObj[cartaId] = (cartasObj[cartaId] || 0) + 1;
             });
             data.cartas = cartasObj;
-            // Opcional: podríamos borrar cartasDesbloqueadas para limpiar, pero no es necesario
           }
           setUserProfile(data);
         } else {

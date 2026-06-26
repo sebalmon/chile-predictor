@@ -22,6 +22,7 @@ import NotificacionCartas from "./NotificacionCartas";
 import AvisoAdmin from "./AvisoAdmin";
 import NotificacionesModal from "./NotificacionesModal";
 import VozHinchada from "./VozHinchada";
+import SeccionLaminas from "./SeccionLaminas";
 
 // ── Contexto de sonidos ───────────────────────────────────────
 const SonidosCtx = createContext({ activado: false, playSound: () => {} });
@@ -134,6 +135,7 @@ const PANTALLAS = {
   RANKING:  "ranking",
   PERFIL:   "perfil",
   ADMIN:    "admin",
+  LAMINAS:  "laminas",
 };
 
 const medallas = ["🥇", "🥈", "🥉"];
@@ -224,7 +226,16 @@ function DashboardInterno() {
       </WithShell>
     );
   }
-
+  if (pantalla === PANTALLAS.LAMINAS) {
+  return (
+    <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+      onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+      esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+      mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+      <SeccionLaminas onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
+    </WithShell>
+  );
+}
   // ── INICIO ──────────────────────────────────────────────────
   return (
     <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
@@ -375,6 +386,7 @@ function MenuInferior({ pantalla, setPantalla, esAdmin }) {
     { id: PANTALLAS.INICIO,   label: "INICIO",   icono: "🏠" },
     { id: PANTALLAS.PARTIDOS, label: "PARTIDOS", icono: "⚽" },
     { id: PANTALLAS.RANKING,  label: "RANKING",  icono: "📊" },
+    { id: PANTALLAS.LAMINAS,  label: "LÁMINAS",  icono: "🖼️" },   
     { id: PANTALLAS.PERFIL,   label: "PERFIL",   icono: "👤" },
     ...(esAdmin ? [{ id: PANTALLAS.ADMIN, label: "ADMIN", icono: "⚙" }] : []),
   ];
