@@ -128,7 +128,7 @@ function SelectorCartas({ cartasDisponibles, cartaSeleccionada, onSeleccionar, o
 }
 
 // ── Componente principal ──────────────────────────────────────
-export default function PartidoCard({ partido, onGuardado }) {
+function PartidoCard({ partido, onGuardado }) {
   const { firebaseUser, userProfile } = useAuth();
   const {
     id, fecha, horaInicio, local, visitante,
@@ -589,3 +589,7 @@ export default function PartidoCard({ partido, onGuardado }) {
     </>
   );
 }
+
+// Memo: evita re-render de todas las cards cuando el padre cambia
+// estado no relacionado (onGuardado va memorizado con useCallback).
+export default React.memo(PartidoCard);

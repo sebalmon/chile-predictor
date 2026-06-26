@@ -10,8 +10,22 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 import {
-  collection, getDocs, query, where, doc, getDoc,
+  collection, getDocs, query, where, documentId,
 } from "firebase/firestore";
+
+// Trae docs por id en lotes de 30 (límite del operador "in" de Firestore),
+// en una query por lote en vez de un getDoc por id (evita N+1).
+async function traerPorIds(nombreColeccion, ids) {
+  const mapa = {};
+  const lotes = [];
+  for (let i = 0; i < ids.length; i += 30) lotes.push(ids.slice(i, i + 30));
+  await Promise.all(lotes.map(async lote => {
+    if (lote.length === 0) return;
+    const snap = await getDocs(query(collection(db, nombreColeccion), where(documentId(), "in", lote)));
+    snap.forEach(d => { mapa[d.id] = { id: d.id, ...d.data() }; });
+  }));
+  return mapa;
+}
 import { db } from "../firebase";
 import { CARTAS } from "../data/sampleData";
 
@@ -278,21 +292,10 @@ export default function HistorialPredicciones({ userId }) {
       const partidoIds  = [...new Set(fechas.flatMap(f => porFecha[f].predicciones.map(p => p.partidoId)))];
       const preguntaIds = [...new Set(fechas.filter(f=>porFecha[f].respuesta).map(f=>porFecha[f].respuesta.preguntaId).filter(Boolean))];
 
-      const partidosMap = {};
-      await Promise.all(partidoIds.map(async pid => {
-        try {
-          const ps = await getDoc(doc(db,"partidos",pid));
-          if (ps.exists()) partidosMap[pid] = { id:pid, ...ps.data() };
-        } catch(_) {}
-      }));
-
-      const preguntasMap = {};
-      await Promise.all(preguntaIds.map(async qid => {
-        try {
-          const qs = await getDoc(doc(db,"preguntas",qid));
-          if (qs.exists()) preguntasMap[qid] = { id:qid, ...qs.data() };
-        } catch(_) {}
-      }));
+      const [partidosMap, preguntasMap] = await Promise.all([
+        traerPorIds("partidos", partidoIds),
+        traerPorIds("preguntas", preguntaIds),
+      ]);
 
       for (const fecha of fechas) {
         const d = porFecha[fecha];

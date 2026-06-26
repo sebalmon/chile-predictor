@@ -8,7 +8,7 @@
 //   • Botón VOLVER corregido.
 //   • Fecha de última actualización mostrada correctamente.
 // ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
@@ -140,7 +140,8 @@ export default function Ranking({ onVolver }) {
   };
 
   // ── Dense rank con tracking del primer del grupo ──────────
-  const filasMeta = (() => {
+  // Memorizado: solo se recalcula cuando cambia la lista de usuarios.
+  const filasMeta = useMemo(() => {
     const result = [];
     for (let i = 0; i < usuarios.length; i++) {
       const u = usuarios[i];
@@ -154,7 +155,7 @@ export default function Ranking({ onVolver }) {
       result.push({ posicion, esPrimero });
     }
     return result;
-  })();
+  }, [usuarios]);
 
   const medallas = ["🥇","🥈","🥉"];
 

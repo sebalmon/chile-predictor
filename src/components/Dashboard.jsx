@@ -8,10 +8,10 @@
 //   • Todo lo demás igual a v4.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { diaNumero } from "../utils/helpers";
+import { diaNumero, ayerStr } from "../utils/helpers";
 import PodioF1 from "./PodioF1";
 import TabPartidos from "./TabPartidos";
 import Ranking from "./Ranking";
@@ -158,15 +158,13 @@ function DashboardInterno() {
   const cargarInicio = async () => {
     setCargando(true);
     try {
-      const ayer = (() => {
-        const d = new Date();
-        d.setDate(d.getDate() - 1);
-        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-      })();
-      const snapPodio = await getDocs(query(collection(db, "puntosDelDia"), orderBy("puntos", "desc")));
+      const ayer = ayerStr();
+      // Filtra por fecha en el servidor (lee solo el día anterior, no toda la colección);
+      // se ordena por puntos en cliente para evitar índice compuesto fecha+puntos.
+      const snapPodio = await getDocs(query(collection(db, "puntosDelDia"), where("fecha", "==", ayer)));
       const todosPodio = snapPodio.docs
         .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((p) => p.fecha === ayer);
+        .sort((a, b) => b.puntos - a.puntos);
       setPodioAyer(todosPodio);
       if (todosPodio.length > 0) playSound("podio");
     } catch (e) { console.error(e); }
