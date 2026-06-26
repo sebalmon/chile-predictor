@@ -19,7 +19,7 @@ import {
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
-import { composicionPorPuesto, generarSobre, cartaImg } from "../utils/sobre";
+import { composicionPorPuesto, generarSobre, gastarDuplicados, cartaImg } from "../utils/sobre";
 
 const CARDS_URL = "https://kvtral.github.io/laminas_16_bits/cards.json";
 const LAMINAS_POR_SOBRE = 4;
@@ -363,49 +363,40 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
 }
 
 // ── Canje ─────────────────────────────────────────────────────
-function CanjeLaminas({ laminasUsuario, todasLaminas, uid, onCanje }) {
-  const [selLam,    setSelLam]    = useState(null);
+function CanjeLaminas({ laminasUsuario, uid, onCanje }) {
   const [canjeando, setCanjeando] = useState(false);
-  const [msg,       setMsg]       = useState(null);
+  const [msg, setMsg] = useState(null);
 
   const REGLAS = [
-    { cantidad:5,  mult:2, label:"5 iguales → carta ×2" },
-    { cantidad:8,  mult:3, label:"8 iguales → carta ×3" },
-    { cantidad:10, mult:4, label:"10 iguales → carta ×4" },
+    { cantidad: 4,  mult: 2, label: "4 repetidas → carta ×2" },
+    { cantidad: 8,  mult: 3, label: "8 repetidas → carta ×3" },
+    { cantidad: 12, mult: 4, label: "12 repetidas → carta ×4" },
   ];
 
-  const repetidas = todasLaminas
-    .filter(l => (laminasUsuario?.[l.file]||0) > 1)
-    .map(l => ({ ...l, cant: laminasUsuario[l.file] }));
+  const sobranteTotal = Object.values(laminasUsuario || {})
+    .reduce((s, c) => s + Math.max(0, (c || 0) - 1), 0);
 
   const canjear = async (regla) => {
-    if (!selLam || (laminasUsuario?.[selLam.file]||0) < regla.cantidad) {
-      setMsg({ tipo:"error", texto:`Necesitas ${regla.cantidad} copias de la misma lámina.` });
-      return;
-    }
+    const { ok, decrementos } = gastarDuplicados(laminasUsuario, regla.cantidad);
+    if (!ok) { setMsg({ tipo:"error", texto:`Te faltan repetidas (tenés ${sobranteTotal}).` }); return; }
     setCanjeando(true);
     try {
-      await updateDoc(doc(db,"usuarios",uid), {
-        [`laminas.${selLam.file}`]: fbIncrement(-regla.cantidad),
-      });
+      const updates = {};
+      for (const [file, d] of Object.entries(decrementos)) updates[`laminas.${file}`] = fbIncrement(d);
+      await updateDoc(doc(db, "usuarios", uid), updates);
+
       const carta = cartaAleatoriaPorMultiplicador(regla.mult);
       if (carta) {
-        await setDoc(
-          doc(db,"cartasDelUsuario",`${uid}_${carta.id}_canje_${Date.now()}`),
-          {
-            uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
-            multiplicador:carta.multiplicador, rareza:carta.rareza,
-            fecha:hoyStr(), visto:false, origen:"canje",
-          }
-        );
-        await updateDoc(doc(db,"usuarios",uid), {
-          [`cartas.${carta.id}`]: fbIncrement(1),
+        await setDoc(doc(db, "cartasDelUsuario", `${uid}_${carta.id}_canje_${Date.now()}`), {
+          uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
+          multiplicador:carta.multiplicador, rareza:carta.rareza,
+          fecha:hoyStr(), visto:false, origen:"canje",
         });
+        await updateDoc(doc(db, "usuarios", uid), { [`cartas.${carta.id}`]: fbIncrement(1) });
       }
-      setMsg({ tipo:"ok", texto:`✅ ×${regla.cantidad} "${selLam.nombre}" → carta ×${regla.mult}!` });
-      setSelLam(null);
+      setMsg({ tipo:"ok", texto:`✅ ${regla.cantidad} repetidas → carta ×${regla.mult}!` });
       onCanje();
-    } catch(e) {
+    } catch (e) {
       setMsg({ tipo:"error", texto:e.message });
     } finally {
       setCanjeando(false);
@@ -414,78 +405,31 @@ function CanjeLaminas({ laminasUsuario, todasLaminas, uid, onCanje }) {
 
   return (
     <div>
-      <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"10px" }}>
+      <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"10px" }}>
         CANJE DE LÁMINAS REPETIDAS
       </p>
       {msg && (
-        <p style={{
-          fontSize:"6px", lineHeight:2, marginBottom:"10px",
-          color: msg.tipo==="ok" ? "var(--verde-claro)" : "var(--rojo-chile)",
-        }}>
+        <p style={{ fontSize:"6px", lineHeight:2, marginBottom:"10px",
+          color: msg.tipo==="ok" ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
           {msg.texto}
         </p>
       )}
-      {repetidas.length === 0 ? (
-        <p style={{ fontSize:"6px",color:"var(--gris-claro)",lineHeight:2 }}>
-          Aún no tienes láminas repetidas.
-        </p>
-      ) : (
-        <>
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginBottom:"8px",lineHeight:2 }}>
-            Selecciona una lámina repetida:
-          </p>
-          <div style={{ display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"12px" }}>
-            {repetidas.map(l => (
-              <div
-                key={l.file}
-                onClick={() => setSelLam(l)}
-                style={{
-                  width:"56px", cursor:"pointer", textAlign:"center",
-                  border:`2px solid ${selLam?.file===l.file?"var(--amarillo)":"var(--gris)"}`,
-                  padding:"3px",
-                  background: selLam?.file===l.file ? "rgba(244,208,63,0.12)" : "transparent",
-                }}
-              >
-                <img src={l.url} alt={l.nombre}
-                  style={{ width:"50px",height:"68px",objectFit:"cover",display:"block" }} />
-                <span style={{
-                  fontFamily:"'Press Start 2P',monospace",fontSize:"5px",
-                  color:"var(--amarillo)",display:"block",marginTop:"2px",
-                }}>
-                  ×{l.cant}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {selLam && (
-            <div style={{ display:"flex",flexDirection:"column",gap:"6px" }}>
-              {REGLAS.filter(r => (laminasUsuario?.[selLam.file]||0) >= r.cantidad).map(r => (
-                <button
-                  key={r.mult}
-                  className="btn-pixel btn-verde w-full"
-                  style={{ fontSize:"6px" }}
-                  onClick={() => canjear(r)}
-                  disabled={canjeando}
-                >
-                  {canjeando ? "⚙ ..." : r.label}
-                </button>
-              ))}
-              {REGLAS.every(r => (laminasUsuario?.[selLam.file]||0) < r.cantidad) && (
-                <p style={{ fontSize:"6px",color:"var(--gris-claro)",lineHeight:2 }}>
-                  Tienes ×{laminasUsuario?.[selLam.file]||0}. Mínimo 5 copias para canjear.
-                </p>
-              )}
-            </div>
-          )}
-        </>
-      )}
-      <div style={{
-        marginTop:"14px",padding:"10px",
-        border:"1px solid var(--verde-campo)",background:"rgba(0,0,0,0.2)",
-      }}>
-        <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:2 }}>
-          5 iguales → carta ×2 &nbsp;|&nbsp; 8 → carta ×3 &nbsp;|&nbsp; 10 → carta ×4
+      <p style={{ fontSize:"6px", color:"var(--gris-claro)", marginBottom:"12px", lineHeight:2 }}>
+        Repetidas disponibles: <span style={{ color:"var(--amarillo)" }}>{sobranteTotal}</span>
+        <br/>(cada copia extra de cualquier lámina cuenta)
+      </p>
+      <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+        {REGLAS.map(r => (
+          <button key={r.mult} className="btn-pixel btn-verde w-full" style={{ fontSize:"6px" }}
+            onClick={() => canjear(r)} disabled={canjeando || sobranteTotal < r.cantidad}>
+            {canjeando ? "⚙ ..." : r.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ marginTop:"14px", padding:"10px",
+        border:"1px solid var(--verde-campo)", background:"rgba(0,0,0,0.2)" }}>
+        <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+          4 → ×2 &nbsp;|&nbsp; 8 → ×3 &nbsp;|&nbsp; 12 → ×4
         </p>
       </div>
     </div>
@@ -820,12 +764,7 @@ export default function SeccionLaminas() {
           ? <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
               Cargando...
             </p>
-          : <CanjeLaminas
-              laminasUsuario={laminasUsuario}
-              todasLaminas={todasLaminas}
-              uid={uid}
-              onCanje={refreshProfile}
-            />
+          : <CanjeLaminas laminasUsuario={laminasUsuario} uid={uid} onCanje={refreshProfile} />
       )}
     </div>
   );
