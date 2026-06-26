@@ -19,7 +19,7 @@ import {
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
-import { composicionPorPuesto, generarSobre, gastarDuplicados, cartaImg } from "../utils/sobre";
+import { composicionPorPuesto, generarSobre, gastarDuplicados, cartaImg, recompensasPendientes } from "../utils/sobre";
 
 const CARDS_URL = "https://kvtral.github.io/laminas_16_bits/cards.json";
 const LAMINAS_POR_SOBRE = 4;
@@ -213,8 +213,43 @@ function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick }) {
 }
 
 // ── Colección ─────────────────────────────────────────────────
-function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
+function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamadas, onReclamar }) {
   const [selCat, setSelCat] = useState("todas");
+  const [reclamando, setReclamando] = useState(false);
+  const [msgRec, setMsgRec] = useState(null);
+
+  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {});
+
+  const reclamar = async (rec) => {
+    if (reclamando || !uid) return;
+    setReclamando(true);
+    setMsgRec(null);
+    try {
+      const detalles = [];
+      for (const { mult, n } of rec.cartas) {
+        for (let i = 0; i < n; i++) { const c = cartaAleatoriaPorMultiplicador(mult); if (c) detalles.push(c); }
+      }
+      const updates = { [`recompensas.${rec.key}`]: true };
+      for (const c of detalles) updates[`cartas.${c.id}`] = fbIncrement(1);
+      const batch = writeBatch(db);
+      batch.update(doc(db, "usuarios", uid), updates);
+      for (let i = 0; i < detalles.length; i++) {
+        const c = detalles[i];
+        batch.set(doc(db, "cartasDelUsuario", `${uid}_${c.id}_recompensa_${rec.key}_${i}`), {
+          uid, cartaId:c.id, cartaNombre:c.nombre, cartaSlug:c.slug,
+          multiplicador:c.multiplicador, rareza:c.rareza,
+          fecha:hoyStr(), visto:false, origen:"recompensa",
+        });
+      }
+      await batch.commit();
+      setMsgRec(`✅ ¡Recompensa reclamada! +${detalles.length} carta(s)`);
+      if (onReclamar) await onReclamar();
+    } catch (e) {
+      setMsgRec(`❌ ${e.message}`);
+    } finally {
+      setReclamando(false);
+    }
+  };
 
   if (!todasLaminas || todasLaminas.length === 0) {
     return (
@@ -248,6 +283,26 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
           {obtenidas}/{total}
         </span>
       </div>
+
+      {/* Recompensas */}
+      {msgRec && (
+        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color: msgRec.startsWith("✅") ? "var(--verde-claro)" : "var(--rojo-chile)",
+          textAlign:"center", marginBottom:"10px", lineHeight:2 }}>{msgRec}</p>
+      )}
+      {pendientes.length > 0 && (
+        <div style={{ display:"flex", flexDirection:"column", gap:"6px", marginBottom:"12px" }}>
+          {pendientes.map(rec => (
+            <button key={rec.key} className="btn-pixel btn-amarillo w-full" style={{ fontSize:"6px" }}
+              onClick={() => reclamar(rec)} disabled={reclamando}>
+              {reclamando ? "⚙ ..." :
+                rec.tipo === "album"
+                  ? "🏆 ÁLBUM COMPLETO — RECLAMAR 2 CARTAS ×4"
+                  : `✅ CATEGORÍA ${rec.key} COMPLETA — RECLAMAR CARTA ×2`}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Categorías */}
       <div style={{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"12px" }}>
@@ -758,6 +813,9 @@ export default function SeccionLaminas() {
                 laminasUsuario={laminasUsuario}
                 todasLaminas={todasLaminas}
                 onClickLamina={handleClickLamina}
+                uid={uid}
+                reclamadas={userProfile?.recompensas}
+                onReclamar={refreshProfile}
               />
       )}
 
