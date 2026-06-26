@@ -52,6 +52,19 @@ coleccionables, y las cartas multiplicadoras pasan a repartirse **por puesto** d
 - Cartas: `cartaAleatoriaPorMultiplicador(mult)` del set local, una por cada `{mult,n}`.
 - Con <23 jugadores los tiers altos simplemente no se alcanzan (no es error).
 
+## Recompensas por completar (colección)
+
+Incentivo a coleccionar:
+
+- **Categoría completa** (tener ≥1 de **cada** lámina de esa categoría) → **1 carta ×2** al azar (set local).
+- **Álbum completo** (las 61 / todo el catálogo) → **2 cartas ×4** al azar.
+
+Reglas:
+- Entrega por **botón RECLAMAR** en la Colección (no automático).
+- **Una sola vez** por categoría y por álbum. Se marca en `usuarios.recompensas` (`cat_${KEY}` / `album`).
+- Si el catálogo crece y una categoría reclamada queda incompleta, no se re-otorga (sigue marcada).
+- Cartas con `origen:"recompensa"` en `cartasDelUsuario`.
+
 ## Arquitectura
 
 ### 1. `src/utils/sobre.js` (nuevo — lógica pura, testeable)
@@ -74,6 +87,13 @@ gastarDuplicados(laminasUsuario, n) -> { ok: boolean, decrementos: {file: -k} }
   // ok=false si sobrante total < n.
 
 cartaImg(slug) -> `/cartas/${slug}.jpg`   // centraliza la ruta (los archivos son .jpg)
+
+// Recompensas por completar
+categoriaCompleta(laminasUsuario, todasLaminas, catKey) -> boolean
+albumCompleto(laminasUsuario, todasLaminas) -> boolean
+recompensasPendientes(laminasUsuario, todasLaminas, reclamadas) -> [{tipo:"categoria"|"album", key, cartas:[{mult,n}]}]
+  // tipo categoria => cartas:[{mult:2,n:1}]; tipo album => cartas:[{mult:4,n:2}]
+  // excluye las que ya están en `reclamadas` (mapa {cat_KEY:true, album:true})
 ```
 
 ### 2. Posición — en `SeccionLaminas` (NO en `sobre.js`)
@@ -108,6 +128,15 @@ Reemplaza el efecto actual ("4 láminas random distintas") por:
 Guard diario: la existencia de `sobresDelDia/{uid}_{hoy}` + `guardado` reemplaza al guard
 basado solo en localStorage.
 
+### 3b. `Coleccion` (modificar — botón RECLAMAR)
+
+- Calcular `recompensasPendientes(laminasUsuario, todasLaminas, userProfile.recompensas||{})`.
+- Por cada pendiente, mostrar un botón **RECLAMAR** (categoría: junto a su filtro/encabezado; álbum: arriba de la grilla).
+- Al reclamar: `cartaAleatoriaPorMultiplicador(mult)` por cada carta de la recompensa →
+  `cartas.{id} += 1` + doc `cartasDelUsuario` (`origen:"recompensa"`, ID determinista
+  `${uid}_${id}_recompensa_${key}_${i}`) + `recompensas.{key} = true`, todo bajo `usuarios/{uid}`.
+- `refreshProfile()` al terminar.
+
 ### 4. `CanjeLaminas` (modificar)
 
 - Reglas nuevas: **4→×2, 8→×3, 12→×4**.
@@ -140,7 +169,8 @@ ve al abrir el sobre). Sin cambios en el flujo de podio (`bonus_ganador`).
 ## Modelo de datos (Firestore)
 
 - `usuarios/{uid}`: campos existentes `laminas{file:n}`, `cartas{id:n}`, `puntosTotal`,
-  `ultimoSobre`. Sin campos nuevos en Fase 1.
+  `ultimoSobre`. **Nuevo:** `recompensas{ cat_KEY:true, album:true }` (recompensas de
+  colección ya reclamadas).
 - `cartasDelUsuario/{detId}`: como hoy; nuevos docs con `origen:"sobre"`.
 - **`sobresDelDia/{uid}_{fecha}`** (nuevo): `{ laminas:[...], cartas:[...], guardado:bool, fecha }`.
 
@@ -180,6 +210,8 @@ Cloud Function (composición + escritura server-side) — no antes.`
 - `generarSobre`: cuenta de láminas y cartas por tier; láminas pueden repetirse.
 - `gastarDuplicados`: suma de sobrantes, nunca baja de 1, `ok=false` si falta, decrementos
   suman -n.
+- `categoriaCompleta` / `albumCompleto`: true solo con todas las láminas (≥1) de la categoría/catálogo.
+- `recompensasPendientes`: lista las completas no reclamadas con sus cartas; excluye las reclamadas.
 
 ## Fuera de scope (Fase 2)
 
@@ -191,7 +223,7 @@ Monedas para comprar sobres + tienda. Spec y plan aparte.
 |---|---|
 | `src/utils/sobre.js` | nuevo (lógica pura + posición + `cartaImg`) |
 | `src/utils/sobre.test.mjs` | nuevo (self-check) |
-| `src/components/SeccionLaminas.jsx` | sobre por puesto + persistencia `sobresDelDia` + reveal de cartas; canje 4/8/12 mezclado |
+| `src/components/SeccionLaminas.jsx` | sobre por puesto + persistencia `sobresDelDia` + reveal de cartas; botón RECLAMAR en colección; canje 4/8/12 mezclado |
 | `src/utils/cartaDiaria.js` | eliminar |
 | `firestore.rules` | regla `sobresDelDia` |
 | `public/cartas/*` | renombrar 2 archivos |

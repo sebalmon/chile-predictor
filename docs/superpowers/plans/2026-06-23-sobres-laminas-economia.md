@@ -34,6 +34,9 @@
   - `generarSobre(todasLaminas: {file:string}[], comp, rnd=Math.random) -> { laminas: object[], cartas: object[] }`
   - `gastarDuplicados(laminasUsuario: Record<string,number>, n: number) -> { ok: boolean, decrementos: Record<string,number> }`
   - `cartaImg(slug: string) -> string`
+  - `categoriaCompleta(laminasUsuario, todasLaminas: {file,categoria}[], catKey: string) -> boolean`
+  - `albumCompleto(laminasUsuario, todasLaminas) -> boolean`
+  - `recompensasPendientes(laminasUsuario, todasLaminas, reclamadas: Record<string,boolean>) -> {tipo:"categoria"|"album", key:string, cartas:{mult:number,n:number}[]}[]`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -86,6 +89,32 @@ test("gastarDuplicados: respeta sobrante y nunca baja de 1", () => {
 
 test("cartaImg: ruta .jpg", () => {
   assert.equal(cartaImg("el-maracanazo"), "/cartas/el-maracanazo.jpg");
+});
+
+test("categoriaCompleta / albumCompleto", async () => {
+  const { categoriaCompleta, albumCompleto } = await import("./sobre.js");
+  const cat = [
+    {file:"RE_A",categoria:"RE"}, {file:"RE_B",categoria:"RE"},
+    {file:"CU_A",categoria:"CU"},
+  ];
+  assert.equal(categoriaCompleta({RE_A:1,RE_B:2}, cat, "RE"), true);
+  assert.equal(categoriaCompleta({RE_A:1}, cat, "RE"), false);   // falta RE_B
+  assert.equal(albumCompleto({RE_A:1,RE_B:1}, cat), false);      // falta CU_A
+  assert.equal(albumCompleto({RE_A:1,RE_B:1,CU_A:1}, cat), true);
+});
+
+test("recompensasPendientes: completas no reclamadas", async () => {
+  const { recompensasPendientes } = await import("./sobre.js");
+  const cat = [{file:"RE_A",categoria:"RE"},{file:"CU_A",categoria:"CU"}];
+  // RE completa y no reclamada; CU incompleta; álbum incompleto
+  const p = recompensasPendientes({RE_A:2}, cat, {});
+  assert.deepEqual(p, [{tipo:"categoria", key:"RE", cartas:[{mult:2,n:1}]}]);
+  // todo completo, RE ya reclamada -> queda CU + album
+  const q = recompensasPendientes({RE_A:1,CU_A:1}, cat, {cat_RE:true});
+  assert.deepEqual(q, [
+    {tipo:"categoria", key:"CU", cartas:[{mult:2,n:1}]},
+    {tipo:"album", key:"album", cartas:[{mult:4,n:2}]},
+  ]);
 });
 ```
 
@@ -149,12 +178,40 @@ export function gastarDuplicados(laminasUsuario, n) {
 export function cartaImg(slug) {
   return `/cartas/${slug}.jpg`;
 }
+
+// ── Recompensas por completar ──────────────────────────────────
+export function categoriaCompleta(laminasUsuario, todasLaminas, catKey) {
+  const dela = todasLaminas.filter(l => l.categoria === catKey);
+  if (dela.length === 0) return false;
+  return dela.every(l => (laminasUsuario?.[l.file] || 0) > 0);
+}
+
+export function albumCompleto(laminasUsuario, todasLaminas) {
+  if (!todasLaminas || todasLaminas.length === 0) return false;
+  return todasLaminas.every(l => (laminasUsuario?.[l.file] || 0) > 0);
+}
+
+// Lista recompensas completas y NO reclamadas. reclamadas = {cat_KEY:true, album:true}
+export function recompensasPendientes(laminasUsuario, todasLaminas, reclamadas = {}) {
+  const out = [];
+  const keys = [...new Set(todasLaminas.map(l => l.categoria).filter(Boolean))];
+  for (const key of keys) {
+    if (reclamadas[`cat_${key}`]) continue;
+    if (categoriaCompleta(laminasUsuario, todasLaminas, key)) {
+      out.push({ tipo: "categoria", key, cartas: [{ mult: 2, n: 1 }] });
+    }
+  }
+  if (!reclamadas.album && albumCompleto(laminasUsuario, todasLaminas)) {
+    out.push({ tipo: "album", key: "album", cartas: [{ mult: 4, n: 2 }] });
+  }
+  return out;
+}
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `node --test src/utils/sobre.test.mjs`
-Expected: PASS — 5 tests, 0 fail.
+Expected: PASS — 8 tests, 0 fail.
 
 - [ ] **Step 5: Commit**
 
@@ -505,7 +562,118 @@ git commit -m "feat(canje): duplicados mezclados 4/8/12 → cartas"
 
 ---
 
-### Task 5: Limpieza — eliminar `cartaDiaria.js` y arreglar rutas `.png`
+### Task 5: `Coleccion` — botón RECLAMAR (recompensas por completar)
+
+**Files:**
+- Modify: `src/components/SeccionLaminas.jsx` (componente `Coleccion` + su call-site)
+
+**Interfaces:**
+- Consumes: `recompensasPendientes`, `cartaImg` (Task 1); `cartaAleatoriaPorMultiplicador` de `sampleData`; `userProfile.recompensas`.
+- Produces: al reclamar, `cartas.{id} += 1` + `recompensas.{key}=true` en `usuarios/{uid}` + docs `cartasDelUsuario` (`origen:"recompensa"`).
+
+> Verificación manual (firebase + auth). La lógica de detección ya está cubierta por Task 1.
+
+- [ ] **Step 1: Imports** — asegurar en la cabecera del archivo:
+
+```js
+import { recompensasPendientes } from "../utils/sobre";
+import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+```
+
+- [ ] **Step 2: Extender la firma de `Coleccion`** y agregar el bloque de reclamo. Cambiar la declaración:
+
+```jsx
+function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamadas, onReclamar }) {
+  const [selCat, setSelCat] = useState("todas");
+  const [reclamando, setReclamando] = useState(false);
+  const [msgRec, setMsgRec] = useState(null);
+
+  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {});
+
+  const reclamar = async (rec) => {
+    if (reclamando || !uid) return;
+    setReclamando(true);
+    setMsgRec(null);
+    try {
+      const detalles = [];
+      for (const { mult, n } of rec.cartas) {
+        for (let i = 0; i < n; i++) { const c = cartaAleatoriaPorMultiplicador(mult); if (c) detalles.push(c); }
+      }
+      const updates = { [`recompensas.${rec.key}`]: true };
+      for (const c of detalles) updates[`cartas.${c.id}`] = fbIncrement(1);
+      await updateDoc(doc(db, "usuarios", uid), updates);
+      for (let i = 0; i < detalles.length; i++) {
+        const c = detalles[i];
+        await setDoc(doc(db, "cartasDelUsuario", `${uid}_${c.id}_recompensa_${rec.key}_${i}`), {
+          uid, cartaId:c.id, cartaNombre:c.nombre, cartaSlug:c.slug,
+          multiplicador:c.multiplicador, rareza:c.rareza,
+          fecha:hoyStr(), visto:false, origen:"recompensa",
+        });
+      }
+      setMsgRec(`✅ ¡Recompensa reclamada! +${detalles.length} carta(s)`);
+      if (onReclamar) await onReclamar();
+    } catch (e) {
+      setMsgRec(`❌ ${e.message}`);
+    } finally {
+      setReclamando(false);
+    }
+  };
+```
+
+(El resto del cuerpo de `Coleccion` —`categorias`, `filtradas`, `total`, `obtenidas`, la grilla— queda igual.)
+
+- [ ] **Step 3: Render del bloque RECLAMAR**, justo después del `<div>` de Progreso (antes del selector de categorías):
+
+```jsx
+{msgRec && (
+  <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+    color: msgRec.startsWith("✅") ? "var(--verde-claro)" : "var(--rojo-chile)",
+    textAlign:"center", marginBottom:"10px", lineHeight:2 }}>{msgRec}</p>
+)}
+{pendientes.length > 0 && (
+  <div style={{ display:"flex", flexDirection:"column", gap:"6px", marginBottom:"12px" }}>
+    {pendientes.map(rec => (
+      <button key={rec.key} className="btn-pixel btn-amarillo w-full" style={{ fontSize:"6px" }}
+        onClick={() => reclamar(rec)} disabled={reclamando}>
+        {reclamando ? "⚙ ..." :
+          rec.tipo === "album"
+            ? "🏆 ÁLBUM COMPLETO — RECLAMAR 2 CARTAS ×4"
+            : `✅ CATEGORÍA ${rec.key} COMPLETA — RECLAMAR CARTA ×2`}
+      </button>
+    ))}
+  </div>
+)}
+```
+
+- [ ] **Step 4: Actualizar el call-site** del tab COLECCIÓN:
+
+```jsx
+<Coleccion
+  laminasUsuario={laminasUsuario}
+  todasLaminas={todasLaminas}
+  onClickLamina={handleClickLamina}
+  uid={uid}
+  reclamadas={userProfile?.recompensas}
+  onReclamar={refreshProfile}
+/>
+```
+
+- [ ] **Step 5: Verificación manual**
+
+Run: `npm run dev`
+Con un usuario que tenga una categoría completa: en COLECCIÓN aparece el botón RECLAMAR de esa categoría; al tocarlo recibe 1 carta ×2, el botón desaparece (queda en `recompensas`), y al recargar no reaparece. Si completa todo, aparece el botón de álbum (2 cartas ×4).
+Expected: comportamiento descrito; reclamar una sola vez; consola sin errores.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/components/SeccionLaminas.jsx
+git commit -m "feat(recompensas): botón RECLAMAR por categoría/álbum completo"
+```
+
+---
+
+### Task 6: Limpieza — eliminar `cartaDiaria.js` y arreglar rutas `.png`
 
 **Files:**
 - Delete: `src/utils/cartaDiaria.js`
@@ -571,6 +739,7 @@ git commit -m "chore: eliminar cartaDiaria muerto y arreglar rutas de imagen de 
 - Imágenes de carta (`.jpg`, renombres, helper, fix `.png`) → Task 2 + Task 5.
 - Test pura `node --test` → Task 1.
 - Default sin ranking (tier 1-3) → Task 1 (`composicionPorPuesto(null)`) + Task 3 (posicion null).
+- Recompensas por completar (categoría ×2 / álbum 2×4, botón RECLAMAR, una vez, `usuarios.recompensas`, `origen:"recompensa"`) → Task 1 (`categoriaCompleta`/`albumCompleto`/`recompensasPendientes` + tests) + Task 5 (UI/claim).
 - Monedas → fuera de scope (Fase 2). Correcto, sin tarea.
 
 **Placeholder scan:** sin TBD/TODO; todos los steps tienen código o comando concreto.
