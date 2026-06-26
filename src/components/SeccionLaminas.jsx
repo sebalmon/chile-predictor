@@ -1,18 +1,20 @@
-// src/components/SeccionLaminas.jsx  — v13 (Mapeo de abreviaturas a nombres completos)
+// src/components/SeccionLaminas.jsx  — v14 (Fusión HEAD + amigo)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v13:
-//   • Mapeo de abreviaturas (BA, CA, CU, FO, HA, ME, OB, RE) a nombres completos.
-//   • Asignación de íconos para cada categoría.
-//   • Muestra el nombre completo en los cuadros del álbum.
+// CAMBIOS v14:
+//   • Fusión de ambas versiones: mapeo de abreviaturas + lógica de recompensas.
+//   • Mantiene nombres completos e íconos.
+//   • Usa writeBatch para transacciones atómicas.
 //   • Persistencia, guardado y canje intactos.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   doc, getDoc, updateDoc, setDoc, increment as fbIncrement,
+  collection, getDocs, query, orderBy, writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+import { composicionPorPuesto, generarSobre, gastarDuplicados, cartaImg, recompensasPendientes } from "../utils/sobre";
 
 const CARDS_URL = "https://kvtral.github.io/laminas_16_bits/cards.json";
 const LAMINAS_POR_SOBRE = 4;
@@ -20,6 +22,19 @@ const LAMINAS_POR_SOBRE = 4;
 function hoyStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+async function obtenerPosicionTotal(uid) {
+  try {
+    const snap = await getDocs(query(
+      collection(db, "usuarios"), orderBy("puntosTotal", "desc")
+    ));
+    const idx = snap.docs.findIndex(d => d.id === uid);
+    return { posicion: idx >= 0 ? idx + 1 : null, total: snap.size };
+  } catch (e) {
+    console.error("posicionTotal:", e);
+    return { posicion: null, total: 0 };
+  }
 }
 
 // ── Lightbox ──────────────────────────────────────────────────
@@ -200,17 +215,11 @@ function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick }) {
   );
 }
 
-// ── Colección (Álbum + Detalle) ──────────────────────────────
-function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
+// ── Colección (Álbum + Detalle + Recompensas) ────────────────
+function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamadas, onReclamar }) {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
-
-  if (!todasLaminas || todasLaminas.length === 0) {
-    return (
-      <p style={{ fontSize:"6px",color:"var(--gris-claro)",padding:"16px",textAlign:"center" }}>
-        Cargando catálogo...
-      </p>
-    );
-  }
+  const [reclamando, setReclamando] = useState(false);
+  const [msgRec, setMsgRec] = useState(null);
 
   // ─── MAPEO DE ABREVIATURAS A NOMBRES COMPLETOS ─────────────
   const mapaCategorias = {
@@ -256,6 +265,56 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
 
   // Función para obtener ícono desde nombre completo
   const getIcono = (nombre) => iconosPorCategoria[nombre] || "🃏";
+
+  // ─── RECOMPENSAS ──────────────────────────────────────────
+  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {});
+
+  const reclamar = async (rec) => {
+    if (reclamando || !uid) return;
+    setReclamando(true);
+    setMsgRec(null);
+    try {
+      const detalles = [];
+      for (const { mult, n } of rec.cartas) {
+        for (let i = 0; i < n; i++) { const c = cartaAleatoriaPorMultiplicador(mult); if (c) detalles.push(c); }
+      }
+      // Bug 1 fix: use cat_ prefix for category keys so the util's lookup matches
+      const storeKey = rec.tipo === "album" ? "album" : `cat_${rec.key}`;
+      const updates = { [`recompensas.${storeKey}`]: true };
+      // Bug 2 fix: count per unique carta id to avoid overwriting increments
+      const conteo = {};
+      for (const c of detalles) conteo[c.id] = (conteo[c.id] || 0) + 1;
+      for (const [id, count] of Object.entries(conteo)) updates[`cartas.${id}`] = fbIncrement(count);
+      const batch = writeBatch(db);
+      batch.update(doc(db, "usuarios", uid), updates);
+      for (let i = 0; i < detalles.length; i++) {
+        const c = detalles[i];
+        batch.set(doc(db, "cartasDelUsuario", `${uid}_${c.id}_recompensa_${rec.key}_${i}`), {
+          uid, cartaId:c.id, cartaNombre:c.nombre, cartaSlug:c.slug,
+          multiplicador:c.multiplicador, rareza:c.rareza,
+          fecha:hoyStr(), visto:false, origen:"recompensa",
+        });
+      }
+      await batch.commit();
+      setMsgRec(`✅ ¡Recompensa reclamada! +${detalles.length} carta(s)`);
+      // Bug 4 fix: clear banner after 4 s
+      setTimeout(() => setMsgRec(null), 4000);
+      if (onReclamar) await onReclamar();
+    } catch (e) {
+      setMsgRec(`❌ ${e.message}`);
+      setTimeout(() => setMsgRec(null), 4000);
+    } finally {
+      setReclamando(false);
+    }
+  };
+
+  if (!todasLaminas || todasLaminas.length === 0) {
+    return (
+      <p style={{ fontSize:"6px",color:"var(--gris-claro)",padding:"16px",textAlign:"center" }}>
+        Cargando catálogo...
+      </p>
+    );
+  }
 
   // ─── VISTA DETALLE (categoría seleccionada) ──────────────
   if (categoriaSeleccionada) {
@@ -317,6 +376,26 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
         }}>
           {icono} {nombreCompleto}
         </div>
+
+        {/* Recompensas */}
+        {msgRec && (
+          <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color: msgRec.startsWith("✅") ? "var(--verde-claro)" : "var(--rojo-chile)",
+            textAlign:"center", marginBottom:"10px", lineHeight:2 }}>{msgRec}</p>
+        )}
+        {pendientes.length > 0 && (
+          <div style={{ display:"flex", flexDirection:"column", gap:"6px", marginBottom:"12px" }}>
+            {pendientes.map(rec => (
+              <button key={rec.key} className="btn-pixel btn-amarillo w-full" style={{ fontSize:"6px" }}
+                onClick={() => reclamar(rec)} disabled={reclamando}>
+                {reclamando ? "⚙ ..." :
+                  rec.tipo === "album"
+                    ? "🏆 ÁLBUM COMPLETO — RECLAMAR 2 CARTAS ×4"
+                    : `✅ CATEGORÍA ${rec.key} COMPLETA — RECLAMAR CARTA ×2`}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div style={{
           padding:"4px 10px",
@@ -510,6 +589,26 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
         SELECCIONA CATEGORIA
       </div>
 
+      {/* Recompensas (en vista álbum) */}
+      {msgRec && (
+        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color: msgRec.startsWith("✅") ? "var(--verde-claro)" : "var(--rojo-chile)",
+          textAlign:"center", marginBottom:"10px", lineHeight:2 }}>{msgRec}</p>
+      )}
+      {pendientes.length > 0 && (
+        <div style={{ display:"flex", flexDirection:"column", gap:"6px", marginBottom:"16px" }}>
+          {pendientes.map(rec => (
+            <button key={rec.key} className="btn-pixel btn-amarillo w-full" style={{ fontSize:"6px" }}
+              onClick={() => reclamar(rec)} disabled={reclamando}>
+              {reclamando ? "⚙ ..." :
+                rec.tipo === "album"
+                  ? "🏆 ÁLBUM COMPLETO — RECLAMAR 2 CARTAS ×4"
+                  : `✅ CATEGORÍA ${rec.key} COMPLETA — RECLAMAR CARTA ×2`}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={{
         display: "flex",
         flexWrap: "wrap",
@@ -600,49 +699,43 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina }) {
 }
 
 // ── Canje ─────────────────────────────────────────────────────
-function CanjeLaminas({ laminasUsuario, todasLaminas, uid, onCanje }) {
-  const [selLam,    setSelLam]    = useState(null);
+function CanjeLaminas({ laminasUsuario, uid, onCanje }) {
   const [canjeando, setCanjeando] = useState(false);
-  const [msg,       setMsg]       = useState(null);
+  const [msg, setMsg] = useState(null);
 
   const REGLAS = [
-    { cantidad:5,  mult:2, label:"5 iguales → carta ×2" },
-    { cantidad:8,  mult:3, label:"8 iguales → carta ×3" },
-    { cantidad:10, mult:4, label:"10 iguales → carta ×4" },
+    { cantidad: 4,  mult: 2, label: "4 repetidas → carta ×2" },
+    { cantidad: 8,  mult: 3, label: "8 repetidas → carta ×3" },
+    { cantidad: 12, mult: 4, label: "12 repetidas → carta ×4" },
   ];
 
-  const repetidas = todasLaminas
-    .filter(l => (laminasUsuario?.[l.file]||0) > 1)
-    .map(l => ({ ...l, cant: laminasUsuario[l.file] }));
+  const sobranteTotal = Object.values(laminasUsuario || {})
+    .reduce((s, c) => s + Math.max(0, (c || 0) - 1), 0);
 
   const canjear = async (regla) => {
-    if (!selLam || (laminasUsuario?.[selLam.file]||0) < regla.cantidad) {
-      setMsg({ tipo:"error", texto:`Necesitas ${regla.cantidad} copias de la misma lámina.` });
-      return;
-    }
+    const { ok, decrementos } = gastarDuplicados(laminasUsuario, regla.cantidad);
+    if (!ok) { setMsg({ tipo:"error", texto:`Te faltan repetidas (tenés ${sobranteTotal}).` }); return; }
     setCanjeando(true);
     try {
-      await updateDoc(doc(db,"usuarios",uid), {
-        [`laminas.${selLam.file}`]: fbIncrement(-regla.cantidad),
-      });
       const carta = cartaAleatoriaPorMultiplicador(regla.mult);
+      const updates = {};
+      for (const [file, d] of Object.entries(decrementos)) updates[`laminas.${file}`] = fbIncrement(d);
+      if (carta) updates[`cartas.${carta.id}`] = fbIncrement(1);
+
+      const batch = writeBatch(db);
+      batch.update(doc(db, "usuarios", uid), updates);
       if (carta) {
-        await setDoc(
-          doc(db,"cartasDelUsuario",`${uid}_${carta.id}_canje_${Date.now()}`),
-          {
-            uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
-            multiplicador:carta.multiplicador, rareza:carta.rareza,
-            fecha:hoyStr(), visto:false, origen:"canje",
-          }
-        );
-        await updateDoc(doc(db,"usuarios",uid), {
-          [`cartas.${carta.id}`]: fbIncrement(1),
+        batch.set(doc(db, "cartasDelUsuario", `${uid}_${carta.id}_canje_${Date.now()}`), {
+          uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
+          multiplicador:carta.multiplicador, rareza:carta.rareza,
+          fecha:hoyStr(), visto:false, origen:"canje",
         });
       }
-      setMsg({ tipo:"ok", texto:`✅ ×${regla.cantidad} "${selLam.nombre}" → carta ×${regla.mult}!` });
-      setSelLam(null);
+      await batch.commit();
+
+      setMsg({ tipo:"ok", texto:`✅ ${regla.cantidad} repetidas → carta ×${regla.mult}!` });
       onCanje();
-    } catch(e) {
+    } catch (e) {
       setMsg({ tipo:"error", texto:e.message });
     } finally {
       setCanjeando(false);
@@ -651,78 +744,31 @@ function CanjeLaminas({ laminasUsuario, todasLaminas, uid, onCanje }) {
 
   return (
     <div>
-      <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"10px" }}>
+      <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"10px" }}>
         CANJE DE LÁMINAS REPETIDAS
       </p>
       {msg && (
-        <p style={{
-          fontSize:"6px", lineHeight:2, marginBottom:"10px",
-          color: msg.tipo==="ok" ? "var(--verde-claro)" : "var(--rojo-chile)",
-        }}>
+        <p style={{ fontSize:"6px", lineHeight:2, marginBottom:"10px",
+          color: msg.tipo==="ok" ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
           {msg.texto}
         </p>
       )}
-      {repetidas.length === 0 ? (
-        <p style={{ fontSize:"6px",color:"var(--gris-claro)",lineHeight:2 }}>
-          Aún no tienes láminas repetidas.
-        </p>
-      ) : (
-        <>
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginBottom:"8px",lineHeight:2 }}>
-            Selecciona una lámina repetida:
-          </p>
-          <div style={{ display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"12px" }}>
-            {repetidas.map(l => (
-              <div
-                key={l.file}
-                onClick={() => setSelLam(l)}
-                style={{
-                  width:"56px", cursor:"pointer", textAlign:"center",
-                  border:`2px solid ${selLam?.file===l.file?"var(--amarillo)":"var(--gris)"}`,
-                  padding:"3px",
-                  background: selLam?.file===l.file ? "rgba(244,208,63,0.12)" : "transparent",
-                }}
-              >
-                <img src={l.url} alt={l.nombre}
-                  style={{ width:"50px",height:"68px",objectFit:"cover",display:"block" }} />
-                <span style={{
-                  fontFamily:"'Press Start 2P',monospace",fontSize:"5px",
-                  color:"var(--amarillo)",display:"block",marginTop:"2px",
-                }}>
-                  ×{l.cant}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {selLam && (
-            <div style={{ display:"flex",flexDirection:"column",gap:"6px" }}>
-              {REGLAS.filter(r => (laminasUsuario?.[selLam.file]||0) >= r.cantidad).map(r => (
-                <button
-                  key={r.mult}
-                  className="btn-pixel btn-verde w-full"
-                  style={{ fontSize:"6px" }}
-                  onClick={() => canjear(r)}
-                  disabled={canjeando}
-                >
-                  {canjeando ? "⚙ ..." : r.label}
-                </button>
-              ))}
-              {REGLAS.every(r => (laminasUsuario?.[selLam.file]||0) < r.cantidad) && (
-                <p style={{ fontSize:"6px",color:"var(--gris-claro)",lineHeight:2 }}>
-                  Tienes ×{laminasUsuario?.[selLam.file]||0}. Mínimo 5 copias para canjear.
-                </p>
-              )}
-            </div>
-          )}
-        </>
-      )}
-      <div style={{
-        marginTop:"14px",padding:"10px",
-        border:"1px solid var(--verde-campo)",background:"rgba(0,0,0,0.2)",
-      }}>
-        <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:2 }}>
-          5 iguales → carta ×2 &nbsp;|&nbsp; 8 → carta ×3 &nbsp;|&nbsp; 10 → carta ×4
+      <p style={{ fontSize:"6px", color:"var(--gris-claro)", marginBottom:"12px", lineHeight:2 }}>
+        Repetidas disponibles: <span style={{ color:"var(--amarillo)" }}>{sobranteTotal}</span>
+        <br/>(cada copia extra de cualquier lámina cuenta)
+      </p>
+      <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+        {REGLAS.map(r => (
+          <button key={r.mult} className="btn-pixel btn-verde w-full" style={{ fontSize:"6px" }}
+            onClick={() => canjear(r)} disabled={canjeando || sobranteTotal < r.cantidad}>
+            {canjeando ? "⚙ ..." : r.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ marginTop:"14px", padding:"10px",
+        border:"1px solid var(--verde-campo)", background:"rgba(0,0,0,0.2)" }}>
+        <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+          4 → ×2 &nbsp;|&nbsp; 8 → ×3 &nbsp;|&nbsp; 12 → ×4
         </p>
       </div>
     </div>
@@ -731,7 +777,7 @@ function CanjeLaminas({ laminasUsuario, todasLaminas, uid, onCanje }) {
 
 // ── Componente principal ──────────────────────────────────────
 export default function SeccionLaminas() {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, userProfile, refreshProfile } = useAuth();
 
   const [tab,          setTab]          = useState("sobre");
   const [todasLaminas, setTodasLaminas] = useState([]);
@@ -741,13 +787,15 @@ export default function SeccionLaminas() {
   const [lightboxLamina,   setLightboxLamina]   = useState(null);
   const [lightboxCantidad, setLightboxCantidad] = useState(0);
 
+  // Estado del sobre (reemplaza laminasNuevas)
+  const [sobre, setSobre]                 = useState(null); // { laminas:[], cartas:[] }
   const [sobreDisponible, setSobreDisponible] = useState(false);
-  const [laminasNuevas,   setLaminasNuevas]   = useState([]);
-  const [sobreAbierto,    setSobreAbierto]     = useState(false);
-  const [volteadas,       setVolteadas]        = useState(0);
-  const [guardando,       setGuardando]        = useState(false);
-  const [sobreGuardado,   setSobreGuardado]    = useState(false);
-  const [msgGuardado,     setMsgGuardado]      = useState(null);
+  const [sobreAbierto, setSobreAbierto]   = useState(false);
+  const [sobreGuardado, setSobreGuardado] = useState(false);
+  const [volteadas, setVolteadas]         = useState(0);
+  const [guardando, setGuardando]         = useState(false);
+  const [msgGuardado, setMsgGuardado]     = useState(null);
+  const iniciadoRef = useRef(false);
 
   const [laminasLocal, setLaminasLocal] = useState(() => {
     const stored = localStorage.getItem("cp8b_mis_laminas");
@@ -759,12 +807,11 @@ export default function SeccionLaminas() {
     return {};
   });
 
-  const iniciadoRef = useRef(false);
   const uid  = firebaseUser?.uid;
   const hoy  = hoyStr();
-  const lsKeyOver = uid ? `cp8b_sobre_${uid}_${hoy}` : null;
-  const lsKeyLams = uid ? `cp8b_lams_${uid}_${hoy}`  : null;
+  const sobreDocId = uid ? `${uid}_${hoy}` : null;
 
+  // Cargar catálogo
   useEffect(() => {
     fetch(CARDS_URL)
       .then(r => r.json())
@@ -779,85 +826,73 @@ export default function SeccionLaminas() {
       .finally(() => setCargandoCat(false));
   }, []);
 
+  // 2. Cargar/crear el sobre del día (fuente de verdad: Firestore sobresDelDia)
   useEffect(() => {
-    if (!uid || iniciadoRef.current) return;
+    if (!uid || iniciadoRef.current || todasLaminas.length === 0) return;
     iniciadoRef.current = true;
 
-    const verificar = async () => {
-      if (localStorage.getItem(lsKeyOver) === "guardado") {
-        setSobreGuardado(true);
+    (async () => {
+      // 1) ¿Ya existe el sobre de hoy? -> restaurar (anti re-roll)
+      const ref = doc(db, "sobresDelDia", sobreDocId);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const d = snap.data();
+        setSobre({ laminas: d.laminas || [], cartas: d.cartas || [] });
+        setSobreGuardado(!!d.guardado);
+        setSobreAbierto(true);
         setSobreDisponible(false);
-        const lamsGuardadas = localStorage.getItem(lsKeyLams);
-        if (lamsGuardadas) {
-          try { setLaminasNuevas(JSON.parse(lamsGuardadas)); } catch(_) {}
-        }
+        if (d.guardado) setVolteadas((d.laminas?.length || 0) + (d.cartas?.length || 0));
         return;
       }
-
-      try {
-        const uSnap = await getDoc(doc(db,"usuarios",uid));
-        if (uSnap.exists() && uSnap.data().ultimoSobre === hoy) {
-          localStorage.setItem(lsKeyOver, "guardado");
-          setSobreGuardado(true);
-          setSobreDisponible(false);
-          const lamsGuardadas = localStorage.getItem(lsKeyLams);
-          if (lamsGuardadas) {
-            try { setLaminasNuevas(JSON.parse(lamsGuardadas)); } catch(_) {}
-          }
-          return;
-        }
-      } catch(_) {}
-
-      const lamsPrep = localStorage.getItem(lsKeyLams);
-      if (lamsPrep) {
-        try {
-          setLaminasNuevas(JSON.parse(lamsPrep));
-          setSobreDisponible(false);
-          setSobreAbierto(true);
-          return;
-        } catch(_) {}
-      }
-
+      // 2) No existe -> generar por puesto y FIJAR en Firestore antes del reveal
+      const { posicion } = await obtenerPosicionTotal(uid);
+      const comp = composicionPorPuesto(posicion);
+      const generado = generarSobre(todasLaminas, comp);
+      await setDoc(ref, {
+        uid, fecha: hoy, guardado: false,
+        laminas: generado.laminas, cartas: generado.cartas,
+      });
+      setSobre(generado);
       setSobreDisponible(true);
-    };
+    })();
+  }, [uid, hoy, sobreDocId, todasLaminas]);
 
-    verificar();
-  }, [uid, hoy, lsKeyOver, lsKeyLams]);
-
-  useEffect(() => {
-    if (!sobreDisponible || todasLaminas.length === 0 || !uid) return;
-    if (laminasNuevas.length > 0) return;
-
-    const seleccionadas = [...todasLaminas]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, LAMINAS_POR_SOBRE);
-
-    setLaminasNuevas(seleccionadas);
-    localStorage.setItem(lsKeyLams, JSON.stringify(seleccionadas));
-  }, [sobreDisponible, todasLaminas, uid, laminasNuevas.length, lsKeyLams]);
-
-  const guardarLaminas = async (e) => {
-    if (e) e.preventDefault();
-    if (!uid || laminasNuevas.length === 0 || guardando) return;
+  // 4. Guardar láminas en Firestore (sin recargar)
+  const guardarLaminas = async () => {
+    if (!uid || !sobre || guardando || sobreGuardado) return;
     setGuardando(true);
     setMsgGuardado(null);
     try {
       const updates = { ultimoSobre: hoy };
-      for (const lam of laminasNuevas) {
-        updates[`laminas.${lam.file}`] = fbIncrement(1);
-      }
-      await updateDoc(doc(db, "usuarios", uid), updates);
+      for (const lam of sobre.laminas) updates[`laminas.${lam.file}`] = fbIncrement(1);
+      for (const c of sobre.cartas)    updates[`cartas.${c.id}`]      = fbIncrement(1);
 
+      const batch = writeBatch(db);
+      batch.update(doc(db, "usuarios", uid), updates);
+
+      // docs detalle de cartas (ID determinista -> idempotente), origen "sobre"
+      for (let i = 0; i < sobre.cartas.length; i++) {
+        const c = sobre.cartas[i];
+        batch.set(doc(db, "cartasDelUsuario", `${uid}_${c.id}_${hoy}_sobre_${i}`), {
+          uid, cartaId: c.id, cartaNombre: c.nombre, cartaSlug: c.slug,
+          multiplicador: c.multiplicador, rareza: c.rareza,
+          fecha: hoy, visto: false, origen: "sobre",
+        });
+      }
+      batch.update(doc(db, "sobresDelDia", sobreDocId), { guardado: true });
+      await batch.commit();
+
+      // Actualizar estado local y localStorage
       const nuevasLaminas = { ...laminasLocal };
-      for (const lam of laminasNuevas) {
+      for (const lam of sobre.laminas) {
         nuevasLaminas[lam.file] = (nuevasLaminas[lam.file] || 0) + 1;
       }
       setLaminasLocal(nuevasLaminas);
       localStorage.setItem("cp8b_mis_laminas", JSON.stringify(nuevasLaminas));
 
-      localStorage.setItem(lsKeyOver, "guardado");
       setSobreGuardado(true);
-      setMsgGuardado("✅ ¡Láminas guardadas en tu colección!");
+      setMsgGuardado("✅ ¡Guardado en tu colección!");
+      if (refreshProfile) await refreshProfile();
     } catch (e) {
       setMsgGuardado(`❌ Error: ${e.message}`);
     } finally {
@@ -865,7 +900,8 @@ export default function SeccionLaminas() {
     }
   };
 
-  const handleCanje = useCallback(async () => {
+  // Callback para actualizar estado después de canje/recompensa
+  const handleRefresh = useCallback(async () => {
     try {
       const userDoc = await getDoc(doc(db, "usuarios", uid));
       if (userDoc.exists()) {
@@ -874,8 +910,9 @@ export default function SeccionLaminas() {
         setLaminasLocal(nuevasLaminas);
         localStorage.setItem("cp8b_mis_laminas", JSON.stringify(nuevasLaminas));
       }
+      if (refreshProfile) await refreshProfile();
     } catch (_) {}
-  }, [uid]);
+  }, [uid, refreshProfile]);
 
   const handleClickLamina = (lamina, cantidad) => {
     setLightboxLamina(lamina);
@@ -954,7 +991,7 @@ export default function SeccionLaminas() {
                   Vuelve mañana para un nuevo sobre.
                 </p>
               </div>
-              {laminasNuevas.length > 0 && (
+              {sobre?.laminas?.length > 0 && (
                 <>
                   <p style={{
                     fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
@@ -963,7 +1000,7 @@ export default function SeccionLaminas() {
                     TUS LÁMINAS DE HOY:
                   </p>
                   <div style={{ display:"flex",flexWrap:"wrap",justifyContent:"center",gap:"8px" }}>
-                    {laminasNuevas.map((lam,i) => (
+                    {sobre.laminas.map((lam,i) => (
                       <div key={i}
                         onClick={() => handleClickLamina(lam, laminasLocal[lam.file]||1)}
                         style={{ width:"76px",cursor:"pointer",textAlign:"center" }}>
@@ -985,19 +1022,20 @@ export default function SeccionLaminas() {
             </div>
           ) : sobreDisponible && !sobreAbierto ? (
             <SobreAnimado onAbrir={() => setSobreAbierto(true)} />
-          ) : laminasNuevas.length > 0 ? (
+          ) : sobre !== null ? (
+            // Sobre abierto — mostrar láminas con flip
             <div>
               <p style={{
                 fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
                 color:"var(--amarillo)",textAlign:"center",marginBottom:"14px",
               }}>
-                {sobreGuardado ? "TUS LÁMINAS DE HOY" : `¡Da vuelta tus láminas! (${volteadas}/${laminasNuevas.length})`}
+                {sobreGuardado ? "TUS LÁMINAS DE HOY" : `¡Da vuelta tus láminas! (${volteadas}/${sobre.laminas.length})`}
               </p>
               <div style={{
                 display:"flex",flexWrap:"wrap",justifyContent:"center",
                 gap:"10px",marginBottom:"16px",
               }}>
-                {laminasNuevas.map((lam,i) => (
+                {sobre.laminas.map((lam,i) => (
                   <LaminaFlip
                     key={lam.file+i}
                     lamina={lam}
@@ -1009,7 +1047,30 @@ export default function SeccionLaminas() {
                 ))}
               </div>
 
-              {!sobreGuardado && volteadas >= laminasNuevas.length && (
+              {sobre.cartas.length > 0 && (
+                <>
+                  <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                    color:"var(--amarillo)", textAlign:"center", margin:"10px 0" }}>
+                    ¡CARTAS MULTIPLICADORAS!
+                  </p>
+                  <div style={{ display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"10px" }}>
+                    {sobre.cartas.map((c, i) => (
+                      <div key={c.id+"_"+i} style={{ width:"80px", textAlign:"center" }}>
+                        <div style={{ width:"80px", height:"110px", border:"3px solid var(--amarillo)",
+                          boxShadow:"3px 3px 0 var(--negro)", overflow:"hidden" }}>
+                          <img src={cartaImg(c.slug)} alt={c.nombre}
+                            style={{ width:"100%", height:"100%", objectFit:"cover" }}
+                            onError={e => { e.target.style.opacity = 0.2; }} />
+                        </div>
+                        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                          color:"var(--verde-claro)", marginTop:"3px" }}>×{c.multiplicador}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {!sobreGuardado && volteadas >= sobre.laminas.length && (
                 <button
                   className="btn-pixel btn-verde w-full"
                   style={{ fontSize:"7px" }}
@@ -1020,7 +1081,7 @@ export default function SeccionLaminas() {
                 </button>
               )}
 
-              {!sobreGuardado && volteadas < laminasNuevas.length && (
+              {!sobreGuardado && volteadas < sobre.laminas.length && (
                 <p style={{
                   fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
                   color:"var(--gris-claro)",textAlign:"center",lineHeight:2,
@@ -1070,6 +1131,9 @@ export default function SeccionLaminas() {
                 laminasUsuario={laminasLocal}
                 todasLaminas={todasLaminas}
                 onClickLamina={handleClickLamina}
+                uid={uid}
+                reclamadas={userProfile?.recompensas}
+                onReclamar={handleRefresh}
               />
       )}
 
@@ -1080,9 +1144,8 @@ export default function SeccionLaminas() {
             </p>
           : <CanjeLaminas
               laminasUsuario={laminasLocal}
-              todasLaminas={todasLaminas}
               uid={uid}
-              onCanje={handleCanje}
+              onCanje={handleRefresh}
             />
       )}
     </div>

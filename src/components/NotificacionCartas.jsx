@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
+import { cartaImg } from "../utils/sobre";
 
 const RAREZA_COLOR = {
   comun:      "var(--verde-claro)",
@@ -161,7 +162,7 @@ function CartasGrid({ cartas }) {
           background: "var(--negro)",
         }}>
           <img
-            src={`/cartas/${c.cartaSlug}.png`}
+            src={cartaImg(c.cartaSlug)}
             alt={c.cartaNombre}
             style={{ width:"80px",height:"80px",objectFit:"cover",
               imageRendering:"pixelated",border:"2px solid var(--negro)" }}

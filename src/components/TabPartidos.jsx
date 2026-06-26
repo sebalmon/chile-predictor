@@ -107,11 +107,12 @@ export default function TabPartidos({ onGuardado }) {
     if (!firebaseUser) return;
     const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
     if (abiertos.length === 0) return;
+    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
+    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
+    const idsAbiertos = new Set(abiertos.map(p => p.id));
+    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
     const nuevas = new Set();
-    for (const p of abiertos) {
-      const snap = await getDoc(doc(db,"predicciones",`${firebaseUser.uid}_${p.id}`));
-      if (snap.exists()) nuevas.add(p.id);
-    }
+    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
     setPrediccionesGuardadas(nuevas);
   };
 

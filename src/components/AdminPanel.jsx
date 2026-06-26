@@ -11,7 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
-  collection, getDocs, query, orderBy, doc,
+  collection, getDocs, query, orderBy, limit, doc,
   updateDoc, where, setDoc, deleteDoc, getDoc, addDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -693,7 +693,7 @@ function TabMensajes({ onMensaje }) {
   const cargar = async () => {
     setCargando(true);
     try {
-      const snap = await getDocs(query(collection(db,"mensajesDia"), orderBy("timestamp","desc")));
+      const snap = await getDocs(query(collection(db,"mensajesDia"), orderBy("timestamp","desc"), limit(LIMITE)));
       setMensajes(snap.docs.map(d => ({ docId:d.id, ...d.data() })));
     } catch(e) { console.error(e); }
     finally { setCargando(false); }

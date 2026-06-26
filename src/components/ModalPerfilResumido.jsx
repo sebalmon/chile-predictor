@@ -1,6 +1,7 @@
 // src/components/ModalPerfilResumido.jsx (versión completa)
 import React from "react";
 import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
+import { cartaImg } from "../utils/sobre";
 
 function AvatarAnimado({ avatarId, size = 56 }) {
   const [frame, setFrame] = React.useState(1);
@@ -135,7 +136,7 @@ export default function ModalPerfilResumido({ jugador, onCerrar }) {
               {cartasInfo.map(carta => (
                 <div key={carta.id} style={{ textAlign: "center", width: "60px" }}>
                   <img
-                    src={`/cartas/${carta.slug}.png`}
+                    src={cartaImg(carta.slug)}
                     alt={carta.nombre}
                     style={{ width: "50px", height: "50px", imageRendering: "pixelated", border: "2px solid var(--negro)" }}
                     onError={(e) => { e.target.style.display = "none"; }}
