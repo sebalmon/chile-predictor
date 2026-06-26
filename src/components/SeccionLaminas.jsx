@@ -218,8 +218,6 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
   const [reclamando, setReclamando] = useState(false);
   const [msgRec, setMsgRec] = useState(null);
 
-  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {});
-
   const reclamar = async (rec) => {
     if (reclamando || !uid) return;
     setReclamando(true);
@@ -229,8 +227,13 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
       for (const { mult, n } of rec.cartas) {
         for (let i = 0; i < n; i++) { const c = cartaAleatoriaPorMultiplicador(mult); if (c) detalles.push(c); }
       }
-      const updates = { [`recompensas.${rec.key}`]: true };
-      for (const c of detalles) updates[`cartas.${c.id}`] = fbIncrement(1);
+      // Bug 1 fix: use cat_ prefix for category keys so the util's lookup matches
+      const storeKey = rec.tipo === "album" ? "album" : `cat_${rec.key}`;
+      const updates = { [`recompensas.${storeKey}`]: true };
+      // Bug 2 fix: count per unique carta id to avoid overwriting increments
+      const conteo = {};
+      for (const c of detalles) conteo[c.id] = (conteo[c.id] || 0) + 1;
+      for (const [id, count] of Object.entries(conteo)) updates[`cartas.${id}`] = fbIncrement(count);
       const batch = writeBatch(db);
       batch.update(doc(db, "usuarios", uid), updates);
       for (let i = 0; i < detalles.length; i++) {
@@ -243,9 +246,12 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
       }
       await batch.commit();
       setMsgRec(`✅ ¡Recompensa reclamada! +${detalles.length} carta(s)`);
+      // Bug 4 fix: clear banner after 4 s
+      setTimeout(() => setMsgRec(null), 4000);
       if (onReclamar) await onReclamar();
     } catch (e) {
       setMsgRec(`❌ ${e.message}`);
+      setTimeout(() => setMsgRec(null), 4000);
     } finally {
       setReclamando(false);
     }
@@ -258,6 +264,9 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
       </p>
     );
   }
+
+  // Bug 3 fix: compute pendientes AFTER the null/empty guard so todasLaminas.map() is safe
+  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {});
 
   const categorias = ["todas", ...new Set(todasLaminas.map(l => l.categoria).filter(Boolean))];
   const filtradas  = selCat === "todas"
