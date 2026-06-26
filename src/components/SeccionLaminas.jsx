@@ -14,7 +14,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   doc, getDoc, updateDoc, setDoc, increment as fbIncrement,
-  collection, getDocs, query, orderBy,
+  collection, getDocs, query, orderBy, writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
@@ -578,18 +578,21 @@ export default function SeccionLaminas() {
       const updates = { ultimoSobre: hoy };
       for (const lam of sobre.laminas) updates[`laminas.${lam.file}`] = fbIncrement(1);
       for (const c of sobre.cartas)    updates[`cartas.${c.id}`]      = fbIncrement(1);
-      await updateDoc(doc(db, "usuarios", uid), updates);
+
+      const batch = writeBatch(db);
+      batch.update(doc(db, "usuarios", uid), updates);
 
       // docs detalle de cartas (ID determinista -> idempotente), origen "sobre"
       for (let i = 0; i < sobre.cartas.length; i++) {
         const c = sobre.cartas[i];
-        await setDoc(doc(db, "cartasDelUsuario", `${uid}_${c.id}_${hoy}_sobre_${i}`), {
+        batch.set(doc(db, "cartasDelUsuario", `${uid}_${c.id}_${hoy}_sobre_${i}`), {
           uid, cartaId: c.id, cartaNombre: c.nombre, cartaSlug: c.slug,
           multiplicador: c.multiplicador, rareza: c.rareza,
           fecha: hoy, visto: false, origen: "sobre",
         });
       }
-      await updateDoc(doc(db, "sobresDelDia", sobreDocId), { guardado: true });
+      batch.update(doc(db, "sobresDelDia", sobreDocId), { guardado: true });
+      await batch.commit();
 
       setSobreGuardado(true);
       setMsgGuardado("✅ ¡Guardado en tu colección!");
