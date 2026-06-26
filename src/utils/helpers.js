@@ -7,7 +7,14 @@ import {
   updateDoc, setDoc, increment, getDoc, addDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { CARTAS, cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+import {
+  calcularPuntosPartido, calcularPuntosPregunta,
+  aplicarMultiplicadorCarta, cartaSeAplica,
+} from "./scoring";
+
+// Re-export para compatibilidad con quien importe desde helpers.
+export { calcularPuntosPartido, calcularPuntosPregunta, aplicarMultiplicadorCarta };
 
 export function hoyStr() {
   const d = new Date();
@@ -38,66 +45,6 @@ export function partidoAbierto(partido) {
   else if (typeof partido.cierre === "string")     cd = new Date(partido.cierre);
   else return true;
   return new Date() < cd;
-}
-
-// ── Cálculo de puntos ────────────────────────────────────────
-export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado) {
-  if (!resultado || !prediccion) return { puntos: 0, esMaximo: false };
-  const esElim = fase && fase !== "grupos";
-  if (!esElim) {
-    const { golesLocal: gl, golesVisitante: gv } = resultado;
-    const ganReal = gl > gv ? "local" : gv > gl ? "visitante" : "empate";
-    const difReal = Math.abs(gl-gv) === 1 ? "1" : "2+";
-    if (estaDestacado) {
-      const exacto = Number(prediccion.golesLocalPred) === gl && Number(prediccion.golesVisitantePred) === gv;
-      if (exacto) return { puntos: 5, esMaximo: true };
-      if (prediccion.ganador === ganReal) return { puntos: 2, esMaximo: true };
-      return { puntos: 0, esMaximo: false };
-    } else {
-      let pts = 0;
-      if (prediccion.ganador === ganReal) {
-        pts += 1;
-        if (ganReal !== "empate" && prediccion.diferencia === difReal) pts += 2;
-      }
-      return { puntos: pts, esMaximo: pts > 0 };
-    }
-  }
-  const { golesLocal: gl, golesVisitante: gv, definicion,
-    golesLocalAlargue, golesVisitanteAlargue,
-    penalesLocal, penalesVisitante, ganadorFinal } = resultado;
-  const gan90 = gl > gv ? "local" : gv > gl ? "visitante" : null;
-  const dif90Real = Math.abs(gl-gv) === 1 ? "1" : "2+";
-  let pts = 0;
-  if (definicion === "normal") {
-    if (prediccion.definicion === "normal" && prediccion.ganador90 === gan90) {
-      pts += 2;
-      if (prediccion.diferencia90 === dif90Real) pts += 1;
-    }
-  } else if (definicion === "alargue") {
-    if (prediccion.definicion === "alargue") {
-      pts += 3;
-      const dAlg = Math.abs((golesLocalAlargue??0)-(golesVisitanteAlargue??0));
-      const dAlgR = dAlg === 1 ? "1" : "2+";
-      if (prediccion.ganadorAlargue === ganadorFinal && prediccion.diferenciaAlargue === dAlgR) pts += 3;
-    }
-  } else if (definicion === "penales") {
-    if (prediccion.definicion === "penales") {
-      pts += 3;
-      const exacta = Number(prediccion.penalesLocal) === penalesLocal && Number(prediccion.penalesVisitante) === penalesVisitante;
-      if (exacta) pts += 4;
-      else if (prediccion.ganadorPenales === ganadorFinal) pts += 2;
-    }
-  }
-  return { puntos: pts, esMaximo: pts > 0 };
-}
-export function calcularPuntosPregunta(resp, correcta) {
-  if (!correcta || !resp) return 0;
-  return resp === correcta ? 2 : 0;
-}
-export function aplicarMultiplicadorCarta(puntos, esMaximo, cartaId) {
-  if (!cartaId || !esMaximo || puntos === 0) return puntos;
-  const carta = CARTAS.find(c => c.id === cartaId);
-  return carta ? puntos * carta.multiplicador : puntos;
 }
 
 // ── Notificación interna ─────────────────────────────────────
@@ -137,6 +84,20 @@ export async function procesarResultadoPartido(partidoId, resultado, fase, estaD
 
     const deltasPorUid = {}, notifsPorUid = {};
 
+    // Cache de inventario de cartas por uid: la carta solo multiplica si el
+    // usuario tiene stock al momento de procesar (evita que una misma carta
+    // multiplique varios partidos y que el contador quede negativo).
+    const stockCartas = {};
+    async function stockDisponible(uid, cartaId) {
+      if (!(uid in stockCartas)) {
+        try {
+          const us = await getDoc(doc(db,"usuarios",uid));
+          stockCartas[uid] = us.exists() ? (us.data().cartas || {}) : {};
+        } catch { stockCartas[uid] = {}; }
+      }
+      return (stockCartas[uid][cartaId] || 0) > 0;
+    }
+
     for (const pDoc of snap.docs) {
       try {
         const pred = pDoc.data();
@@ -144,19 +105,24 @@ export async function procesarResultadoPartido(partidoId, resultado, fase, estaD
         const puntosViejos = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
         const yaConsumio   = pred.cartaConsumida === true;
 
+        // ¿La carta se aplica? (lógica pura en scoring.cartaSeAplica)
+        const stock = pred.cartaId && !yaConsumio ? (await stockDisponible(uid, pred.cartaId) ? 1 : 0) : 0;
+        const cartaAplica = cartaSeAplica(!!pred.cartaId, yaConsumio, stock);
+
         const { puntos: base, esMaximo } = calcularPuntosPartido(pred, resultado, fase, estaDestacado);
-        const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, pred.cartaId || null);
+        const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, cartaAplica ? pred.cartaId : null);
         const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
 
         // Actualizar predicción
         const upd = { puntosGanados: puntosNuevos, puntosBase: base, esMaximo, calculadoEn: new Date().toISOString() };
-        if (pred.cartaId && !yaConsumio) upd.cartaConsumida = true;
+        if (cartaAplica && !yaConsumio) upd.cartaConsumida = true;
         await updateDoc(doc(db,"predicciones",pDoc.id), upd);
 
-        // Consumir carta (solo primera vez, independiente de si acertó)
-        if (pred.cartaId && !yaConsumio) {
+        // Consumir carta (solo primera vez y si había stock; descuenta del cache local)
+        if (cartaAplica && !yaConsumio) {
           try {
             await updateDoc(doc(db,"usuarios",uid), { [`cartas.${pred.cartaId}`]: increment(-1) });
+            stockCartas[uid][pred.cartaId] = (stockCartas[uid][pred.cartaId] || 0) - 1;
           } catch(e) { console.error("Error consumiendo carta:", e); }
         }
 
@@ -165,11 +131,15 @@ export async function procesarResultadoPartido(partidoId, resultado, fase, estaD
           deltasPorUid[uid] = (deltasPorUid[uid] || 0) + delta;
         }
 
-        notifsPorUid[uid] = {
-          tipo:"resultado_partido", partidoId, nombrePartido,
-          tuApuesta: _txtPred(pred, estaDestacado), resultado: _txtRes(resultado),
-          acertaste: esMaximo, puntosGanados: puntosNuevos, fecha,
-        };
+        // Notificar solo en el primer procesamiento o si el puntaje cambió
+        // (evita spam de notificaciones al re-guardar un resultado sin cambios).
+        if (puntosViejos === null || delta !== 0) {
+          notifsPorUid[uid] = {
+            tipo:"resultado_partido", partidoId, nombrePartido,
+            tuApuesta: _txtPred(pred, estaDestacado), resultado: _txtRes(resultado),
+            acertaste: esMaximo, puntosGanados: puntosNuevos, fecha,
+          };
+        }
         procesados++;
       } catch(e) { console.error("Error pred:", pDoc.id, e); errores++; }
     }
@@ -263,6 +233,8 @@ export async function calcularGanadorDelDia(fecha) {
       };
     }
     const maxPts = jug[0].puntos;
+    // No premiar si nadie sumó puntos ese día (evita carta x4 + bonus a un "líder" con 0 pts).
+    if (maxPts <= 0) return { ok:false, mensaje:`Nadie sumó puntos el día ${fecha}; no se entregan cartas ni bonus.` };
     const l1 = jug.filter(j=>j.puntos===maxPts);
     const r1 = jug.filter(j=>j.puntos<maxPts);
     const p2 = r1[0]?.puntos;
