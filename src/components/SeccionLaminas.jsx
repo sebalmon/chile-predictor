@@ -14,10 +14,12 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   doc, getDoc, updateDoc, setDoc, increment as fbIncrement,
+  collection, getDocs, query, orderBy,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+import { composicionPorPuesto, generarSobre, cartaImg } from "../utils/sobre";
 
 const CARDS_URL = "https://kvtral.github.io/laminas_16_bits/cards.json";
 const LAMINAS_POR_SOBRE = 4;
@@ -25,6 +27,19 @@ const LAMINAS_POR_SOBRE = 4;
 function hoyStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+async function obtenerPosicionTotal(uid) {
+  try {
+    const snap = await getDocs(query(
+      collection(db, "usuarios"), orderBy("puntosTotal", "desc")
+    ));
+    const idx = snap.docs.findIndex(d => d.id === uid);
+    return { posicion: idx >= 0 ? idx + 1 : null, total: snap.size };
+  } catch (e) {
+    console.error("posicionTotal:", e);
+    return { posicion: null, total: 0 };
+  }
 }
 
 // ── Lightbox ──────────────────────────────────────────────────
@@ -490,20 +505,19 @@ export default function SeccionLaminas() {
   const [lightboxLamina,   setLightboxLamina]   = useState(null);
   const [lightboxCantidad, setLightboxCantidad] = useState(0);
 
-  // Estado del sobre
+  // Estado del sobre (reemplaza laminasNuevas)
+  const [sobre, setSobre]                 = useState(null); // { laminas:[], cartas:[] }
   const [sobreDisponible, setSobreDisponible] = useState(false);
-  const [laminasNuevas,   setLaminasNuevas]   = useState([]);
-  const [sobreAbierto,    setSobreAbierto]     = useState(false);
-  const [volteadas,       setVolteadas]        = useState(0);
-  const [guardando,       setGuardando]        = useState(false);
-  const [sobreGuardado,   setSobreGuardado]    = useState(false);
-  const [msgGuardado,     setMsgGuardado]      = useState(null);
+  const [sobreAbierto, setSobreAbierto]   = useState(false);
+  const [sobreGuardado, setSobreGuardado] = useState(false);
+  const [volteadas, setVolteadas]         = useState(0);
+  const [guardando, setGuardando]         = useState(false);
+  const [msgGuardado, setMsgGuardado]     = useState(null);
   const iniciadoRef = useRef(false);
 
   const uid  = firebaseUser?.uid;
   const hoy  = hoyStr();
-  const lsKeyOver = uid ? `cp8b_sobre_${uid}_${hoy}` : null;
-  const lsKeyLams = uid ? `cp8b_lams_${uid}_${hoy}`  : null;
+  const sobreDocId = uid ? `${uid}_${hoy}` : null;
 
   // Láminas que el usuario tiene (mapa file→cantidad)
   const laminasUsuario = userProfile?.laminas || {};
@@ -524,86 +538,63 @@ export default function SeccionLaminas() {
       .finally(() => setCargandoCat(false));
   }, []);
 
-  // 2. Verificar disponibilidad del sobre (una vez por uid+hoy)
+  // 2. Cargar/crear el sobre del día (fuente de verdad: Firestore sobresDelDia)
   useEffect(() => {
-    if (!uid || iniciadoRef.current) return;
+    if (!uid || iniciadoRef.current || todasLaminas.length === 0) return;
     iniciadoRef.current = true;
 
-    const verificar = async () => {
-      // a) ¿Ya guardadas láminas hoy? (Firestore es fuente de verdad)
-      if (localStorage.getItem(lsKeyOver) === "guardado") {
-        setSobreGuardado(true);
+    (async () => {
+      // 1) ¿Ya existe el sobre de hoy? -> restaurar (anti re-roll)
+      const ref = doc(db, "sobresDelDia", sobreDocId);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const d = snap.data();
+        setSobre({ laminas: d.laminas || [], cartas: d.cartas || [] });
+        setSobreGuardado(!!d.guardado);
+        setSobreAbierto(true);
         setSobreDisponible(false);
-        // Restaurar láminas del día desde localStorage
-        const lamsGuardadas = localStorage.getItem(lsKeyLams);
-        if (lamsGuardadas) {
-          try { setLaminasNuevas(JSON.parse(lamsGuardadas)); } catch(_) {}
-        }
+        if (d.guardado) setVolteadas((d.laminas?.length || 0) + (d.cartas?.length || 0));
         return;
       }
-
-      // b) ¿Ya marcado en Firestore?
-      try {
-        const uSnap = await getDoc(doc(db,"usuarios",uid));
-        if (uSnap.exists() && uSnap.data().ultimoSobre === hoy) {
-          localStorage.setItem(lsKeyOver, "guardado");
-          setSobreGuardado(true);
-          setSobreDisponible(false);
-          const lamsGuardadas = localStorage.getItem(lsKeyLams);
-          if (lamsGuardadas) {
-            try { setLaminasNuevas(JSON.parse(lamsGuardadas)); } catch(_) {}
-          }
-          return;
-        }
-      } catch(_) {}
-
-      // c) ¿Hay láminas preparadas en localStorage (no guardadas aún)?
-      const lamsPrep = localStorage.getItem(lsKeyLams);
-      if (lamsPrep) {
-        try {
-          setLaminasNuevas(JSON.parse(lamsPrep));
-          setSobreDisponible(false); // ya se abrió
-          setSobreAbierto(true);     // mostrar láminas
-          return;
-        } catch(_) {}
-      }
-
-      // d) Sobre disponible
+      // 2) No existe -> generar por puesto y FIJAR en Firestore antes del reveal
+      const { posicion } = await obtenerPosicionTotal(uid);
+      const comp = composicionPorPuesto(posicion);
+      const generado = generarSobre(todasLaminas, comp);
+      await setDoc(ref, {
+        uid, fecha: hoy, guardado: false,
+        laminas: generado.laminas, cartas: generado.cartas,
+      });
+      setSobre(generado);
       setSobreDisponible(true);
-    };
-
-    verificar();
-  }, [uid, hoy, lsKeyOver, lsKeyLams]);
-
-  // 3. Cuando el catálogo carga y el sobre es disponible, preparar láminas
-  useEffect(() => {
-    if (!sobreDisponible || todasLaminas.length === 0 || !uid) return;
-    if (laminasNuevas.length > 0) return; // ya preparadas
-
-    const seleccionadas = [...todasLaminas]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, LAMINAS_POR_SOBRE);
-
-    setLaminasNuevas(seleccionadas);
-    localStorage.setItem(lsKeyLams, JSON.stringify(seleccionadas));
-  }, [sobreDisponible, todasLaminas, uid, laminasNuevas.length, lsKeyLams]);
+    })();
+  }, [uid, hoy, sobreDocId, todasLaminas]);
 
   // 4. Guardar láminas en Firestore (sin recargar)
   const guardarLaminas = async () => {
-    if (!uid || laminasNuevas.length === 0 || guardando) return;
+    if (!uid || !sobre || guardando || sobreGuardado) return;
     setGuardando(true);
     setMsgGuardado(null);
     try {
       const updates = { ultimoSobre: hoy };
-      for (const lam of laminasNuevas) {
-        updates[`laminas.${lam.file}`] = fbIncrement(1);
+      for (const lam of sobre.laminas) updates[`laminas.${lam.file}`] = fbIncrement(1);
+      for (const c of sobre.cartas)    updates[`cartas.${c.id}`]      = fbIncrement(1);
+      await updateDoc(doc(db, "usuarios", uid), updates);
+
+      // docs detalle de cartas (ID determinista -> idempotente), origen "sobre"
+      for (let i = 0; i < sobre.cartas.length; i++) {
+        const c = sobre.cartas[i];
+        await setDoc(doc(db, "cartasDelUsuario", `${uid}_${c.id}_${hoy}_sobre_${i}`), {
+          uid, cartaId: c.id, cartaNombre: c.nombre, cartaSlug: c.slug,
+          multiplicador: c.multiplicador, rareza: c.rareza,
+          fecha: hoy, visto: false, origen: "sobre",
+        });
       }
-      await updateDoc(doc(db,"usuarios",uid), updates);
-      localStorage.setItem(lsKeyOver, "guardado");
+      await updateDoc(doc(db, "sobresDelDia", sobreDocId), { guardado: true });
+
       setSobreGuardado(true);
-      setMsgGuardado("✅ ¡Láminas guardadas en tu colección!");
+      setMsgGuardado("✅ ¡Guardado en tu colección!");
       if (refreshProfile) await refreshProfile();
-    } catch(e) {
+    } catch (e) {
       setMsgGuardado(`❌ Error: ${e.message}`);
     } finally {
       setGuardando(false);
@@ -675,7 +666,7 @@ export default function SeccionLaminas() {
                   Vuelve mañana para un nuevo sobre.
                 </p>
               </div>
-              {laminasNuevas.length > 0 && (
+              {sobre?.laminas?.length > 0 && (
                 <>
                   <p style={{
                     fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
@@ -684,7 +675,7 @@ export default function SeccionLaminas() {
                     TUS LÁMINAS DE HOY:
                   </p>
                   <div style={{ display:"flex",flexWrap:"wrap",justifyContent:"center",gap:"8px" }}>
-                    {laminasNuevas.map((lam,i) => (
+                    {sobre.laminas.map((lam,i) => (
                       <div key={i}
                         onClick={() => handleClickLamina(lam, laminasUsuario[lam.file]||1)}
                         style={{ width:"76px",cursor:"pointer",textAlign:"center" }}>
@@ -707,20 +698,20 @@ export default function SeccionLaminas() {
           ) : sobreDisponible && !sobreAbierto ? (
             // Sobre disponible para abrir
             <SobreAnimado onAbrir={() => setSobreAbierto(true)} />
-          ) : laminasNuevas.length > 0 ? (
+          ) : sobre !== null ? (
             // Sobre abierto — mostrar láminas con flip
             <div>
               <p style={{
                 fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
                 color:"var(--amarillo)",textAlign:"center",marginBottom:"14px",
               }}>
-                {sobreGuardado ? "TUS LÁMINAS DE HOY" : `¡Da vuelta tus láminas! (${volteadas}/${laminasNuevas.length})`}
+                {sobreGuardado ? "TUS LÁMINAS DE HOY" : `¡Da vuelta tus láminas! (${volteadas}/${sobre.laminas.length})`}
               </p>
               <div style={{
                 display:"flex",flexWrap:"wrap",justifyContent:"center",
                 gap:"10px",marginBottom:"16px",
               }}>
-                {laminasNuevas.map((lam,i) => (
+                {sobre.laminas.map((lam,i) => (
                   <LaminaFlip
                     key={lam.file+i}
                     lamina={lam}
@@ -732,7 +723,30 @@ export default function SeccionLaminas() {
                 ))}
               </div>
 
-              {!sobreGuardado && volteadas >= laminasNuevas.length && (
+              {sobre.cartas.length > 0 && (
+                <>
+                  <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                    color:"var(--amarillo)", textAlign:"center", margin:"10px 0" }}>
+                    ¡CARTAS MULTIPLICADORAS!
+                  </p>
+                  <div style={{ display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"10px" }}>
+                    {sobre.cartas.map((c, i) => (
+                      <div key={c.id+"_"+i} style={{ width:"80px", textAlign:"center" }}>
+                        <div style={{ width:"80px", height:"110px", border:"3px solid var(--amarillo)",
+                          boxShadow:"3px 3px 0 var(--negro)", overflow:"hidden" }}>
+                          <img src={cartaImg(c.slug)} alt={c.nombre}
+                            style={{ width:"100%", height:"100%", objectFit:"cover" }}
+                            onError={e => { e.target.style.opacity = 0.2; }} />
+                        </div>
+                        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                          color:"var(--verde-claro)", marginTop:"3px" }}>×{c.multiplicador}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {!sobreGuardado && volteadas >= sobre.laminas.length && (
                 <button
                   className="btn-pixel btn-verde w-full"
                   style={{ fontSize:"7px" }}
@@ -743,7 +757,7 @@ export default function SeccionLaminas() {
                 </button>
               )}
 
-              {!sobreGuardado && volteadas < laminasNuevas.length && (
+              {!sobreGuardado && volteadas < sobre.laminas.length && (
                 <p style={{
                   fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
                   color:"var(--gris-claro)",textAlign:"center",lineHeight:2,
