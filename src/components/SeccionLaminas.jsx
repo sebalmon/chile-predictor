@@ -1,10 +1,9 @@
-// src/components/SeccionLaminas.jsx  — v14 (Fusión HEAD + amigo)
+// src/components/SeccionLaminas.jsx  — v15 (Eliminado FORZAR SOBRE)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v14:
-//   • Fusión de ambas versiones: mapeo de abreviaturas + lógica de recompensas.
-//   • Mantiene nombres completos e íconos.
-//   • Usa writeBatch para transacciones atómicas.
-//   • Persistencia, guardado y canje intactos.
+// CAMBIOS v15:
+//   • Eliminado el botón "FORZAR SOBRE" (solo para pruebas).
+//   • Mantiene la lógica de sobres diarios, colección y recompensas.
+//   • Sin pestaña CANJE (ya eliminada en versión anterior).
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
@@ -784,83 +783,6 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
   );
 }
 
-// ── Canje ─────────────────────────────────────────────────────
-function CanjeLaminas({ laminasUsuario, uid, onCanje }) {
-  const [canjeando, setCanjeando] = useState(false);
-  const [msg, setMsg] = useState(null);
-
-  const REGLAS = [
-    { cantidad: 4,  mult: 2, label: "4 repetidas → carta ×2" },
-    { cantidad: 8,  mult: 3, label: "8 repetidas → carta ×3" },
-    { cantidad: 12, mult: 4, label: "12 repetidas → carta ×4" },
-  ];
-
-  const sobranteTotal = Object.values(laminasUsuario || {})
-    .reduce((s, c) => s + Math.max(0, (c || 0) - 1), 0);
-
-  const canjear = async (regla) => {
-    const { ok, decrementos } = gastarDuplicados(laminasUsuario, regla.cantidad);
-    if (!ok) { setMsg({ tipo:"error", texto:`Te faltan repetidas (tenés ${sobranteTotal}).` }); return; }
-    setCanjeando(true);
-    try {
-      const carta = cartaAleatoriaPorMultiplicador(regla.mult);
-      const updates = {};
-      for (const [file, d] of Object.entries(decrementos)) updates[`laminas.${file}`] = fbIncrement(d);
-      if (carta) updates[`cartas.${carta.id}`] = fbIncrement(1);
-
-      const batch = writeBatch(db);
-      batch.update(doc(db, "usuarios", uid), updates);
-      if (carta) {
-        batch.set(doc(db, "cartasDelUsuario", `${uid}_${carta.id}_canje_${Date.now()}`), {
-          uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
-          multiplicador:carta.multiplicador, rareza:carta.rareza,
-          fecha:hoyStr(), visto:false, origen:"canje",
-        });
-      }
-      await batch.commit();
-
-      setMsg({ tipo:"ok", texto:`✅ ${regla.cantidad} repetidas → carta ×${regla.mult}!` });
-      onCanje();
-    } catch (e) {
-      setMsg({ tipo:"error", texto:e.message });
-    } finally {
-      setCanjeando(false);
-    }
-  };
-
-  return (
-    <div>
-      <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"10px" }}>
-        CANJE DE LÁMINAS REPETIDAS
-      </p>
-      {msg && (
-        <p style={{ fontSize:"6px", lineHeight:2, marginBottom:"10px",
-          color: msg.tipo==="ok" ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
-          {msg.texto}
-        </p>
-      )}
-      <p style={{ fontSize:"6px", color:"var(--gris-claro)", marginBottom:"12px", lineHeight:2 }}>
-        Repetidas disponibles: <span style={{ color:"var(--amarillo)" }}>{sobranteTotal}</span>
-        <br/>(cada copia extra de cualquier lámina cuenta)
-      </p>
-      <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
-        {REGLAS.map(r => (
-          <button key={r.mult} className="btn-pixel btn-verde w-full" style={{ fontSize:"6px" }}
-            onClick={() => canjear(r)} disabled={canjeando || sobranteTotal < r.cantidad}>
-            {canjeando ? "⚙ ..." : r.label}
-          </button>
-        ))}
-      </div>
-      <div style={{ marginTop:"14px", padding:"10px",
-        border:"1px solid var(--verde-campo)", background:"rgba(0,0,0,0.2)" }}>
-        <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-          4 → ×2 &nbsp;|&nbsp; 8 → ×3 &nbsp;|&nbsp; 12 → ×4
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // ── Componente principal ──────────────────────────────────────
 export default function SeccionLaminas() {
   const { firebaseUser, userProfile, refreshProfile } = useAuth();
@@ -1009,22 +931,7 @@ export default function SeccionLaminas() {
 
   return (
     <div style={{ padding:"16px 16px 80px" }}>
-      <div style={{ marginBottom:"12px", padding:"8px", border:"2px solid red", textAlign:"center" }}>
-        <button
-          onClick={() => {
-            setSobreDisponible(true);
-            setSobreGuardado(false);
-            setSobreAbierto(false);
-          }}
-          className="btn-pixel btn-rojo"
-          style={{ fontSize:"8px" }}
-        >
-          🔴 FORZAR SOBRE
-        </button>
-        <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"4px" }}>
-          Haz clic para activar un sobre nuevo (solo para pruebas)
-        </p>
-      </div>
+      {/* EL BOTÓN FORZAR SOBRE HA SIDO ELIMINADO */}
 
       <Lightbox
         lamina={lightboxLamina}

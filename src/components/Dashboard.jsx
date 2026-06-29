@@ -1,11 +1,9 @@
-// src/components/Dashboard.jsx  — v5 (Fase 2)
+// src/components/Dashboard.jsx  — v8 (Modal secuencial de imágenes)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v5:
-//   • Integra NotificacionesModal (modales de resultados al cargar).
-//   • Sonidos opcionales: botón 🔊/🔇 en la topbar, preferencia
-//     guardada en localStorage. SonidosContext exporta playSound().
-//   • SistemaPuntuacion actualizado (idéntico a Dashboard v4).
-//   • Todo lo demás igual a v4.
+// CAMBIOS v8:
+//   • Modal promocional con dos imágenes en secuencia.
+//   • Primero imagen 1, al cerrar imagen 2, al cerrar se oculta.
+//   • Al recargar, vuelve a empezar (si es el día de la fecha).
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -43,7 +41,6 @@ function SonidosProvider({ children }) {
     });
   };
 
-  // Generador de sonidos con Web Audio API
   const audioCtxRef = useRef(null);
 
   const getAudioCtx = useCallback(() => {
@@ -64,7 +61,6 @@ function SonidosProvider({ children }) {
 
       switch (tipo) {
         case "guardar": {
-          // Bip corto ascendente
           osc.frequency.setValueAtTime(440, ctx.currentTime);
           osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
           gain.gain.setValueAtTime(0.2, ctx.currentTime);
@@ -74,7 +70,6 @@ function SonidosProvider({ children }) {
           break;
         }
         case "podio": {
-          // Fanfarria corta: Do-Mi-Sol
           const notas = [261.63, 329.63, 392.00, 523.25];
           notas.forEach((freq, i) => {
             const o = ctx.createOscillator();
@@ -99,7 +94,6 @@ function SonidosProvider({ children }) {
           break;
         }
         case "notificacion": {
-          // Dos bips rápidos
           [0, 0.15].forEach((t) => {
             const o = ctx.createOscillator();
             const g = ctx.createGain();
@@ -115,9 +109,7 @@ function SonidosProvider({ children }) {
         default:
           osc.start(); osc.stop(ctx.currentTime + 0.1);
       }
-    } catch (e) {
-      // Audio no disponible (modo silencioso del SO, etc.)
-    }
+    } catch (e) {}
   }, [activado, getAudioCtx]);
 
   return (
@@ -138,7 +130,8 @@ const PANTALLAS = {
   LAMINAS:  "laminas",
 };
 
-const medallas = ["🥇", "🥈", "🥉"];
+// ── FECHA DE PROMOCIÓN ──────────────────────────────────────
+const FECHA_PROMO = "2026-06-29"; // Cambiar manualmente cada día
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
@@ -147,6 +140,26 @@ function DashboardInterno() {
   const [podioAyer, setPodioAyer]       = useState([]);
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
+
+  // ── Modal promocional secuencial ──────────────────────────
+  const [pasoPromo, setPasoPromo] = useState(0); // 0: imagen1, 1: imagen2, 2: oculto
+
+  useEffect(() => {
+    const hoy = new Date().toISOString().slice(0,10);
+    if (hoy === FECHA_PROMO) {
+      setPasoPromo(0); // reinicia la secuencia al recargar
+    } else {
+      setPasoPromo(2); // ocultar
+    }
+  }, []);
+
+  const avanzarPromo = () => {
+    setPasoPromo(p => p + 1);
+  };
+
+  const cerrarPromo = () => {
+    setPasoPromo(2); // ocultar completamente
+  };
 
   const [esAdmin, setEsAdmin] = useState(false);
   useEffect(() => {
@@ -161,8 +174,6 @@ function DashboardInterno() {
     setCargando(true);
     try {
       const ayer = ayerStr();
-      // Filtra por fecha en el servidor (lee solo el día anterior, no toda la colección);
-      // se ordena por puntos en cliente para evitar índice compuesto fecha+puntos.
       const snapPodio = await getDocs(query(collection(db, "puntosDelDia"), where("fecha", "==", ayer)));
       const todosPodio = snapPodio.docs
         .map((d) => ({ id: d.id, ...d.data() }))
@@ -184,87 +195,190 @@ function DashboardInterno() {
     setPantalla(p);
   };
 
-  if (pantalla === PANTALLAS.PERFIL) {
-    return (
-      <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
-        onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
-        esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
-        mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
-        <Perfil onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
-      </WithShell>
-    );
-  }
-  if (pantalla === PANTALLAS.RANKING) {
-    return (
-      <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
-        onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
-        esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
-        mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
-        <Ranking />
-      </WithShell>
-    );
-  }
-  if (pantalla === PANTALLAS.PARTIDOS) {
-    return (
-      <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
-        onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
-        esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
-        mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
-        <TabPartidos />
-      </WithShell>
-    );
-  }
-  if (pantalla === PANTALLAS.ADMIN && esAdmin) {
-    return (
-      <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
-        onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
-        esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
-        mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
-        <AdminPanel onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
-      </WithShell>
-    );
-  }
-  if (pantalla === PANTALLAS.LAMINAS) {
-  return (
-    <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
-      onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
-      esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
-      mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
-      <SeccionLaminas onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
-    </WithShell>
-  );
-}
-  // ── INICIO ──────────────────────────────────────────────────
-  return (
-    <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
-      onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
-      esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
-      mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
-      <div className="contenedor dashboard-wrapper">
-        {cargando ? (
-          <div className="loading-pantalla" style={{ minHeight: "200px" }}>
-            <span className="spinner">⚙</span><p>CARGANDO...</p>
+  // ── Contenido con el modal promocional secuencial ──────────
+  const contenidoConPromo = (
+    <>
+      {pasoPromo < 2 && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.85)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            cursor: "pointer",
+          }}
+          onClick={pasoPromo === 0 ? avanzarPromo : cerrarPromo} // clic fuera avanza o cierra
+        >
+          <div
+            style={{
+              maxWidth: "600px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              cursor: "default",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {pasoPromo === 0 && (
+              <>
+                <img
+                  src="/A_PAISES_MARRUECOS.jpg"
+                  alt="Partido en vivo Países Bajos vs Marruecos"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: "8px",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
+                    imageRendering: "pixelated",
+                    border: "3px solid var(--amarillo)",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.nextSibling.style.display = "block";
+                  }}
+                />
+                <div style={{ display: "none", color: "var(--rojo-chile)", textAlign: "center", padding: "20px" }}>
+                  Imagen no disponible
+                </div>
+                <button
+                  className="btn-pixel btn-amarillo"
+                  style={{
+                    fontSize: "8px",
+                    padding: "10px",
+                    marginTop: "16px",
+                    width: "100%",
+                  }}
+                  onClick={avanzarPromo}
+                >
+                  CONTINUAR →
+                </button>
+              </>
+            )}
+
+            {pasoPromo === 1 && (
+              <>
+                <img
+                  src="/A_LAMINITAS.jpg"
+                  alt="Nuevo formato de láminas"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: "8px",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
+                    imageRendering: "pixelated",
+                    border: "3px solid var(--verde-claro)",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.nextSibling.style.display = "block";
+                  }}
+                />
+                <div style={{ display: "none", color: "var(--rojo-chile)", textAlign: "center", padding: "20px" }}>
+                  Imagen no disponible
+                </div>
+                <button
+                  className="btn-pixel btn-amarillo"
+                  style={{
+                    fontSize: "8px",
+                    padding: "10px",
+                    marginTop: "16px",
+                    width: "100%",
+                  }}
+                  onClick={cerrarPromo}
+                >
+                  ✕ CERRAR
+                </button>
+              </>
+            )}
           </div>
-        ) : (
-          <>
-            <div className="seccion-titulo">🏆 PODIO DEL DÍA ANTERIOR</div>
-            <PodioF1 datos={podioAyer} />
-            <VozHinchada />
-            <div className="seccion-titulo">📋 SISTEMA DE PUNTUACIÓN</div>
-            <SistemaPuntuacion />
-            <div style={{ marginTop: "8px", marginBottom: "24px" }}>
-              <button className="btn-pixel btn-gris w-full"
-                style={{ fontSize: "7px", padding: "10px",
-                  borderColor: "var(--amarillo)", color: "var(--amarillo)" }}
-                onClick={() => setMostrarTutorial(true)}>
-                📖 LEER TUTORIAL DE INICIO OTRA VEZ
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </WithShell>
+        </div>
+      )}
+
+      {/* Aquí va el resto de la app (igual que antes) */}
+      {pantalla === PANTALLAS.PERFIL && (
+        <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+          onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+          esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+          mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+          <Perfil onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
+        </WithShell>
+      )}
+
+      {pantalla === PANTALLAS.RANKING && (
+        <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+          onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+          esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+          mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+          <Ranking />
+        </WithShell>
+      )}
+
+      {pantalla === PANTALLAS.PARTIDOS && (
+        <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+          onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+          esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+          mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+          <TabPartidos />
+        </WithShell>
+      )}
+
+      {pantalla === PANTALLAS.ADMIN && esAdmin && (
+        <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+          onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+          esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+          mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+          <AdminPanel onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
+        </WithShell>
+      )}
+
+      {pantalla === PANTALLAS.LAMINAS && (
+        <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+          onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+          esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+          mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+          <SeccionLaminas onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
+        </WithShell>
+      )}
+
+      {pantalla === PANTALLAS.INICIO && (
+        <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+          onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+          esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+          mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+          <div className="contenedor dashboard-wrapper">
+            {cargando ? (
+              <div className="loading-pantalla" style={{ minHeight: "200px" }}>
+                <span className="spinner">⚙</span><p>CARGANDO...</p>
+              </div>
+            ) : (
+              <>
+                <div className="seccion-titulo">🏆 PODIO DEL DÍA ANTERIOR</div>
+                <PodioF1 datos={podioAyer} />
+                <VozHinchada />
+                <div className="seccion-titulo">📋 SISTEMA DE PUNTUACIÓN</div>
+                <SistemaPuntuacion />
+                <div style={{ marginTop: "8px", marginBottom: "24px" }}>
+                  <button className="btn-pixel btn-gris w-full"
+                    style={{ fontSize: "7px", padding: "10px",
+                      borderColor: "var(--amarillo)", color: "var(--amarillo)" }}
+                    onClick={() => setMostrarTutorial(true)}>
+                    📖 LEER TUTORIAL DE INICIO OTRA VEZ
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </WithShell>
+      )}
+    </>
   );
+
+  return contenidoConPromo;
 }
 
 export default function Dashboard() {
@@ -275,9 +389,8 @@ export default function Dashboard() {
   );
 }
 
-// ── Sistema de puntuación (tabla v4/v5) ───────────────────────
+// ── Sistema de puntuación ────────────────────────────────
 function SistemaPuntuacion() {
-  // Solo fase muere-muere (puntos x2 desde dieciseisavos)
   const muere = [
     { pts: "+4",  desc: "Acertar ganador en 90 min" },
     { pts: "+6",  desc: "Ganador + diferencia en 90 min" },
@@ -336,7 +449,6 @@ function TopBar({ userProfile, onPerfil, onLogout, diaLabel, sonidosOn, toggleSo
         ⚽ {diaLabel}
       </span>
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {/* Botón sonidos */}
         <button
           onClick={toggleSonidos}
           style={{
