@@ -11,7 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
-  collection, getDocs, query, orderBy, doc,
+  collection, getDocs, query, orderBy, limit, doc,
   updateDoc, where, setDoc, deleteDoc, getDoc, addDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -21,6 +21,7 @@ import {
   procesarPreguntaDelDia, publicarAvisoAdmin, cerrarAvisoAdmin,
 } from "../utils/helpers";
 import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
+import AdminSuperDestacado from "./AdminSuperDestacado";
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
@@ -94,6 +95,7 @@ function AdminPanelInterno({ onVolver }) {
 
   const TABS = [
     { id:"partidos",  label:"⚽ PARTIDOS" },
+    { id:"superdes",  label:"🔴 EN VIVO" },
     { id:"preguntas", label:"❓ PREGUNTAS" },
     { id:"cartas",    label:"🃏 CARTAS Y BONUS" },
     { id:"aviso",     label:"📢 AVISO" },
@@ -138,6 +140,7 @@ function AdminPanelInterno({ onVolver }) {
       ) : (
         <>
           {tab==="partidos"  && <TabPartidosAdmin partidos={partidos} onActualizar={cargarDatos} onMensaje={msg} />}
+          {tab==="superdes"  && <AdminSuperDestacado partidos={partidos} onMensaje={msg} />}
           {tab==="preguntas" && <TabPreguntasAdmin preguntas={preguntas} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="cartas"    && <TabCartasBonus preguntas={preguntas} onMensaje={msg} />}
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
@@ -693,7 +696,7 @@ function TabMensajes({ onMensaje }) {
   const cargar = async () => {
     setCargando(true);
     try {
-      const snap = await getDocs(query(collection(db,"mensajesDia"), orderBy("timestamp","desc")));
+      const snap = await getDocs(query(collection(db,"mensajesDia"), orderBy("timestamp","desc"), limit(LIMITE)));
       setMensajes(snap.docs.map(d => ({ docId:d.id, ...d.data() })));
     } catch(e) { console.error(e); }
     finally { setCargando(false); }
