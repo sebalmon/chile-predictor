@@ -301,7 +301,7 @@ function SistemaPuntuacion() {
   return (
     <div className="mb-16">
       <div className="caja-pixel" style={{ padding: "12px", borderColor: "var(--rojo-chile)" }}>
-        <p style={{ fontSize: "7px", color: "var(--rojo-chile)", marginBottom: "8px" }}>💀 SISTEMA DE PUNTUACIÓN</p>
+        <p style={{ fontSize: "7px", color: "var(--rojo-chile)", marginBottom: "8px" }}>💀 PUNTUACIÓN FASE MUERE MUERE</p>
         {muere.map((r, i) => <FilaPts key={i} {...r} />)}
       </div>
     </div>
