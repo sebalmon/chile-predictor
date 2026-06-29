@@ -141,15 +141,17 @@ const PANTALLAS = {
 const medallas = ["🥇", "🥈", "🥉"];
 
 function DashboardInterno() {
-  const { firebaseUser, userProfile, loadingProfile } = useAuth();
+  const { firebaseUser, userProfile } = useAuth();
   const { activado: sonidosOn, toggle: toggleSonidos, playSound } = useSonidos();
   const [pantalla, setPantalla]         = useState(PANTALLAS.INICIO);
   const [podioAyer, setPodioAyer]       = useState([]);
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // FIX DEFINITIVO: esperamos a que Firebase Auth resuelva (loadingProfile=false)
-  const esAdmin = !loadingProfile && firebaseUser?.email === "xtokesu@gmail.com";
+  const [esAdmin, setEsAdmin] = useState(false);
+  useEffect(() => {
+    setEsAdmin(firebaseUser?.email === "xtokesu@gmail.com");
+  }, [firebaseUser]);
   const diaNum   = diaNumero();
   const diaLabel = diaNum > 0 ? `DÍA ${diaNum}` : "MUNDIAL 2026";
 
@@ -284,13 +286,13 @@ function SistemaPuntuacion() {
     { pts: "+2", desc: "Ganador del día (más puntos)" },
   ];
   const muere = [
-    { pts: "+2", desc: "Acertar ganador en 90 min" },
-    { pts: "+3", desc: "Ganador + diferencia en 90 min" },
-    { pts: "+3", desc: "Acertar que se define en Alargue" },
-    { pts: "+6", desc: "Alargue + diferencia en el alargue" },
-    { pts: "+3", desc: "Acertar que se define en Penales" },
-    { pts: "+5", desc: "Penales + quién gana la tanda" },
-    { pts: "+7", desc: "Penales + diferencia exacta de la tanda" },
+    { pts: "+4",  desc: "Acertar ganador en 90 min" },
+    { pts: "+6",  desc: "Ganador + diferencia en 90 min" },
+    { pts: "+6",  desc: "Acertar que se define en Alargue" },
+    { pts: "+12", desc: "Alargue + diferencia en el alargue" },
+    { pts: "+6",  desc: "Acertar que se define en Penales" },
+    { pts: "+10", desc: "Penales + quién gana la tanda" },
+    { pts: "+14", desc: "Penales + diferencia exacta de la tanda" },
     { pts: "+2", desc: "Pregunta del día correcta" },
     { pts: "+2", desc: "Ganador del día (más puntos)" },
   ];

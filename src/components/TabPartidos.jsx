@@ -87,8 +87,20 @@ export default function TabPartidos({ onGuardado }) {
     try {
       let lista = [];
       try {
-        const snap = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
-        lista = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+        // Partidos de hoy
+        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
+        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
+
+        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
+        let d16Lista = [];
+        try {
+          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
+          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
+        } catch(_) {}
+
+        // Combinar sin duplicados
+        const idsHoy = new Set(hoyLista.map(p => p.id));
+        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
       } catch(_) {}
       setPartidos(lista);
 

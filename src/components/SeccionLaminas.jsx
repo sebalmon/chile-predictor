@@ -267,7 +267,7 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
   const getIcono = (nombre) => iconosPorCategoria[nombre] || "🃏";
 
   // ─── RECOMPENSAS ──────────────────────────────────────────
-  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {}, posicionRanking);
+  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {});
 
   const reclamar = async (rec) => {
     if (reclamando || !uid) return;
@@ -335,7 +335,7 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
 
     return (
       <div style={{
-        background: "#0a0a0a",
+        background: "var(--negro)",
         backgroundImage: `
           linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
@@ -777,7 +777,7 @@ function CanjeLaminas({ laminasUsuario, uid, onCanje }) {
 
 // ── Componente principal ──────────────────────────────────────
 export default function SeccionLaminas() {
-  const { firebaseUser, userProfile, refreshProfile } = useAuth();
+  const { firebaseUser, userProfile, refreshProfile, setUserProfile } = useAuth();
 
   const [tab,          setTab]          = useState("sobre");
   const [todasLaminas, setTodasLaminas] = useState([]);
@@ -892,7 +892,21 @@ export default function SeccionLaminas() {
 
       setSobreGuardado(true);
       setMsgGuardado("✅ ¡Guardado en tu colección!");
-      if (refreshProfile) await refreshProfile();
+      // FIX: actualizar perfil localmente sin causar re-render completo de App
+      if (setUserProfile) {
+        setUserProfile(prev => {
+          if (!prev) return prev;
+          const nuevasLam = { ...(prev.laminas || {}) };
+          for (const lam of sobre.laminas) {
+            nuevasLam[lam.file] = (nuevasLam[lam.file] || 0) + 1;
+          }
+          const nuevasCartas = { ...(prev.cartas || {}) };
+          for (const c of sobre.cartas) {
+            nuevasCartas[c.id] = (nuevasCartas[c.id] || 0) + 1;
+          }
+          return { ...prev, laminas: nuevasLam, cartas: nuevasCartas, ultimoSobre: hoy };
+        });
+      }
     } catch (e) {
       setMsgGuardado(`❌ Error: ${e.message}`);
     } finally {
@@ -910,7 +924,13 @@ export default function SeccionLaminas() {
         setLaminasLocal(nuevasLaminas);
         localStorage.setItem("cp8b_mis_laminas", JSON.stringify(nuevasLaminas));
       }
-      if (refreshProfile) await refreshProfile();
+      // Actualizar localmente sin re-render completo
+      try {
+        const userDoc = await getDoc(doc(db, "usuarios", uid));
+        if (userDoc.exists() && setUserProfile) {
+          setUserProfile(userDoc.data());
+        }
+      } catch(_) {}
     } catch (_) {}
   }, [uid, refreshProfile]);
 
@@ -952,6 +972,7 @@ export default function SeccionLaminas() {
         {[
           { id:"sobre",     label:"📦 SOBRE"     },
           { id:"coleccion", label:"📚 COLECCIÓN"  },
+          { id:"canje",     label:"🔄 CANJEAR"    },
         ].map(t => (
           <button
             key={t.id}
@@ -1136,7 +1157,17 @@ export default function SeccionLaminas() {
               />
       )}
 
-
+      {tab === "canje" && (
+        cargandoCat
+          ? <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
+              Cargando...
+            </p>
+          : <CanjeLaminas
+              laminasUsuario={laminasLocal}
+              uid={uid}
+              onCanje={handleRefresh}
+            />
+      )}
     </div>
   );
 }
