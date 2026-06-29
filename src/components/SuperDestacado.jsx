@@ -1,13 +1,10 @@
-// src/components/SuperDestacado.jsx  — v1 (Fase 4)
+// src/components/SuperDestacado.jsx  — v2 (Persistencia "ya visto")
 // ─────────────────────────────────────────────────────────────
-// Componente para USUARIOS durante un partido Super Destacado.
-// • Escucha en tiempo real (onSnapshot) la colección
-//   preguntasEnVivo/{partidoId}/preguntas
-// • Si hay una pregunta abierta (estado:"abierta"), la muestra
-//   como modal o banner flotante urgente.
-// • El usuario responde una vez. Al cerrar el admin la pregunta,
-//   aparece el resultado (quién acertó, puntos ganados).
-// • Puntos: +3 si acierta la pregunta en vivo.
+// CAMBIOS v2:
+//   • Guarda en localStorage cuando el usuario cierra un resultado
+//     de pregunta en vivo (clave: cp8b_sd_visto_{partidoId}_{pregId}).
+//   • Al recargar, si la clave existe, no muestra el resultado.
+//   • Las preguntas abiertas siempre se muestran (no se guardan).
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
@@ -18,18 +15,20 @@ import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 
 const PTS_EN_VIVO = 3;
+const LS_PREFIX = "cp8b_sd_visto_";
 
 export default function SuperDestacado({ partidoId, nombrePartido }) {
   const { firebaseUser } = useAuth();
   const [preguntaActiva, setPreguntaActiva] = useState(null);
   const [miRespuesta,    setMiRespuesta]    = useState(null);
   const [enviando,       setEnviando]       = useState(false);
-  const [resultado,      setResultado]      = useState(null); // cuando cierra el admin
+  const [resultado,      setResultado]      = useState(null);
+  const [resultadoVisto, setResultadoVisto] = useState(false); // estado local para ocultar
 
   useEffect(() => {
     if (!partidoId) return;
 
-    // Escuchar en tiempo real la única pregunta abierta
+    // Escuchar pregunta abierta
     const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
     const q   = query(ref, where("estado", "==", "abierta"));
 
@@ -51,14 +50,24 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
       }
     });
 
-    // También escuchar preguntas recién cerradas (para mostrar resultado)
+    // Escuchar preguntas cerradas (resultados)
     const qCerrada = query(ref, where("estado", "==", "cerrada"));
     const unsubCerrada = onSnapshot(qCerrada, snap => {
-      if (snap.empty) { setResultado(null); return; }
-      // Mostrar resultado de la más reciente
-      const cerradas = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+      if (snap.empty) {
+        setResultado(null);
+        return;
+      }
+      // Obtener la más reciente
+      const cerradas = snap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a,b) => (b.creadaEn?.seconds||0) - (a.creadaEn?.seconds||0));
-      setResultado(cerradas[0]);
+      const ultima = cerradas[0];
+
+      // Verificar si ya fue vista en localStorage
+      const clave = `${LS_PREFIX}${partidoId}_${ultima.id}`;
+      const yaVista = localStorage.getItem(clave) === "true";
+
+      setResultado(ultima);
+      setResultadoVisto(yaVista);
     });
 
     return () => { unsub(); unsubCerrada(); };
@@ -84,13 +93,27 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
     finally { setEnviando(false); }
   };
 
-  // Sin pregunta activa ni resultado reciente → no renderizar nada
+  // Ocultar resultado si ya fue visto
+  const ocultarResultado = () => {
+    if (!resultado) return;
+    const clave = `${LS_PREFIX}${partidoId}_${resultado.id}`;
+    localStorage.setItem(clave, "true");
+    setResultadoVisto(true);
+  };
+
+  // Si hay resultado y ya fue visto, no mostrar nada
+  if (resultado && resultadoVisto) {
+    // No renderizar el componente en absoluto
+    return null;
+  }
+
+  // Si no hay pregunta activa ni resultado visible, no renderizar nada
   if (!preguntaActiva && !resultado) return null;
 
   return (
     <div style={{
       position: "fixed",
-      bottom: "80px", // sobre el menú inferior
+      bottom: "80px",
       left: "50%",
       transform: "translateX(-50%)",
       width: "calc(100% - 24px)",
@@ -107,7 +130,6 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
           padding: "14px 14px 10px",
           animation: "pulseRojo 1.5s infinite",
         }}>
-          {/* Cabecera parpadeante */}
           <div style={{ display:"flex", justifyContent:"space-between",
             alignItems:"center", marginBottom:"10px" }}>
             <span style={{ fontSize:"7px", color:"var(--rojo-chile)" }}>
@@ -160,8 +182,12 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
       )}
 
       {/* ── Resultado de pregunta recién cerrada ──────────────── */}
-      {!preguntaActiva && resultado && (
-        <ResultadoEnVivo resultado={resultado} miRespuesta={miRespuesta} />
+      {!preguntaActiva && resultado && !resultadoVisto && (
+        <ResultadoEnVivo
+          resultado={resultado}
+          miRespuesta={miRespuesta}
+          onCerrar={ocultarResultado}
+        />
       )}
 
       <style>{`
@@ -174,12 +200,9 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
   );
 }
 
-function ResultadoEnVivo({ resultado, miRespuesta }) {
-  const [visible, setVisible] = useState(true);
+function ResultadoEnVivo({ resultado, miRespuesta, onCerrar }) {
   const correcta   = resultado.respuestaCorrecta;
   const acertaste  = miRespuesta === correcta;
-
-  if (!visible) return null;
 
   return (
     <div style={{
@@ -193,9 +216,19 @@ function ResultadoEnVivo({ resultado, miRespuesta }) {
         <span style={{ fontSize:"7px", color:"var(--gris-claro)" }}>
           RESULTADO EN VIVO
         </span>
-        <button onClick={() => setVisible(false)}
-          style={{ background:"none", border:"none", color:"var(--gris)",
-            cursor:"pointer", fontSize:"10px" }}>✕</button>
+        <button
+          onClick={onCerrar}
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--gris)",
+            cursor: "pointer",
+            fontSize: "10px",
+          }}
+          title="Cerrar (no volverá a aparecer)"
+        >
+          ✕
+        </button>
       </div>
       <p style={{ fontSize:"7px", color:"var(--blanco)", lineHeight:2, marginBottom:"8px" }}>
         {resultado.texto}
