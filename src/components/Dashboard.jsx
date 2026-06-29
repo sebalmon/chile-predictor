@@ -1,8 +1,9 @@
-// src/components/Dashboard.jsx  — v9 (Modal secuencial con 3 imágenes)
+// src/components/Dashboard.jsx  — v9 (Tres imágenes promocionales + menú responsive)
 // ─────────────────────────────────────────────────────────────
 // CAMBIOS v9:
-//   • Añadida tercera imagen promocional (A_Nuevospun.jpg)
-//   • Secuencia: Imagen 1 → Imagen 2 → Imagen 3 → cerrar
+//   • Añadida tercera imagen (A_Nuevospun.jpg) en la secuencia.
+//   • Menú inferior con scroll horizontal en móviles.
+//   • Muestra ADMIN solo si es el email autorizado.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -140,24 +141,20 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // ── Modal promocional secuencial (3 imágenes) ────────────
-  const [pasoPromo, setPasoPromo] = useState(0); // 0,1,2 → imágenes; 3 = oculto
+  // ── Modal promocional secuencial (3 imágenes) ─────────────
+  const [pasoPromo, setPasoPromo] = useState(0); // 0,1,2 -> imágenes, 3 = oculto
 
   useEffect(() => {
     const hoy = new Date().toISOString().slice(0,10);
     if (hoy === FECHA_PROMO) {
-      setPasoPromo(0); // reinicia la secuencia al recargar
+      setPasoPromo(0);
     } else {
-      setPasoPromo(3); // ocultar
+      setPasoPromo(3);
     }
   }, []);
 
   const avanzarPromo = () => {
-    if (pasoPromo < 2) {
-      setPasoPromo(p => p + 1);
-    } else {
-      setPasoPromo(3); // cerrar después de la última
-    }
+    setPasoPromo(p => p + 1);
   };
 
   const cerrarPromo = () => {
@@ -215,7 +212,7 @@ function DashboardInterno() {
             padding: "20px",
             cursor: "pointer",
           }}
-          onClick={pasoPromo < 2 ? avanzarPromo : cerrarPromo}
+          onClick={pasoPromo === 2 ? cerrarPromo : avanzarPromo}
         >
           <div
             style={{
@@ -310,7 +307,7 @@ function DashboardInterno() {
                     borderRadius: "8px",
                     boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
                     imageRendering: "pixelated",
-                    border: "3px solid var(--verde-claro)",
+                    border: "3px solid var(--rojo-chile)",
                   }}
                   onError={(e) => {
                     e.target.style.display = "none";
@@ -524,18 +521,64 @@ function MenuInferior({ pantalla, setPantalla, esAdmin }) {
     { id: PANTALLAS.INICIO,   label: "INICIO",   icono: "🏠" },
     { id: PANTALLAS.PARTIDOS, label: "PARTIDOS", icono: "⚽" },
     { id: PANTALLAS.RANKING,  label: "RANKING",  icono: "📊" },
-    { id: PANTALLAS.LAMINAS,  label: "LÁMINAS",  icono: "🖼️" },   
+    { id: PANTALLAS.LAMINAS,  label: "LÁMINAS",  icono: "🖼️" },
     { id: PANTALLAS.PERFIL,   label: "PERFIL",   icono: "👤" },
     ...(esAdmin ? [{ id: PANTALLAS.ADMIN, label: "ADMIN", icono: "⚙" }] : []),
   ];
+
   return (
-    <nav className="menu-inferior">
+    <nav
+      className="menu-inferior"
+      style={{
+        overflowX: "auto",
+        whiteSpace: "nowrap",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none", // Firefox
+        msOverflowStyle: "none", // IE/Edge
+        display: "flex",
+        gap: "4px",
+        padding: "4px 8px",
+        background: "var(--negro)",
+        borderTop: "2px solid var(--verde-campo)",
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+      }}
+    >
+      {/* Ocultar scrollbar en Chrome/Safari */}
+      <style>
+        {`
+          .menu-inferior::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
       {items.map((item) => (
-        <button key={item.id}
+        <button
+          key={item.id}
           className={`menu-item ${pantalla === item.id ? "activo" : ""}`}
           onClick={() => setPantalla(item.id)}
-          style={item.id === PANTALLAS.ADMIN ? { color: "var(--rojo-chile)" } : {}}>
-          <span className="menu-item-icono">{item.icono}</span>
+          style={{
+            flex: "0 0 auto",
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "5px",
+            padding: "6px 10px",
+            background: "none",
+            border: "none",
+            color: pantalla === item.id ? "var(--amarillo)" : "var(--gris-claro)",
+            cursor: "pointer",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "2px",
+            borderBottom: pantalla === item.id ? "2px solid var(--amarillo)" : "2px solid transparent",
+            transition: "all 0.1s",
+            ...(item.id === PANTALLAS.ADMIN ? { color: "var(--rojo-chile)" } : {}),
+          }}
+        >
+          <span style={{ fontSize: "14px" }}>{item.icono}</span>
           {item.label}
         </button>
       ))}
