@@ -1,11 +1,4 @@
-// src/components/SuperDestacado.jsx  — v3 (Atmósfera visual + banderas + imagen fondo)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v3:
-//   • Fondo con imagen personalizable (pvivo_X.jpg).
-//   • Banderas de los equipos en grande.
-//   • Diseño tipo "estadio en vivo" con gradientes y animaciones.
-//   • Persistencia "ya visto" en localStorage (mantenida).
-// ─────────────────────────────────────────────────────────────
+// src/components/SuperDestacado.jsx  — v4 (Props separadas, robusto)
 import React, { useState, useEffect } from "react";
 import {
   collection, onSnapshot, query, where, doc,
@@ -17,21 +10,21 @@ import { useAuth } from "../contexts/AuthContext";
 const PTS_EN_VIVO = 3;
 const LS_PREFIX = "cp8b_sd_visto_";
 
-export default function SuperDestacado({ partido, imagenFondo }) {
+export default function SuperDestacado({
+  partidoId,
+  nombrePartido,
+  banderaLocal = '🏳️',
+  banderaVisitante = '🏳️',
+  nombreLocal = 'Local',
+  nombreVisitante = 'Visitante',
+  imagenFondo = '/pvivo_0.jpg',
+}) {
   const { firebaseUser } = useAuth();
   const [preguntaActiva, setPreguntaActiva] = useState(null);
   const [miRespuesta,    setMiRespuesta]    = useState(null);
   const [enviando,       setEnviando]       = useState(false);
   const [resultado,      setResultado]      = useState(null);
   const [resultadoVisto, setResultadoVisto] = useState(false);
-
-  const partidoId = partido?.id;
-  const nombrePartido = partido ? `${partido.local?.bandera} ${partido.local?.nombre} vs ${partido.visitante?.nombre} ${partido.visitante?.bandera}` : "";
-  const banderaLocal = partido?.local?.bandera || "🏳️";
-  const banderaVisitante = partido?.visitante?.bandera || "🏳️";
-
-  // Imagen de fondo por defecto
-  const imgFondo = imagenFondo || "/pvivo_0.jpg";
 
   useEffect(() => {
     if (!partidoId) return;
@@ -103,7 +96,10 @@ export default function SuperDestacado({ partido, imagenFondo }) {
     setResultadoVisto(true);
   };
 
+  // Si hay resultado y ya fue visto, no mostrar nada
   if (resultado && resultadoVisto) return null;
+
+  // Si no hay pregunta activa ni resultado, no renderizar
   if (!preguntaActiva && !resultado) return null;
 
   return (
@@ -128,11 +124,11 @@ export default function SuperDestacado({ partido, imagenFondo }) {
           animation: "pulseRojo 2s infinite",
           background: "#0a0a0a",
         }}>
-          {/* Imagen de fondo */}
+          {/* Fondo con imagen */}
           <div style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: `url(${imgFondo})`,
+            backgroundImage: `url(${imagenFondo})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.25,
@@ -144,9 +140,7 @@ export default function SuperDestacado({ partido, imagenFondo }) {
             background: "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)",
           }} />
 
-          {/* Contenido (por encima del fondo) */}
           <div style={{ position: "relative", padding: "16px 14px 14px", zIndex: 1 }}>
-            {/* Banderas y título */}
             <div style={{
               display: "flex",
               alignItems: "center",
@@ -169,17 +163,15 @@ export default function SuperDestacado({ partido, imagenFondo }) {
               </span>
             </div>
 
-            {/* Nombre del partido */}
             <p style={{
               fontSize: "6px",
               color: "var(--blanco)",
               marginBottom: "8px",
               textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
             }}>
-              🔴 EN VIVO — {partido.local?.nombre} vs {partido.visitante?.nombre}
+              🔴 EN VIVO — {nombrePartido}
             </p>
 
-            {/* Pregunta */}
             <p style={{
               fontSize: "8px",
               color: "var(--blanco)",
@@ -191,7 +183,6 @@ export default function SuperDestacado({ partido, imagenFondo }) {
               {preguntaActiva.texto}
             </p>
 
-            {/* Opciones de respuesta */}
             {!miRespuesta ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {(preguntaActiva.opciones || []).map((op, i) => (
@@ -245,9 +236,8 @@ export default function SuperDestacado({ partido, imagenFondo }) {
           onCerrar={ocultarResultado}
           banderaLocal={banderaLocal}
           banderaVisitante={banderaVisitante}
-          nombreLocal={partido?.local?.nombre}
-          nombreVisitante={partido?.visitante?.nombre}
-          imgFondo={imgFondo}
+          nombrePartido={nombrePartido}
+          imagenFondo={imagenFondo}
         />
       )}
 
@@ -261,16 +251,14 @@ export default function SuperDestacado({ partido, imagenFondo }) {
   );
 }
 
-// ── Resultado con atmósfera ────────────────────────────────────
 function ResultadoEnVivo({
   resultado,
   miRespuesta,
   onCerrar,
   banderaLocal,
   banderaVisitante,
-  nombreLocal,
-  nombreVisitante,
-  imgFondo,
+  nombrePartido,
+  imagenFondo,
 }) {
   const correcta   = resultado.respuestaCorrecta;
   const acertaste  = miRespuesta === correcta;
@@ -284,11 +272,10 @@ function ResultadoEnVivo({
       boxShadow: `0 0 30px ${acertaste ? "rgba(82,183,136,0.5)" : "rgba(255,255,255,0.1)"}, 4px 4px 0 var(--negro)`,
       background: "#0a0a0a",
     }}>
-      {/* Imagen de fondo */}
       <div style={{
         position: "absolute",
         inset: 0,
-        backgroundImage: `url(${imgFondo})`,
+        backgroundImage: `url(${imagenFondo})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         opacity: 0.2,
@@ -301,7 +288,6 @@ function ResultadoEnVivo({
       }} />
 
       <div style={{ position: "relative", padding: "14px", zIndex: 1 }}>
-        {/* Banderas */}
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -324,7 +310,6 @@ function ResultadoEnVivo({
               padding: "2px 8px",
               borderRadius: "4px",
             }}
-            title="Cerrar (no volverá a aparecer)"
           >
             ✕
           </button>
@@ -336,7 +321,7 @@ function ResultadoEnVivo({
           marginBottom: "6px",
           textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
         }}>
-          RESULTADO EN VIVO — {nombreLocal} vs {nombreVisitante}
+          RESULTADO EN VIVO — {nombrePartido}
         </p>
 
         <p style={{
