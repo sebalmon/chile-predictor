@@ -1,4 +1,9 @@
-// src/components/SuperDestacado.jsx  — v4 (Props separadas, robusto)
+// src/components/SuperDestacado.jsx  — v5 (Original + mejoras visuales con datos desde Firestore)
+// ─────────────────────────────────────────────────────────────
+// Mantiene la lógica original (partidoId, nombrePartido) y agrega
+// banderas, nombre de equipos e imagen de fondo obteniendo los
+// datos del partido desde Firestore.
+// ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
   collection, onSnapshot, query, where, doc,
@@ -10,15 +15,7 @@ import { useAuth } from "../contexts/AuthContext";
 const PTS_EN_VIVO = 3;
 const LS_PREFIX = "cp8b_sd_visto_";
 
-export default function SuperDestacado({
-  partidoId,
-  nombrePartido,
-  banderaLocal = '🏳️',
-  banderaVisitante = '🏳️',
-  nombreLocal = 'Local',
-  nombreVisitante = 'Visitante',
-  imagenFondo = '/pvivo_0.jpg',
-}) {
+export default function SuperDestacado({ partidoId, nombrePartido }) {
   const { firebaseUser } = useAuth();
   const [preguntaActiva, setPreguntaActiva] = useState(null);
   const [miRespuesta,    setMiRespuesta]    = useState(null);
@@ -26,6 +23,26 @@ export default function SuperDestacado({
   const [resultado,      setResultado]      = useState(null);
   const [resultadoVisto, setResultadoVisto] = useState(false);
 
+  // ── Estado para datos del partido (banderas, nombres) ──
+  const [partidoData, setPartidoData] = useState(null);
+
+  // Obtener datos del partido desde Firestore
+  useEffect(() => {
+    if (!partidoId) return;
+    const cargarPartido = async () => {
+      try {
+        const snap = await getDoc(doc(db, "partidos", partidoId));
+        if (snap.exists()) {
+          setPartidoData(snap.data());
+        }
+      } catch (e) {
+        console.error("Error cargando partido:", e);
+      }
+    };
+    cargarPartido();
+  }, [partidoId]);
+
+  // ── Lógica de preguntas en vivo (original) ──────────────
   useEffect(() => {
     if (!partidoId) return;
 
@@ -96,11 +113,21 @@ export default function SuperDestacado({
     setResultadoVisto(true);
   };
 
-  // Si hay resultado y ya fue visto, no mostrar nada
+  // ── Renderizado condicional ──────────────────────────────
   if (resultado && resultadoVisto) return null;
-
-  // Si no hay pregunta activa ni resultado, no renderizar
   if (!preguntaActiva && !resultado) return null;
+
+  // Datos para mostrar (de partidoData o valores por defecto)
+  const localBandera = partidoData?.local?.bandera || "🏳️";
+  const visitanteBandera = partidoData?.visitante?.bandera || "🏳️";
+  const localNombre = partidoData?.local?.nombre || "Local";
+  const visitanteNombre = partidoData?.visitante?.nombre || "Visitante";
+  const nombreMostrado = partidoData
+    ? `${localNombre} vs ${visitanteNombre}`
+    : nombrePartido || "Partido en vivo";
+
+  // Imagen de fondo (usa pvivo_0.jpg por defecto, o pvivo_{partidoId}.jpg si existe)
+  const imgFondo = `/pvivo_${partidoId || '0'}.jpg`;
 
   return (
     <div style={{
@@ -128,7 +155,7 @@ export default function SuperDestacado({
           <div style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: `url(${imagenFondo})`,
+            backgroundImage: `url(${imgFondo})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.25,
@@ -148,9 +175,9 @@ export default function SuperDestacado({
               marginBottom: "8px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "28px", lineHeight: 1 }}>{banderaLocal}</span>
+                <span style={{ fontSize: "28px", lineHeight: 1 }}>{localBandera}</span>
                 <span style={{ fontSize: "6px", color: "var(--gris-claro)" }}>vs</span>
-                <span style={{ fontSize: "28px", lineHeight: 1 }}>{banderaVisitante}</span>
+                <span style={{ fontSize: "28px", lineHeight: 1 }}>{visitanteBandera}</span>
               </div>
               <span style={{
                 fontSize: "6px",
@@ -169,7 +196,7 @@ export default function SuperDestacado({
               marginBottom: "8px",
               textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
             }}>
-              🔴 EN VIVO — {nombrePartido}
+              🔴 EN VIVO — {nombreMostrado}
             </p>
 
             <p style={{
@@ -234,10 +261,10 @@ export default function SuperDestacado({
           resultado={resultado}
           miRespuesta={miRespuesta}
           onCerrar={ocultarResultado}
-          banderaLocal={banderaLocal}
-          banderaVisitante={banderaVisitante}
-          nombrePartido={nombrePartido}
-          imagenFondo={imagenFondo}
+          localBandera={localBandera}
+          visitanteBandera={visitanteBandera}
+          nombrePartido={nombreMostrado}
+          imgFondo={imgFondo}
         />
       )}
 
@@ -251,14 +278,15 @@ export default function SuperDestacado({
   );
 }
 
+// ── Resultado con atmósfera ────────────────────────────────────
 function ResultadoEnVivo({
   resultado,
   miRespuesta,
   onCerrar,
-  banderaLocal,
-  banderaVisitante,
+  localBandera,
+  visitanteBandera,
   nombrePartido,
-  imagenFondo,
+  imgFondo,
 }) {
   const correcta   = resultado.respuestaCorrecta;
   const acertaste  = miRespuesta === correcta;
@@ -275,7 +303,7 @@ function ResultadoEnVivo({
       <div style={{
         position: "absolute",
         inset: 0,
-        backgroundImage: `url(${imagenFondo})`,
+        backgroundImage: `url(${imgFondo})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         opacity: 0.2,
@@ -295,9 +323,9 @@ function ResultadoEnVivo({
           marginBottom: "8px",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "28px", lineHeight: 1 }}>{banderaLocal}</span>
+            <span style={{ fontSize: "28px", lineHeight: 1 }}>{localBandera}</span>
             <span style={{ fontSize: "6px", color: "var(--gris-claro)" }}>vs</span>
-            <span style={{ fontSize: "28px", lineHeight: 1 }}>{banderaVisitante}</span>
+            <span style={{ fontSize: "28px", lineHeight: 1 }}>{visitanteBandera}</span>
           </div>
           <button
             onClick={onCerrar}

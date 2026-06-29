@@ -183,11 +183,6 @@ export default function TabPartidos({ onGuardado }) {
   <SuperDestacado
     partidoId={superDestacado.id}
     nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
-    banderaLocal={superDestacado.local?.bandera || '🏳️'}
-    banderaVisitante={superDestacado.visitante?.bandera || '🏳️'}
-    nombreLocal={superDestacado.local?.nombre || 'Local'}
-    nombreVisitante={superDestacado.visitante?.nombre || 'Visitante'}
-    imagenFondo={`/pvivo_${superDestacado.id || '0'}.jpg`}
   />
 )}
 
