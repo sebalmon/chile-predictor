@@ -109,55 +109,141 @@ function Lightbox({ lamina, cantidad, onCerrar }) {
 
 // ── Animación del sobre ───────────────────────────────────────
 function SobreAnimado({ onAbrir }) {
-  const [abierto, setAbierto] = useState(false);
+  const [fase, setFase] = useState("cerrado"); // cerrado | sacudiendo | abriendo | abierto
+
   const abrir = () => {
-    if (abierto) return;
-    setAbierto(true);
-    setTimeout(onAbrir, 800);
+    if (fase !== "cerrado") return;
+    setFase("sacudiendo");
+    setTimeout(() => setFase("abriendo"), 600);
+    setTimeout(() => {
+      setFase("abierto");
+      setTimeout(onAbrir, 400);
+    }, 1400);
   };
+
+  const estiloSobre = {
+    cerrado:    { transform:"scale(1) rotate(0deg)",    filter:"brightness(1)" },
+    sacudiendo: { transform:"scale(1.08) rotate(-4deg)",filter:"brightness(1.2)" },
+    abriendo:   { transform:"scale(1.15) rotate(2deg)", filter:"brightness(1.4)" },
+    abierto:    { transform:"scale(1.1) rotate(0deg)",  filter:"brightness(1.6)" },
+  }[fase];
+
   return (
-    <div style={{ textAlign:"center", padding:"24px 20px" }}>
-      <div
-        onClick={!abierto ? abrir : undefined}
-        style={{ display:"inline-block", cursor:abierto?"default":"pointer" }}
-      >
-        <div style={{ position:"relative", width:"160px", height:"120px", margin:"0 auto 16px" }}>
-          <img
-            src={abierto ? "/sobre/sobre-abierto.png" : "/sobre/sobre-cerrado.png"}
-            alt="sobre"
-            style={{ width:"160px", height:"120px", imageRendering:"pixelated", objectFit:"contain" }}
-            onError={e => {
-              e.target.style.display = "none";
-              e.target.nextSibling.style.display = "flex";
-            }}
-          />
+    <>
+      {/* Overlay fullscreen */}
+      <div style={{
+        position:"fixed", inset:0, zIndex:800,
+        background:"radial-gradient(ellipse at center, rgba(10,22,40,0.97) 60%, rgba(0,0,0,0.99) 100%)",
+        display:"flex", flexDirection:"column",
+        alignItems:"center", justifyContent:"center",
+        padding:"20px",
+      }}>
+        {/* Destellos de fondo */}
+        {fase === "abriendo" || fase === "abierto" ? (
           <div style={{
-            display:"none", width:"160px", height:"120px",
-            background: abierto ? "#f4d03f" : "#e8a020",
-            border:"4px solid var(--negro)", boxShadow:"4px 4px 0 var(--negro)",
-            alignItems:"center", justifyContent:"center",
-            fontSize:"56px",
-          }}>
-            {abierto ? "📬" : "📦"}
-          </div>
-        </div>
+            position:"absolute", inset:0, pointerEvents:"none",
+            background:"radial-gradient(circle at 50% 45%, rgba(244,208,63,0.18) 0%, transparent 65%)",
+          }} />
+        ) : null}
+
+        {/* Texto superior */}
         <p style={{
-          fontFamily:"'Press Start 2P',monospace", fontSize:"9px",
-          color: abierto ? "var(--verde-claro)" : "var(--amarillo)",
-          lineHeight:1.8,
+          fontFamily:"'Press Start 2P',monospace",
+          fontSize:"8px", color:"var(--amarillo)",
+          marginBottom:"32px", textAlign:"center", lineHeight:1.8,
+          textShadow:"0 0 12px rgba(244,208,63,0.6)",
         }}>
-          {abierto ? "¡ABRIENDO!" : "👆 TOCA PARA ABRIR"}
+          {fase === "cerrado"    && "🎁 ¡TU SOBRE DEL DÍA!"}
+          {fase === "sacudiendo" && "✨ ¡¡LO TIENES!!"}
+          {fase === "abriendo"   && "🔓 ABRIENDO..."}
+          {fase === "abierto"    && "🎉 ¡¡LÁMINAS!!"}
         </p>
-        {!abierto && (
-          <p style={{
-            fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-            color:"var(--gris-claro)", marginTop:"6px",
+
+        {/* Sobre */}
+        <div
+          onClick={fase === "cerrado" ? abrir : undefined}
+          style={{
+            cursor: fase === "cerrado" ? "pointer" : "default",
+            transition: "transform 0.3s ease, filter 0.3s ease",
+            ...estiloSobre,
+          }}
+        >
+          {/* Imagen del sobre */}
+          <div style={{
+            position:"relative", width:"200px", height:"150px",
+            margin:"0 auto",
           }}>
-            Contiene {LAMINAS_POR_SOBRE} láminas
-          </p>
-        )}
+            <img
+              src={fase === "abierto" ? "/sobre/sobre-abierto.png" : "/sobre/sobre-cerrado.png"}
+              alt="sobre"
+              style={{
+                width:"200px", height:"150px",
+                imageRendering:"pixelated", objectFit:"contain",
+                filter: fase==="sacudiendo" ? "drop-shadow(0 0 20px gold)" :
+                        fase==="abriendo"   ? "drop-shadow(0 0 30px gold)" : "none",
+                transition:"filter 0.3s",
+              }}
+              onError={e => {
+                e.target.style.display="none";
+                e.target.nextSibling.style.display="flex";
+              }}
+            />
+            {/* Fallback CSS */}
+            <div style={{
+              display:"none", width:"200px", height:"150px",
+              background: fase==="abierto" ? "#f4d03f" : "#e8a020",
+              border:"4px solid var(--negro)", boxShadow:"4px 4px 0 var(--negro)",
+              alignItems:"center", justifyContent:"center",
+              fontSize:"72px",
+            }}>
+              {fase === "abierto" ? "📬" : "📦"}
+            </div>
+
+            {/* Rayos de luz al abrir */}
+            {(fase === "abriendo" || fase === "abierto") && (
+              <div style={{
+                position:"absolute", top:"-20px", left:"50%",
+                transform:"translateX(-50%)",
+                width:"260px", height:"200px",
+                background:"radial-gradient(ellipse at 50% 80%, rgba(244,208,63,0.35) 0%, transparent 70%)",
+                pointerEvents:"none",
+                animation:"rayos 0.6s ease-out",
+              }} />
+            )}
+          </div>
+
+          {/* Texto acción */}
+          {fase === "cerrado" && (
+            <div style={{ textAlign:"center", marginTop:"20px" }}>
+              <p style={{
+                fontFamily:"'Press Start 2P',monospace", fontSize:"9px",
+                color:"var(--amarillo)", animation:"pulso 1.2s ease-in-out infinite",
+              }}>
+                👆 TOCA PARA ABRIR
+              </p>
+              <p style={{
+                fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                color:"var(--gris-claro)", marginTop:"8px",
+              }}>
+                Contiene {LAMINAS_POR_SOBRE} láminas
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      <style>{`
+        @keyframes pulso {
+          0%,100% { opacity:1; transform:scale(1); }
+          50%      { opacity:0.7; transform:scale(1.04); }
+        }
+        @keyframes rayos {
+          0%   { opacity:0; transform:translateX(-50%) scaleY(0.3); }
+          60%  { opacity:1; transform:translateX(-50%) scaleY(1.1); }
+          100% { opacity:0.7; transform:translateX(-50%) scaleY(1); }
+        }
+      `}</style>
+    </>
   );
 }
 
@@ -335,7 +421,7 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
 
     return (
       <div style={{
-        background: "var(--negro)",
+        background: "#0a0a0a",
         backgroundImage: `
           linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
@@ -777,7 +863,7 @@ function CanjeLaminas({ laminasUsuario, uid, onCanje }) {
 
 // ── Componente principal ──────────────────────────────────────
 export default function SeccionLaminas() {
-  const { firebaseUser, userProfile, refreshProfile, setUserProfile } = useAuth();
+  const { firebaseUser, userProfile, refreshProfile } = useAuth();
 
   const [tab,          setTab]          = useState("sobre");
   const [todasLaminas, setTodasLaminas] = useState([]);
@@ -892,21 +978,7 @@ export default function SeccionLaminas() {
 
       setSobreGuardado(true);
       setMsgGuardado("✅ ¡Guardado en tu colección!");
-      // FIX: actualizar perfil localmente sin causar re-render completo de App
-      if (setUserProfile) {
-        setUserProfile(prev => {
-          if (!prev) return prev;
-          const nuevasLam = { ...(prev.laminas || {}) };
-          for (const lam of sobre.laminas) {
-            nuevasLam[lam.file] = (nuevasLam[lam.file] || 0) + 1;
-          }
-          const nuevasCartas = { ...(prev.cartas || {}) };
-          for (const c of sobre.cartas) {
-            nuevasCartas[c.id] = (nuevasCartas[c.id] || 0) + 1;
-          }
-          return { ...prev, laminas: nuevasLam, cartas: nuevasCartas, ultimoSobre: hoy };
-        });
-      }
+      if (refreshProfile) await refreshProfile();
     } catch (e) {
       setMsgGuardado(`❌ Error: ${e.message}`);
     } finally {
@@ -924,13 +996,7 @@ export default function SeccionLaminas() {
         setLaminasLocal(nuevasLaminas);
         localStorage.setItem("cp8b_mis_laminas", JSON.stringify(nuevasLaminas));
       }
-      // Actualizar localmente sin re-render completo
-      try {
-        const userDoc = await getDoc(doc(db, "usuarios", uid));
-        if (userDoc.exists() && setUserProfile) {
-          setUserProfile(userDoc.data());
-        }
-      } catch(_) {}
+      if (refreshProfile) await refreshProfile();
     } catch (_) {}
   }, [uid, refreshProfile]);
 
@@ -972,7 +1038,6 @@ export default function SeccionLaminas() {
         {[
           { id:"sobre",     label:"📦 SOBRE"     },
           { id:"coleccion", label:"📚 COLECCIÓN"  },
-          { id:"canje",     label:"🔄 CANJEAR"    },
         ].map(t => (
           <button
             key={t.id}
@@ -990,6 +1055,30 @@ export default function SeccionLaminas() {
 
       {tab === "sobre" && (
         <div>
+          {/* ── Bienvenida ──────────────────────────────────── */}
+          <div style={{
+            background:"linear-gradient(135deg,rgba(14,30,60,0.95),rgba(10,22,40,0.98))",
+            border:"2px solid var(--amarillo)",
+            padding:"14px 12px", marginBottom:"14px",
+            boxShadow:"0 0 18px rgba(244,208,63,0.18)",
+          }}>
+            <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
+              color:"var(--amarillo)",marginBottom:"10px",textAlign:"center",lineHeight:1.8 }}>
+              🖼️ LÁMINAS COLECCIONABLES
+            </p>
+            <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"5px",
+              color:"var(--gris-claro)",lineHeight:2.2,marginBottom:"8px" }}>
+              Cada día recibes un <span style={{ color:"var(--amarillo)" }}>sobre</span> con láminas únicas.
+              Colecciona todas las de cada categoría y desbloquea
+              <span style={{ color:"var(--verde-claro)" }}> cartas multiplicadoras de premio</span>.
+            </p>
+            <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"5px",
+              color:"var(--gris-claro)",lineHeight:2.2 }}>
+              🏆 Mejor ranking → <span style={{ color:"var(--amarillo)" }}>mejor carta</span> (×2, ×3 o ×4).
+              Completa una categoría entera y reclama tu recompensa en
+              <span style={{ color:"var(--verde-claro)" }}> COLECCIÓN</span>.
+            </p>
+          </div>
           {cargandoCat ? (
             <div style={{ textAlign:"center",padding:"20px" }}>
               <span className="spinner">⚙</span>
@@ -1157,17 +1246,7 @@ export default function SeccionLaminas() {
               />
       )}
 
-      {tab === "canje" && (
-        cargandoCat
-          ? <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
-              Cargando...
-            </p>
-          : <CanjeLaminas
-              laminasUsuario={laminasLocal}
-              uid={uid}
-              onCanje={handleRefresh}
-            />
-      )}
+
     </div>
   );
 }

@@ -277,14 +277,7 @@ export default function Dashboard() {
 
 // ── Sistema de puntuación (tabla v4/v5) ───────────────────────
 function SistemaPuntuacion() {
-  const grupos = [
-    { pts: "+1", desc: "Acertar ganador (partido normal)" },
-    { pts: "+3", desc: "Ganador + diferencia de goles" },
-    { pts: "+2", desc: "Solo ganador (partido destacado ⭐)" },
-    { pts: "+5", desc: "Resultado exacto (partido destacado ⭐)" },
-    { pts: "+2", desc: "Pregunta del día correcta" },
-    { pts: "+2", desc: "Ganador del día (más puntos)" },
-  ];
+  // Solo fase muere-muere (puntos x2 desde dieciseisavos)
   const muere = [
     { pts: "+4",  desc: "Acertar ganador en 90 min" },
     { pts: "+6",  desc: "Ganador + diferencia en 90 min" },
@@ -293,8 +286,8 @@ function SistemaPuntuacion() {
     { pts: "+6",  desc: "Acertar que se define en Penales" },
     { pts: "+10", desc: "Penales + quién gana la tanda" },
     { pts: "+14", desc: "Penales + diferencia exacta de la tanda" },
-    { pts: "+2", desc: "Pregunta del día correcta" },
-    { pts: "+2", desc: "Ganador del día (más puntos)" },
+    { pts: "+2",  desc: "Pregunta del día correcta" },
+    { pts: "+2",  desc: "Ganador del día (más puntos)" },
   ];
   const FilaPts = ({ pts, desc }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -307,12 +300,8 @@ function SistemaPuntuacion() {
   );
   return (
     <div className="mb-16">
-      <div className="caja-pixel mb-8" style={{ padding: "12px" }}>
-        <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginBottom: "8px" }}>FASE DE GRUPOS</p>
-        {grupos.map((r, i) => <FilaPts key={i} {...r} />)}
-      </div>
       <div className="caja-pixel" style={{ padding: "12px", borderColor: "var(--rojo-chile)" }}>
-        <p style={{ fontSize: "7px", color: "var(--rojo-chile)", marginBottom: "8px" }}>💀 FASES MUERE-MUERE</p>
+        <p style={{ fontSize: "7px", color: "var(--rojo-chile)", marginBottom: "8px" }}>💀 SISTEMA DE PUNTUACIÓN</p>
         {muere.map((r, i) => <FilaPts key={i} {...r} />)}
       </div>
     </div>
