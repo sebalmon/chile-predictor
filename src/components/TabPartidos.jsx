@@ -180,11 +180,11 @@ export default function TabPartidos({ onGuardado }) {
     <div style={{ paddingBottom:"80px" }}>
       {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
       {superDestacado && (
-        <SuperDestacado
-          partidoId={superDestacado.id}
-          nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
-        />
-      )}
+  <SuperDestacado
+    partido={superDestacado}
+    imagenFondo={`/pvivo_${superDestacado.id || '0'}.jpg`}
+  />
+)}
 
       {/* Modal hinchada */}
       {mostrarModalHinchada && (
