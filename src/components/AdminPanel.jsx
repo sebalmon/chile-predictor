@@ -21,41 +21,33 @@ import {
   procesarPreguntaDelDia, publicarAvisoAdmin, cerrarAvisoAdmin,
 } from "../utils/helpers";
 import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
+import AdminSuperDestacado from "./AdminSuperDestacado";
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
 export default function AdminPanel({ onVolver }) {
-  const { firebaseUser } = useAuth();
-  const [esAdmin,     setEsAdmin]     = useState(false);
-  const [verificando, setVerificando] = useState(true);
+  const { firebaseUser, loadingProfile } = useAuth();
 
-  useEffect(() => {
-    if (firebaseUser === null) {
-      const t = setTimeout(() => setVerificando(false), 4000);
-      return () => clearTimeout(t);
-    }
-    setEsAdmin(ADMIN_EMAILS.includes(firebaseUser.email));
-    setVerificando(false);
-  }, [firebaseUser]);
-
-  if (verificando) {
+  // FIX DEFINITIVO: esperar a que AuthContext resuelva completamente
+  if (loadingProfile) {
     return (
       <div style={{ padding:"40px", textAlign:"center" }}>
         <span className="spinner" style={{ fontSize:"24px" }}>⚙</span>
         <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
           color:"var(--verde-claro)", marginTop:"16px" }}>
-          Verificando acceso...
+          Cargando...
         </p>
       </div>
     );
   }
-  if (!esAdmin) {
+
+  if (!ADMIN_EMAILS.includes(firebaseUser?.email)) {
     return (
       <div style={{ padding:"20px", textAlign:"center" }}>
         <p style={{ color:"var(--rojo-chile)", fontSize:"8px" }}>🔒 ACCESO DENEGADO</p>
         <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
           color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
-          Email: {firebaseUser?.email || "no autenticado"}
+          {firebaseUser?.email || "no autenticado"}
         </p>
         <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop:"16px" }}>
           ← VOLVER
@@ -99,6 +91,7 @@ function AdminPanelInterno({ onVolver }) {
     { id:"aviso",     label:"📢 AVISO" },
     { id:"mensajes",  label:"💬 MENSAJES" },
     { id:"sonido",    label:"🎵 SONIDO" },
+    { id:"superdes",  label:"🔴 EN VIVO" },
   ];
 
   return (
@@ -143,6 +136,7 @@ function AdminPanelInterno({ onVolver }) {
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
           {tab==="mensajes"  && <TabMensajes onMensaje={msg} />}
           {tab==="sonido"    && <TabSonido onMensaje={msg} />}
+          {tab==="superdes"  && <TabSuperDestacadoInline partidos={partidos} onMensaje={msg} />}
         </>
       )}
     </div>
@@ -873,4 +867,10 @@ function TabSonido({ onMensaje }) {
       )}
     </div>
   );
+}
+
+
+// ── Tab Super Destacado inline ────────────────────────────────
+function TabSuperDestacadoInline({ partidos, onMensaje }) {
+  return <AdminSuperDestacado partidos={partidos} onMensaje={onMensaje} />;
 }

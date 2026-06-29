@@ -141,17 +141,15 @@ const PANTALLAS = {
 const medallas = ["🥇", "🥈", "🥉"];
 
 function DashboardInterno() {
-  const { firebaseUser, userProfile } = useAuth();
+  const { firebaseUser, userProfile, loadingProfile } = useAuth();
   const { activado: sonidosOn, toggle: toggleSonidos, playSound } = useSonidos();
   const [pantalla, setPantalla]         = useState(PANTALLAS.INICIO);
   const [podioAyer, setPodioAyer]       = useState([]);
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  const [esAdmin, setEsAdmin] = useState(false);
-  useEffect(() => {
-    setEsAdmin(firebaseUser?.email === "xtokesu@gmail.com");
-  }, [firebaseUser]);
+  // FIX DEFINITIVO: esperamos a que Firebase Auth resuelva (loadingProfile=false)
+  const esAdmin = !loadingProfile && firebaseUser?.email === "xtokesu@gmail.com";
   const diaNum   = diaNumero();
   const diaLabel = diaNum > 0 ? `DÍA ${diaNum}` : "MUNDIAL 2026";
 

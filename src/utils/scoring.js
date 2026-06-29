@@ -21,7 +21,8 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
         pts += 1;
         if (ganReal !== "empate" && prediccion.diferencia === difReal) pts += 2;
       }
-      return { puntos: pts, esMaximo: pts > 0 };
+      if (fase === "dieciseisavos" && pts > 0) pts *= 2;
+  return { puntos: pts, esMaximo: pts > 0 };
     }
   }
   const { golesLocal: gl, golesVisitante: gv, definicion,
@@ -50,6 +51,7 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
       else if (prediccion.ganadorPenales === ganadorFinal) pts += 2;
     }
   }
+  if (fase === "dieciseisavos" && pts > 0) pts *= 2;
   return { puntos: pts, esMaximo: pts > 0 };
 }
 

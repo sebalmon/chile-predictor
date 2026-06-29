@@ -62,13 +62,14 @@ export function albumCompleto(laminasUsuario, todasLaminas) {
 }
 
 // Lista recompensas completas y NO reclamadas. reclamadas = {cat_KEY:true, album:true}
-export function recompensasPendientes(laminasUsuario, todasLaminas, reclamadas = {}) {
+export function recompensasPendientes(laminasUsuario, todasLaminas, reclamadas = {}, posicion = null) {
   const out = [];
   const keys = [...new Set(todasLaminas.map(l => l.categoria).filter(Boolean))];
   for (const key of keys) {
     if (reclamadas[`cat_${key}`]) continue;
     if (categoriaCompleta(laminasUsuario, todasLaminas, key)) {
-      out.push({ tipo: "categoria", key, cartas: [{ mult: 2, n: 1 }] });
+      const mult = (!posicion || posicion <= 3) ? 2 : posicion <= 12 ? 3 : 4;
+      out.push({ tipo: "categoria", key, cartas: [{ mult, n: 2 }] });
     }
   }
   if (!reclamadas.album && albumCompleto(laminasUsuario, todasLaminas)) {

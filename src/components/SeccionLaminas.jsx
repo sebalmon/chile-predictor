@@ -267,7 +267,7 @@ function Coleccion({ laminasUsuario, todasLaminas, onClickLamina, uid, reclamada
   const getIcono = (nombre) => iconosPorCategoria[nombre] || "🃏";
 
   // ─── RECOMPENSAS ──────────────────────────────────────────
-  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {});
+  const pendientes = recompensasPendientes(laminasUsuario, todasLaminas, reclamadas || {}, posicionRanking);
 
   const reclamar = async (rec) => {
     if (reclamando || !uid) return;
@@ -952,7 +952,6 @@ export default function SeccionLaminas() {
         {[
           { id:"sobre",     label:"📦 SOBRE"     },
           { id:"coleccion", label:"📚 COLECCIÓN"  },
-          { id:"canje",     label:"🔄 CANJEAR"    },
         ].map(t => (
           <button
             key={t.id}
@@ -1137,17 +1136,7 @@ export default function SeccionLaminas() {
               />
       )}
 
-      {tab === "canje" && (
-        cargandoCat
-          ? <p style={{ fontSize:"7px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
-              Cargando...
-            </p>
-          : <CanjeLaminas
-              laminasUsuario={laminasLocal}
-              uid={uid}
-              onCanje={handleRefresh}
-            />
-      )}
+
     </div>
   );
 }
