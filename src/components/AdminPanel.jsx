@@ -11,7 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
-  collection, getDocs, query, orderBy, limit, doc,
+  collection, getDocs, query, orderBy, doc,
   updateDoc, where, setDoc, deleteDoc, getDoc, addDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -21,33 +21,41 @@ import {
   procesarPreguntaDelDia, publicarAvisoAdmin, cerrarAvisoAdmin,
 } from "../utils/helpers";
 import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
-import AdminSuperDestacado from "./AdminSuperDestacado";
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
 export default function AdminPanel({ onVolver }) {
-  const { firebaseUser, loadingProfile } = useAuth();
+  const { firebaseUser } = useAuth();
+  const [esAdmin,     setEsAdmin]     = useState(false);
+  const [verificando, setVerificando] = useState(true);
 
-  // FIX DEFINITIVO: esperar a que AuthContext resuelva completamente
-  if (loadingProfile) {
+  useEffect(() => {
+    if (firebaseUser === null) {
+      const t = setTimeout(() => setVerificando(false), 4000);
+      return () => clearTimeout(t);
+    }
+    setEsAdmin(ADMIN_EMAILS.includes(firebaseUser.email));
+    setVerificando(false);
+  }, [firebaseUser]);
+
+  if (verificando) {
     return (
       <div style={{ padding:"40px", textAlign:"center" }}>
         <span className="spinner" style={{ fontSize:"24px" }}>⚙</span>
         <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
           color:"var(--verde-claro)", marginTop:"16px" }}>
-          Cargando...
+          Verificando acceso...
         </p>
       </div>
     );
   }
-
-  if (!ADMIN_EMAILS.includes(firebaseUser?.email)) {
+  if (!esAdmin) {
     return (
       <div style={{ padding:"20px", textAlign:"center" }}>
         <p style={{ color:"var(--rojo-chile)", fontSize:"8px" }}>🔒 ACCESO DENEGADO</p>
         <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
           color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
-          {firebaseUser?.email || "no autenticado"}
+          Email: {firebaseUser?.email || "no autenticado"}
         </p>
         <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop:"16px" }}>
           ← VOLVER
@@ -91,7 +99,6 @@ function AdminPanelInterno({ onVolver }) {
     { id:"aviso",     label:"📢 AVISO" },
     { id:"mensajes",  label:"💬 MENSAJES" },
     { id:"sonido",    label:"🎵 SONIDO" },
-    { id:"superdes",  label:"🔴 EN VIVO" },
   ];
 
   return (
@@ -136,7 +143,6 @@ function AdminPanelInterno({ onVolver }) {
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
           {tab==="mensajes"  && <TabMensajes onMensaje={msg} />}
           {tab==="sonido"    && <TabSonido onMensaje={msg} />}
-          {tab==="superdes"  && <TabSuperDestacadoInline partidos={partidos} onMensaje={msg} />}
         </>
       )}
     </div>
@@ -687,7 +693,7 @@ function TabMensajes({ onMensaje }) {
   const cargar = async () => {
     setCargando(true);
     try {
-      const snap = await getDocs(query(collection(db,"mensajesDia"), orderBy("timestamp","desc"), limit(LIMITE)));
+      const snap = await getDocs(query(collection(db,"mensajesDia"), orderBy("timestamp","desc")));
       setMensajes(snap.docs.map(d => ({ docId:d.id, ...d.data() })));
     } catch(e) { console.error(e); }
     finally { setCargando(false); }
@@ -867,10 +873,4 @@ function TabSonido({ onMensaje }) {
       )}
     </div>
   );
-}
-
-
-// ── Tab Super Destacado inline ────────────────────────────────
-function TabSuperDestacadoInline({ partidos, onMensaje }) {
-  return <AdminSuperDestacado partidos={partidos} onMensaje={onMensaje} />;
 }
