@@ -366,9 +366,9 @@ function PartidoCard({ partido, onGuardado }) {
       <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"8px" }}>¿CÓMO SE DECIDE?</p>
       <div className="pred-opciones" style={{ flexWrap:"wrap" }}>
         {[
-          {val:"normal", label:"⚽ 90 MIN", sub:"+2/+3 pts"},
-          {val:"alargue",label:"⏱ ALARGUE",sub:"+3/+6 pts"},
-          {val:"penales",label:"🎯 PENALES",sub:"+3/+5/+7 pts"},
+          {val:"normal", label:"⚽ 90 MIN", sub:"+4 pts"},
+          {val:"alargue",label:"⏱ ALARGUE",sub:"+6 pts"},
+          {val:"penales",label:"🎯 PENALES",sub:"+6/+10/+14 pts"},
         ].map(({val,label,sub}) => (
           <button key={val}
             className={`pred-btn ${defSel===val?"seleccionado":""}`}
