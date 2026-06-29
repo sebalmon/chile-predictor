@@ -1,9 +1,8 @@
-// src/components/Dashboard.jsx  — v8 (Modal secuencial de imágenes)
+// src/components/Dashboard.jsx  — v9 (Modal secuencial con 3 imágenes)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v8:
-//   • Modal promocional con dos imágenes en secuencia.
-//   • Primero imagen 1, al cerrar imagen 2, al cerrar se oculta.
-//   • Al recargar, vuelve a empezar (si es el día de la fecha).
+// CAMBIOS v9:
+//   • Añadida tercera imagen promocional (A_Nuevospun.jpg)
+//   • Secuencia: Imagen 1 → Imagen 2 → Imagen 3 → cerrar
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -141,24 +140,28 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // ── Modal promocional secuencial ──────────────────────────
-  const [pasoPromo, setPasoPromo] = useState(0); // 0: imagen1, 1: imagen2, 2: oculto
+  // ── Modal promocional secuencial (3 imágenes) ────────────
+  const [pasoPromo, setPasoPromo] = useState(0); // 0,1,2 → imágenes; 3 = oculto
 
   useEffect(() => {
     const hoy = new Date().toISOString().slice(0,10);
     if (hoy === FECHA_PROMO) {
       setPasoPromo(0); // reinicia la secuencia al recargar
     } else {
-      setPasoPromo(2); // ocultar
+      setPasoPromo(3); // ocultar
     }
   }, []);
 
   const avanzarPromo = () => {
-    setPasoPromo(p => p + 1);
+    if (pasoPromo < 2) {
+      setPasoPromo(p => p + 1);
+    } else {
+      setPasoPromo(3); // cerrar después de la última
+    }
   };
 
   const cerrarPromo = () => {
-    setPasoPromo(2); // ocultar completamente
+    setPasoPromo(3);
   };
 
   const [esAdmin, setEsAdmin] = useState(false);
@@ -198,7 +201,7 @@ function DashboardInterno() {
   // ── Contenido con el modal promocional secuencial ──────────
   const contenidoConPromo = (
     <>
-      {pasoPromo < 2 && (
+      {pasoPromo < 3 && (
         <div
           style={{
             position: "fixed",
@@ -212,7 +215,7 @@ function DashboardInterno() {
             padding: "20px",
             cursor: "pointer",
           }}
-          onClick={pasoPromo === 0 ? avanzarPromo : cerrarPromo} // clic fuera avanza o cierra
+          onClick={pasoPromo < 2 ? avanzarPromo : cerrarPromo}
         >
           <div
             style={{
@@ -265,6 +268,42 @@ function DashboardInterno() {
                 <img
                   src="/A_LAMINITAS.jpg"
                   alt="Nuevo formato de láminas"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: "8px",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
+                    imageRendering: "pixelated",
+                    border: "3px solid var(--verde-claro)",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.nextSibling.style.display = "block";
+                  }}
+                />
+                <div style={{ display: "none", color: "var(--rojo-chile)", textAlign: "center", padding: "20px" }}>
+                  Imagen no disponible
+                </div>
+                <button
+                  className="btn-pixel btn-amarillo"
+                  style={{
+                    fontSize: "8px",
+                    padding: "10px",
+                    marginTop: "16px",
+                    width: "100%",
+                  }}
+                  onClick={avanzarPromo}
+                >
+                  CONTINUAR →
+                </button>
+              </>
+            )}
+
+            {pasoPromo === 2 && (
+              <>
+                <img
+                  src="/A_Nuevospun.jpg"
+                  alt="Nuevos puntajes y fase de dieciseisavos"
                   style={{
                     width: "100%",
                     height: "auto",
