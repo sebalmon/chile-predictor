@@ -130,12 +130,12 @@ export default function OnboardingModal({ isOpen, onClose }) {
     // ── 2. Sistema de puntos ──────────────────────────────
     {
       icono: "🔢",
-      titulo: "SISTEMA DE PUNTOS",
+      titulo: "SISTEMA DE PUNTOS FASE MUERE MUERE",
       color: "var(--rojo-chile)",
       contenido: (
         <>
           <p style={{ lineHeight:2, marginBottom:"8px", fontSize:"6px" }}>
-            Todos los puntos son <span style={{ color:"var(--amarillo)" }}>dobles</span> en
+            Todos los puntos <span style={{ color:"var(--amarillo)" }}>aumentaron</span> en
             fase eliminatoria. Cuanto más exacto tu pronóstico, más puntos.
           </p>
           <div style={{ display:"flex", flexDirection:"column", gap:"3px" }}>
@@ -214,7 +214,6 @@ export default function OnboardingModal({ isOpen, onClose }) {
           </div>
           <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
             💡 La carta se consume al procesar el resultado, aunque no hayas acertado.
-            Cada día recibes cartas según tu posición en el ranking.
           </p>
         </>
       ),
@@ -241,10 +240,6 @@ export default function OnboardingModal({ isOpen, onClose }) {
               📚 <strong style={{ color:"var(--blanco)" }}>COLECCIÓN:</strong>{" "}
               Las láminas se organizan por categoría. Completa una categoría entera
               y reclama <span style={{ color:"var(--amarillo)" }}>2 cartas multiplicadoras</span> de regalo.
-            </p>
-            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
-              🏆 <strong style={{ color:"var(--blanco)" }}>RECOMPENSA:</strong>{" "}
-              El multiplicador depende de tu ranking: top 3 → ×2, puestos 4-12 → ×3, resto → ×4.
             </p>
           </div>
         </>
