@@ -1072,12 +1072,7 @@ export default function SeccionLaminas() {
               Colecciona todas las de cada categoría y desbloquea
               <span style={{ color:"var(--verde-claro)" }}> cartas multiplicadoras de premio</span>.
             </p>
-            <p style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"5px",
-              color:"var(--gris-claro)",lineHeight:2.2 }}>
-              🏆 Mejor ranking → <span style={{ color:"var(--amarillo)" }}>mejor carta</span> (×2, ×3 o ×4).
-              Completa una categoría entera y reclama tu recompensa en
-              <span style={{ color:"var(--verde-claro)" }}> COLECCIÓN</span>.
-            </p>
+            
           </div>
           {cargandoCat ? (
             <div style={{ textAlign:"center",padding:"20px" }}>
