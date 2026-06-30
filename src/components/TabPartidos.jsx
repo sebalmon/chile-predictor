@@ -106,24 +106,15 @@ export default function TabPartidos({ onGuardado }) {
 
       // Detectar partido super destacado — búsqueda separada (sin filtro de fecha)
       // para que funcione aunque el partido no sea de hoy
-      let sd = lista.find(p => p.esSuperDestacado && !p.resultado);
+            let sd = lista.find(p => p.esSuperDestacado && !p.resultado);
       if (!sd) {
         try {
           const snapSD = await getDocs(query(
-            collection(db,"partidos"),
-            where("esSuperDestacado","==",true)
+            collection(db,"partidos"), where("esSuperDestacado","==",true)
           ));
-          const candidatos = snapSD.docs
+          sd = snapSD.docs
             .map(d => ({ id:d.id, ...d.data() }))
-            .filter(p => !p.resultado);
-          if (candidatos.length > 0) {
-            sd = candidatos[0];
-            // Añadirlo a la lista si no está
-            if (!lista.find(p => p.id === sd.id)) {
-              lista = [...lista, sd];
-              setPartidos(lista);
-            }
-          }
+            .find(p => !p.resultado) || null;
         } catch(_) {}
       }
       setSuperDestacado(sd || null);
