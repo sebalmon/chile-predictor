@@ -1,12 +1,12 @@
-// src/components/SuperDestacado.jsx  — v5 (Original + mejoras visuales con datos desde Firestore)
+// src/components/SuperDestacado.jsx  — v6 (Polling + diseño visual)
 // ─────────────────────────────────────────────────────────────
-// Mantiene la lógica original (partidoId, nombrePartido) y agrega
-// banderas, nombre de equipos e imagen de fondo obteniendo los
-// datos del partido desde Firestore.
+// Usa polling (cada 15 segundos) en vez de onSnapshot para
+// reducir lecturas y evitar bloqueos. Obtiene datos del partido
+// desde Firestore para mostrar banderas y nombres.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
-  collection, onSnapshot, query, where, doc,
+  collection, getDocs, query, where, doc,
   setDoc, getDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -22,19 +22,16 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
   const [enviando,       setEnviando]       = useState(false);
   const [resultado,      setResultado]      = useState(null);
   const [resultadoVisto, setResultadoVisto] = useState(false);
+  const [partidoData,    setPartidoData]    = useState(null);
+  const [cargando,       setCargando]       = useState(true);
 
-  // ── Estado para datos del partido (banderas, nombres) ──
-  const [partidoData, setPartidoData] = useState(null);
-
-  // Obtener datos del partido desde Firestore
+  // Cargar datos del partido
   useEffect(() => {
     if (!partidoId) return;
     const cargarPartido = async () => {
       try {
         const snap = await getDoc(doc(db, "partidos", partidoId));
-        if (snap.exists()) {
-          setPartidoData(snap.data());
-        }
+        if (snap.exists()) setPartidoData(snap.data());
       } catch (e) {
         console.error("Error cargando partido:", e);
       }
@@ -42,48 +39,63 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
     cargarPartido();
   }, [partidoId]);
 
-  // ── Lógica de preguntas en vivo (original) ──────────────
+  // Polling de preguntas en vivo
   useEffect(() => {
     if (!partidoId) return;
+    let intervalo;
 
-    const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
-    const q   = query(ref, where("estado", "==", "abierta"));
+    const cargarPreguntas = async () => {
+      try {
+        setCargando(true);
+        const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
 
-    const unsub = onSnapshot(q, async snap => {
-      if (snap.empty) {
-        setPreguntaActiva(null);
-        return;
+        // 1. Buscar pregunta abierta
+        const qAbierta = query(ref, where("estado", "==", "abierta"));
+        const snapAbierta = await getDocs(qAbierta);
+
+        if (!snapAbierta.empty) {
+          const pregData = { id: snapAbierta.docs[0].id, ...snapAbierta.docs[0].data() };
+          setPreguntaActiva(pregData);
+          setResultado(null); // limpiar resultado anterior
+
+          // Verificar si ya respondí
+          if (firebaseUser) {
+            const respRef = doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
+              `${firebaseUser.uid}_${pregData.id}`);
+            const respSnap = await getDoc(respRef);
+            if (respSnap.exists()) setMiRespuesta(respSnap.data().respuesta);
+            else setMiRespuesta(null);
+          }
+        } else {
+          // 2. Si no hay abierta, buscar cerrada (resultado)
+          setPreguntaActiva(null);
+          const qCerrada = query(ref, where("estado", "==", "cerrada"));
+          const snapCerrada = await getDocs(qCerrada);
+          if (!snapCerrada.empty) {
+            const cerradas = snapCerrada.docs.map(d => ({ id: d.id, ...d.data() }))
+              .sort((a, b) => (b.creadaEn?.seconds || 0) - (a.creadaEn?.seconds || 0));
+            const ultima = cerradas[0];
+            const clave = `${LS_PREFIX}${partidoId}_${ultima.id}`;
+            const yaVista = localStorage.getItem(clave) === "true";
+            setResultado(ultima);
+            setResultadoVisto(yaVista);
+          } else {
+            setResultado(null);
+            setResultadoVisto(false);
+          }
+        }
+        setCargando(false);
+      } catch (e) {
+        console.error("Error en polling de preguntas:", e);
+        setCargando(false);
       }
-      const pregData = { id: snap.docs[0].id, ...snap.docs[0].data() };
-      setPreguntaActiva(pregData);
+    };
 
-      if (firebaseUser) {
-        const respRef  = doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
-          `${firebaseUser.uid}_${pregData.id}`);
-        const respSnap = await getDoc(respRef);
-        if (respSnap.exists()) setMiRespuesta(respSnap.data().respuesta);
-        else setMiRespuesta(null);
-      }
-    });
+    // Ejecutar al montar y luego cada 15 segundos
+    cargarPreguntas();
+    intervalo = setInterval(cargarPreguntas, 15000);
 
-    const qCerrada = query(ref, where("estado", "==", "cerrada"));
-    const unsubCerrada = onSnapshot(qCerrada, snap => {
-      if (snap.empty) {
-        setResultado(null);
-        return;
-      }
-      const cerradas = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .sort((a,b) => (b.creadaEn?.seconds||0) - (a.creadaEn?.seconds||0));
-      const ultima = cerradas[0];
-
-      const clave = `${LS_PREFIX}${partidoId}_${ultima.id}`;
-      const yaVista = localStorage.getItem(clave) === "true";
-
-      setResultado(ultima);
-      setResultadoVisto(yaVista);
-    });
-
-    return () => { unsub(); unsubCerrada(); };
+    return () => clearInterval(intervalo);
   }, [partidoId, firebaseUser]);
 
   const responder = async (opcion) => {
@@ -113,11 +125,16 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
     setResultadoVisto(true);
   };
 
-  // ── Renderizado condicional ──────────────────────────────
+  // ── Si no hay partidoId, no renderizar nada ──────────────
+  if (!partidoId) return null;
+
+  // ── Si hay resultado y ya fue visto, ocultar ──────────────
   if (resultado && resultadoVisto) return null;
+
+  // ── Si no hay pregunta activa ni resultado, no mostrar ────
   if (!preguntaActiva && !resultado) return null;
 
-  // Datos para mostrar (de partidoData o valores por defecto)
+  // ── Datos para mostrar ─────────────────────────────────────
   const localBandera = partidoData?.local?.bandera || "🏳️";
   const visitanteBandera = partidoData?.visitante?.bandera || "🏳️";
   const localNombre = partidoData?.local?.nombre || "Local";
@@ -125,10 +142,9 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
   const nombreMostrado = partidoData
     ? `${localNombre} vs ${visitanteNombre}`
     : nombrePartido || "Partido en vivo";
-
-  // Imagen de fondo (usa pvivo_0.jpg por defecto, o pvivo_{partidoId}.jpg si existe)
   const imgFondo = `/pvivo_${partidoId || '0'}.jpg`;
 
+  // ── Renderizado ─────────────────────────────────────────────
   return (
     <div style={{
       position: "fixed",
@@ -140,7 +156,7 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
       zIndex: 500,
       fontFamily: "'Press Start 2P', monospace",
     }}>
-      {/* ── Pregunta abierta ─────────────────────────────────── */}
+      {/* Pregunta abierta */}
       {preguntaActiva && (
         <div style={{
           position: "relative",
@@ -255,7 +271,7 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
         </div>
       )}
 
-      {/* ── Resultado de pregunta cerrada ────────────────────── */}
+      {/* Resultado de pregunta cerrada */}
       {!preguntaActiva && resultado && !resultadoVisto && (
         <ResultadoEnVivo
           resultado={resultado}
@@ -278,7 +294,6 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
   );
 }
 
-// ── Resultado con atmósfera ────────────────────────────────────
 function ResultadoEnVivo({
   resultado,
   miRespuesta,
