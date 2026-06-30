@@ -1,10 +1,15 @@
-// src/components/EventoEnVivo.jsx
+// src/components/EventoEnVivo.jsx  — v2
 // ─────────────────────────────────────────────────────────────
-// Vista del USUARIO para el evento en vivo independiente.
-// • Escucha con onSnapshot (tiempo real, sin polling).
-// • Ocupa pantalla completa cuando hay pregunta abierta.
-// • Muestra banderas, imagen de fondo y pregunta.
-// • Al cerrar el admin la pregunta, muestra el resultado.
+// CAMBIOS v2:
+//   • Minimizable: botón ✕ en la esquina cierra el modal
+//     fullscreen y deja una burbuja flotante 🔴 para reabrirlo.
+//   • La burbuja persiste mientras la pregunta siga activa/cerrada
+//     sin ver, así el usuario puede navegar a otras pestañas
+//     (incluyendo ADMIN si es admin) sin perder el evento.
+//   • Imagen de fondo: onError visible (si la imagen no carga,
+//     se nota con un aviso pequeño en vez de fallar en silencio).
+//   • Soporta múltiples preguntas seguidas: cada vez que cambia
+//     pregunta.id, se resetea el estado de "minimizado".
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
@@ -20,7 +25,8 @@ export default function EventoEnVivo() {
   const [evento,      setEvento]      = useState(null);
   const [miRespuesta, setMiRespuesta] = useState(null);
   const [enviando,    setEnviando]    = useState(false);
-  const [cerrado,     setCerrado]     = useState(false); // usuario cerró el resultado
+  const [minimizado,  setMinimizado]  = useState(false);
+  const [imgError,    setImgError]    = useState(false);
 
   // Escuchar evento en tiempo real
   useEffect(() => {
@@ -28,16 +34,13 @@ export default function EventoEnVivo() {
       if (snap.exists()) {
         const data = snap.data();
         setEvento(data);
-        // Si cambió la pregunta (nuevo id), resetear respuesta
-        setMiRespuesta(prev => {
-          const pregId = data.pregunta?.id;
-          // La respuesta se guarda en localStorage por preguntaId
-          if (pregId) {
-            const guardada = localStorage.getItem(`cp8b_ev_resp_${pregId}`);
-            return guardada || null;
-          }
-          return null;
-        });
+        const pregId = data.pregunta?.id;
+        if (pregId) {
+          const guardada = localStorage.getItem(`cp8b_ev_resp_${pregId}`);
+          setMiRespuesta(guardada || null);
+        } else {
+          setMiRespuesta(null);
+        }
       } else {
         setEvento(null);
       }
@@ -45,9 +48,11 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, []);
 
-  // Resetear "cerrado" cuando llega pregunta nueva
+  // Cada vez que cambia la pregunta (nueva pregunta publicada),
+  // resetear minimizado para que la nueva aparezca en pantalla completa
   useEffect(() => {
-    setCerrado(false);
+    setMinimizado(false);
+    setImgError(false);
   }, [evento?.pregunta?.id]);
 
   const responder = async (opcion) => {
@@ -59,10 +64,10 @@ export default function EventoEnVivo() {
       await setDoc(
         doc(db, "eventoEnVivo", "actual", "respuestas", firebaseUser.uid),
         {
-          uid:       firebaseUser.uid,
-          respuesta: opcion,
+          uid:        firebaseUser.uid,
+          respuesta:  opcion,
           preguntaId: pregId,
-          timestamp: serverTimestamp(),
+          timestamp:  serverTimestamp(),
         }
       );
       setMiRespuesta(opcion);
@@ -71,12 +76,11 @@ export default function EventoEnVivo() {
     finally { setEnviando(false); }
   };
 
-  // No mostrar si evento inactivo o sin pregunta
+  // No mostrar nada si el evento está inactivo o sin pregunta
   if (!evento?.activo) return null;
   const pregunta = evento.pregunta;
   if (!pregunta) return null;
   if (pregunta.estado !== "abierta" && pregunta.estado !== "cerrada") return null;
-  if (pregunta.estado === "cerrada" && cerrado) return null;
 
   const localBandera     = evento.equipoLocal?.bandera     || "🏳️";
   const visitanteBandera = evento.equipoVisitante?.bandera || "🏳️";
@@ -88,6 +92,35 @@ export default function EventoEnVivo() {
   const correcta         = pregunta.respuestaCorrecta;
   const acerte           = miRespuesta && miRespuesta === correcta;
 
+  // ── BURBUJA MINIMIZADA ──────────────────────────────────────
+  if (minimizado) {
+    return (
+      <button
+        onClick={() => setMinimizado(false)}
+        style={{
+          position:"fixed", bottom:"90px", right:"16px", zIndex:650,
+          width:"56px", height:"56px", borderRadius:"50%",
+          background:"var(--rojo-chile)",
+          border:"3px solid var(--blanco)",
+          boxShadow:"0 0 16px rgba(214,40,40,0.7)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontSize:"24px", cursor:"pointer",
+          animation:"latido 1.4s ease-in-out infinite",
+        }}
+        title="Reabrir evento en vivo"
+      >
+        🔴
+        <style>{`
+          @keyframes latido {
+            0%,100% { transform:scale(1); }
+            50%     { transform:scale(1.08); }
+          }
+        `}</style>
+      </button>
+    );
+  }
+
+  // ── MODAL FULLSCREEN ─────────────────────────────────────────
   return (
     <div style={{
       position:"fixed", inset:0, zIndex:700,
@@ -96,13 +129,22 @@ export default function EventoEnVivo() {
       fontFamily:"'Press Start 2P', monospace",
     }}>
       {/* Imagen de fondo */}
-      {imagenFondo ? (
-        <div style={{
-          position:"absolute", inset:0,
-          backgroundImage:`url(/${imagenFondo})`,
-          backgroundSize:"cover", backgroundPosition:"center",
-          filter:"brightness(0.3) saturate(1.3)",
-        }} />
+      {imagenFondo && !imgError ? (
+        <>
+          <div style={{
+            position:"absolute", inset:0,
+            backgroundImage:`url(/${imagenFondo})`,
+            backgroundSize:"cover", backgroundPosition:"center",
+            filter:"brightness(0.3) saturate(1.3)",
+          }} />
+          {/* Imagen oculta solo para detectar error de carga */}
+          <img
+            src={`/${imagenFondo}`}
+            alt=""
+            style={{ display:"none" }}
+            onError={() => setImgError(true)}
+          />
+        </>
       ) : (
         <div style={{
           position:"absolute", inset:0,
@@ -114,6 +156,35 @@ export default function EventoEnVivo() {
         position:"absolute", inset:0,
         background:"linear-gradient(180deg,rgba(0,0,0,0.4) 0%,rgba(0,0,0,0.88) 100%)",
       }} />
+
+      {/* Botón minimizar (esquina superior derecha) */}
+      <button
+        onClick={() => setMinimizado(true)}
+        style={{
+          position:"absolute", top:"16px", right:"16px", zIndex:2,
+          width:"36px", height:"36px",
+          background:"rgba(0,0,0,0.6)",
+          border:"2px solid rgba(255,255,255,0.3)",
+          color:"var(--blanco)", fontSize:"16px",
+          cursor:"pointer", display:"flex",
+          alignItems:"center", justifyContent:"center",
+        }}
+        title="Minimizar"
+      >
+        ✕
+      </button>
+
+      {/* Aviso si la imagen configurada no carga */}
+      {imagenFondo && imgError && (
+        <div style={{
+          position:"absolute", top:"16px", left:"16px", zIndex:2,
+          fontSize:"5px", color:"var(--amarillo)",
+          background:"rgba(0,0,0,0.6)", padding:"4px 8px",
+          border:"1px solid var(--amarillo)", maxWidth:"200px", lineHeight:2,
+        }}>
+          ⚠ No se encontró /{imagenFondo}
+        </div>
+      )}
 
       {/* Contenido */}
       <div style={{
@@ -222,6 +293,12 @@ export default function EventoEnVivo() {
                   marginTop:"6px", lineHeight:2 }}>
                   Esperando que el admin cierre la pregunta...
                 </p>
+                <button
+                  onClick={() => setMinimizado(true)}
+                  className="btn-pixel btn-gris w-full"
+                  style={{ fontSize:"6px", marginTop:"12px" }}>
+                  MINIMIZAR Y SEGUIR NAVEGANDO
+                </button>
               </div>
             )}
           </div>
@@ -263,7 +340,7 @@ export default function EventoEnVivo() {
               )}
               <button className="btn-pixel btn-gris w-full"
                 style={{ fontSize:"7px" }}
-                onClick={() => setCerrado(true)}>
+                onClick={() => setMinimizado(true)}>
                 CERRAR ✕
               </button>
             </div>
