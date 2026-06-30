@@ -132,7 +132,7 @@ const PANTALLAS = {
 };
 
 // ── FECHA DE PROMOCIÓN ──────────────────────────────────────
-const FECHA_PROMO = "2026-06-29"; // Cambiar manualmente cada día
+const FECHA_PROMO = "2026-06-30"; // Cambiar manualmente cada día
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
