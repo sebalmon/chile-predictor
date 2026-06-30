@@ -47,12 +47,15 @@ export default function EventoEnVivo() {
   }, []);
 
   const preguntas = evento?.preguntas || [];
-  const abierta   = preguntas.find(p => p.estado === "abierta");
+  // Pueden convivir varias preguntas abiertas a la vez
+  const abiertas  = preguntas.filter(p => p.estado === "abierta");
   const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
 
+  // Cuando aparece una pregunta nueva abierta, des-minimizar
+  const idsAbiertas = abiertas.map(p => p.id).join(",");
   useEffect(() => {
-    if (abierta) setMinimizado(false);
-  }, [abierta?.id]);
+    if (abiertas.length > 0) setMinimizado(false);
+  }, [idsAbiertas]);
 
   const responder = async (pregunta, opcion) => {
     if (!firebaseUser || misRespuestas[pregunta.id] || enviando) return;
@@ -179,7 +182,7 @@ export default function EventoEnVivo() {
               {localBandera}
             </span>
             <div style={{ textAlign:"center" }}>
-              {abierta && (
+              {abiertas.length > 0 && (
                 <span style={{
                   background:"var(--rojo-chile)", color:"var(--blanco)",
                   padding:"2px 8px", fontSize:"5px",
@@ -210,18 +213,23 @@ export default function EventoEnVivo() {
         display:"flex", flexDirection:"column", gap:"10px",
       }}>
 
-        {abierta && (
-          <PreguntaGrande
-            pregunta={abierta}
-            miRespuesta={misRespuestas[abierta.id]}
-            enviando={enviando === abierta.id}
-            onResponder={(op) => responder(abierta, op)}
-          />
+        {abiertas.length > 0 && (
+          <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
+            {abiertas.map(preg => (
+              <PreguntaGrande
+                key={preg.id}
+                pregunta={preg}
+                miRespuesta={misRespuestas[preg.id]}
+                enviando={enviando === preg.id}
+                onResponder={(op) => responder(preg, op)}
+              />
+            ))}
+          </div>
         )}
 
         {cerradas.length > 0 && (
           <div>
-            {abierta && (
+            {abiertas.length > 0 && (
               <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
                 margin:"8px 0 6px", letterSpacing:"1px" }}>
                 PREGUNTAS ANTERIORES
@@ -241,7 +249,7 @@ export default function EventoEnVivo() {
           </div>
         )}
 
-        {!abierta && (
+        {abiertas.length === 0 && (
           <button
             onClick={() => setMinimizado(true)}
             className="btn-pixel btn-gris w-full"
