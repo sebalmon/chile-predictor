@@ -878,6 +878,118 @@ Las reglas de Firestore no están bien configuradas. Pega el contenido de `fires
 <svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
 </file>
 
+<file path="src/components/FraseCinema.jsx">
+// src/components/FraseCinema.jsx
+// ─────────────────────────────────────────────────────────────
+// Pantalla cinematográfica de la frase del día.
+// MODIFICADO: Se muestra SIEMPRE al iniciar/recargar la app.
+// Tiempos extendidos para una mayor duración en pantalla.
+// ─────────────────────────────────────────────────────────────
+import React, { useEffect, useState } from "react";
+import { FRASES_DEL_DIA } from "../data/sampleData";
+import { hoyStr } from "../utils/helpers";
+
+// Elige la frase del día de forma determinista según la fecha
+function getFraseDelDia() {
+  const hoy = hoyStr();
+  // Índice basado en el día del año (0-based), cíclico sobre el array
+  const inicio = new Date("2026-06-11");
+  const ahora  = new Date();
+  const diffDias = Math.max(0, Math.floor((ahora - inicio) / 86400000));
+  const idx = diffDias % FRASES_DEL_DIA.length;
+  return FRASES_DEL_DIA[idx];
+}
+
+// Forzamos a que siempre devuelva falso para que la App no se salte este componente
+export function fraseCinemaYaVistahoy() {
+  return false; 
+}
+
+// ── Componente ────────────────────────────────────────────────
+export default function FraseCinema({ onTerminar }) {
+  const [fase, setFase] = useState("fadein"); // "fadein" | "visible" | "fadeout"
+  const frase = getFraseDelDia();
+
+  useEffect(() => {
+    // NUEVA CRONOLOGÍA EXTENDIDA:
+    // 0.8s fade-in → 7.0s visible (Dura el doble) → 0.8s fade-out → callback final
+    const t1 = setTimeout(() => setFase("visible"), 800);
+    const t2 = setTimeout(() => setFase("fadeout"), 8800); // 800ms + 7000ms
+    const t3 = setTimeout(() => {
+      onTerminar();
+    }, 9600); // 7800ms + 800ms de fadeout
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onTerminar]);
+
+  const opacity =
+    fase === "fadein"   ? 0   :
+    fase === "visible"  ? 1   : 0;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "#000",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+        padding: "32px",
+        cursor: "pointer"
+      }}
+      // Saltar al tocar en cualquier momento
+      onClick={onTerminar}
+    >
+      <div
+        style={{
+          opacity,
+          transition: "opacity 0.8s ease",
+          textAlign: "center",
+          maxWidth: "460px",
+        }}
+      >
+        {/* Línea decorativa superior */}
+        <div style={{
+          width: "60px", height: "3px",
+          background: "linear-gradient(90deg, transparent, #f4d03f, transparent)",
+          margin: "0 auto 28px",
+        }} />
+
+        <p style={{
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize: "clamp(8px, 2.5vw, 11px)",
+          color: "#f4d03f",
+          lineHeight: 2.4,
+          letterSpacing: "1px",
+          textShadow: "0 0 20px rgba(244,208,63,0.4)",
+          whiteSpace: "pre-line",
+        }}>
+          "{frase}"
+        </p>
+
+        {/* Línea decorativa inferior */}
+        <div style={{
+          width: "60px", height: "3px",
+          background: "linear-gradient(90deg, transparent, #f4d03f, transparent)",
+          margin: "28px auto 0",
+        }} />
+
+        <p style={{
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize: "6px",
+          color: "rgba(255,255,255,0.25)",
+          marginTop: "20px",
+        }}>
+          toca para continuar
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="src/components/Login.jsx">
 import React, { useState } from "react";
 import { signInWithPopup } from "firebase/auth";
@@ -1361,118 +1473,6 @@ export default function AvisoAdmin() {
             Este aviso seguirá apareciendo hasta que el administrador lo desactive.
           </p>
         )}
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/FraseCinema.jsx">
-// src/components/FraseCinema.jsx
-// ─────────────────────────────────────────────────────────────
-// Pantalla cinematográfica de la frase del día.
-// MODIFICADO: Se muestra SIEMPRE al iniciar/recargar la app.
-// Tiempos extendidos para una mayor duración en pantalla.
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
-import { FRASES_DEL_DIA } from "../data/sampleData";
-import { hoyStr } from "../utils/helpers";
-
-// Elige la frase del día de forma determinista según la fecha
-function getFraseDelDia() {
-  const hoy = hoyStr();
-  // Índice basado en el día del año (0-based), cíclico sobre el array
-  const inicio = new Date("2026-06-11");
-  const ahora  = new Date();
-  const diffDias = Math.max(0, Math.floor((ahora - inicio) / 86400000));
-  const idx = diffDias % FRASES_DEL_DIA.length;
-  return FRASES_DEL_DIA[idx];
-}
-
-// Forzamos a que siempre devuelva falso para que la App no se salte este componente
-export function fraseCinemaYaVistahoy() {
-  return false; 
-}
-
-// ── Componente ────────────────────────────────────────────────
-export default function FraseCinema({ onTerminar }) {
-  const [fase, setFase] = useState("fadein"); // "fadein" | "visible" | "fadeout"
-  const frase = getFraseDelDia();
-
-  useEffect(() => {
-    // NUEVA CRONOLOGÍA EXTENDIDA:
-    // 0.8s fade-in → 7.0s visible (Dura el doble) → 0.8s fade-out → callback final
-    const t1 = setTimeout(() => setFase("visible"), 800);
-    const t2 = setTimeout(() => setFase("fadeout"), 8800); // 800ms + 7000ms
-    const t3 = setTimeout(() => {
-      onTerminar();
-    }, 9600); // 7800ms + 800ms de fadeout
-
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [onTerminar]);
-
-  const opacity =
-    fase === "fadein"   ? 0   :
-    fase === "visible"  ? 1   : 0;
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "#000",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        padding: "32px",
-        cursor: "pointer"
-      }}
-      // Saltar al tocar en cualquier momento
-      onClick={onTerminar}
-    >
-      <div
-        style={{
-          opacity,
-          transition: "opacity 0.8s ease",
-          textAlign: "center",
-          maxWidth: "460px",
-        }}
-      >
-        {/* Línea decorativa superior */}
-        <div style={{
-          width: "60px", height: "3px",
-          background: "linear-gradient(90deg, transparent, #f4d03f, transparent)",
-          margin: "0 auto 28px",
-        }} />
-
-        <p style={{
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: "clamp(8px, 2.5vw, 11px)",
-          color: "#f4d03f",
-          lineHeight: 2.4,
-          letterSpacing: "1px",
-          textShadow: "0 0 20px rgba(244,208,63,0.4)",
-          whiteSpace: "pre-line",
-        }}>
-          "{frase}"
-        </p>
-
-        {/* Línea decorativa inferior */}
-        <div style={{
-          width: "60px", height: "3px",
-          background: "linear-gradient(90deg, transparent, #f4d03f, transparent)",
-          margin: "28px auto 0",
-        }} />
-
-        <p style={{
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: "6px",
-          color: "rgba(255,255,255,0.25)",
-          marginTop: "20px",
-        }}>
-          toca para continuar
-        </p>
       </div>
     </div>
   );
@@ -2458,455 +2458,6 @@ test("recompensasPendientes: completas no reclamadas", async () => {
 });
 </file>
 
-<file path="src/components/AdminSuperDestacado.jsx">
-// src/components/AdminSuperDestacado.jsx  — v2
-// ─────────────────────────────────────────────────────────────
-// Panel COMPLETO de Super Destacado para el administrador:
-//
-//  SECCIÓN 1 — ACTIVAR/DESACTIVAR
-//    • Lista todos los partidos.
-//    • Botón 🔴/⚪ para marcar/desmarcar esSuperDestacado.
-//    • Una vez marcado aparece en la sección de preguntas en vivo.
-//
-//  SECCIÓN 2 — PREGUNTAS EN VIVO
-//    • Selecciona el partido super destacado activo.
-//    • Crea preguntas: texto + opciones (2-5) + puntaje variable.
-//    • Solo 1 pregunta abierta a la vez.
-//    • Mientras está abierta: los usuarios la ven y responden en tiempo real.
-//    • El admin selecciona la respuesta correcta y cierra → puntos automáticos.
-//    • Historial de preguntas cerradas con resultado.
-//
-// Colecciones:
-//   preguntasEnVivo/{partidoId}/preguntas/{id}
-//     { texto, opciones, estado, respuestaCorrecta, creadaEn, puntosEnVivo }
-//   preguntasEnVivo/{partidoId}/respuestasEnVivo/{uid}_{pregId}
-//     { uid, preguntaId, respuesta, timestamp }
-// ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect, useRef } from "react";
-import {
-  collection, getDocs, query, where, orderBy,
-  doc, setDoc, updateDoc, onSnapshot, serverTimestamp,
-  increment, writeBatch,
-} from "firebase/firestore";
-import { db } from "../firebase";
-
-export default function AdminSuperDestacado({ partidos = [], onMensaje }) {
-  // ── Sección 1: toggle super destacado ────────────────────
-  const [toggling, setToggling] = useState(null);
-
-  const toggleSD = async (p) => {
-    setToggling(p.id);
-    try {
-      const nuevoValor = !p.esSuperDestacado;
-      await updateDoc(doc(db, "partidos", p.id), { esSuperDestacado: nuevoValor });
-      onMensaje("ok",
-        nuevoValor
-          ? `🔴 ${p.local?.nombre} vs ${p.visitante?.nombre} es ahora SUPER DESTACADO`
-          : `⚪ ${p.local?.nombre} vs ${p.visitante?.nombre} ya no es Super Destacado`
-      );
-    } catch (e) { onMensaje("error", e.message); }
-    finally { setToggling(null); }
-  };
-
-  // ── Sección 2: preguntas en vivo ─────────────────────────
-  const superDestacados = partidos.filter(p => p.esSuperDestacado);
-  const [partidoSel, setPartidoSel] = useState(null);
-  const [preguntas,  setPreguntas]  = useState([]);
-  const unsubRef = useRef(null);
-
-  // Auto-seleccionar si hay solo uno super destacado
-  useEffect(() => {
-    if (superDestacados.length === 1 && !partidoSel) {
-      seleccionar(superDestacados[0]);
-    }
-  }, [superDestacados.length]);
-
-  // Limpiar listener al desmontar
-  useEffect(() => () => { if (unsubRef.current) unsubRef.current(); }, []);
-
-  const seleccionar = (p) => {
-    if (unsubRef.current) unsubRef.current();
-    setPartidoSel(p);
-    setTextoNueva(""); setOpcionesNv(["",""]); setPuntosNv(3);
-
-    const ref = collection(db, "preguntasEnVivo", p.id, "preguntas");
-    const q   = query(ref, orderBy("creadaEn", "desc"));
-    unsubRef.current = onSnapshot(q, snap => {
-      setPreguntas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-  };
-
-  // Form nueva pregunta
-  const [textoNueva,  setTextoNueva]  = useState("");
-  const [opcionesNv,  setOpcionesNv]  = useState(["",""]);
-  const [puntosNv,    setPuntosNv]    = useState(3);
-  const [creando,     setCreando]     = useState(false);
-
-  // Estado cierre
-  const [cerrando,    setCerrando]    = useState(null);
-  const [respSels,    setRespSels]    = useState({}); // pregId → opcion elegida
-
-  const abierta = preguntas.find(p => p.estado === "abierta");
-
-  // ── Crear pregunta ────────────────────────────────────────
-  const crear = async () => {
-    const optsOk = opcionesNv.filter(o => o.trim()).length >= 2;
-    if (!textoNueva.trim() || !optsOk) {
-      onMensaje("error", "Necesitas texto y al menos 2 opciones.");
-      return;
-    }
-    if (abierta) {
-      onMensaje("error", "Hay una pregunta abierta. Ciérrala primero.");
-      return;
-    }
-    if (puntosNv < 1 || puntosNv > 20) {
-      onMensaje("error", "El puntaje debe ser entre 1 y 20.");
-      return;
-    }
-    setCreando(true);
-    try {
-      const pregId = `pev_${Date.now()}`;
-      await setDoc(doc(db, "preguntasEnVivo", partidoSel.id, "preguntas", pregId), {
-        texto:             textoNueva.trim(),
-        opciones:          opcionesNv.filter(o => o.trim()),
-        estado:            "abierta",
-        respuestaCorrecta: null,
-        creadaEn:          serverTimestamp(),
-        puntosEnVivo:      Number(puntosNv),
-      });
-      onMensaje("ok", `¡Pregunta publicada! Los usuarios ya pueden responder (+${puntosNv} pts).`);
-      setTextoNueva(""); setOpcionesNv(["",""]); setPuntosNv(3);
-    } catch (e) { onMensaje("error", e.message); }
-    finally { setCreando(false); }
-  };
-
-  // ── Cerrar pregunta y dar puntos ──────────────────────────
-  const cerrar = async (pregunta) => {
-    const respCorrecta = respSels[pregunta.id];
-    if (!respCorrecta) {
-      onMensaje("error", "Selecciona la respuesta correcta antes de cerrar.");
-      return;
-    }
-    setCerrando(pregunta.id);
-    try {
-      const pts = pregunta.puntosEnVivo || 3;
-
-      // 1. Marcar pregunta cerrada
-      await updateDoc(
-        doc(db, "preguntasEnVivo", partidoSel.id, "preguntas", pregunta.id),
-        { estado: "cerrada", respuestaCorrecta: respCorrecta }
-      );
-
-      // 2. Leer respuestas y dar puntos en batch
-      const snapR = await getDocs(
-        collection(db, "preguntasEnVivo", partidoSel.id, "respuestasEnVivo")
-      );
-      const respuestas = snapR.docs
-        .map(d => d.data())
-        .filter(r => r.preguntaId === pregunta.id);
-
-      let acertaron = 0;
-      const batch = writeBatch(db);
-      for (const r of respuestas) {
-        if (r.respuesta === respCorrecta) {
-          batch.update(doc(db, "usuarios", r.uid), { puntosTotal: increment(pts) });
-          acertaron++;
-        }
-      }
-      await batch.commit();
-
-      onMensaje("ok",
-        `✅ Pregunta cerrada. ${acertaron} de ${respuestas.length} usuarios acertaron → +${pts} pts c/u.`
-      );
-    } catch (e) { onMensaje("error", e.message); }
-    finally { setCerrando(null); }
-  };
-
-  // ── Render ────────────────────────────────────────────────
-  return (
-    <div>
-      {/* ── SECCIÓN 1: Toggle Super Destacado ──────────────── */}
-      <div style={{ marginBottom:"20px" }}>
-        <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"4px" }}>
-          🔴 ACTIVAR / DESACTIVAR SUPER DESTACADO
-        </p>
-        <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"10px", lineHeight:2 }}>
-          Marca un partido como Super Destacado para habilitar las preguntas en vivo.
-          Los usuarios ven las preguntas en tiempo real mientras juega el partido.
-        </p>
-
-        {partidos.length === 0 ? (
-          <p style={{ fontSize:"6px", color:"var(--gris-claro)", padding:"12px",
-            border:"1px solid var(--gris)", textAlign:"center" }}>
-            No hay partidos cargados.
-          </p>
-        ) : (
-          <div style={{ display:"flex", flexDirection:"column", gap:"4px" }}>
-            {partidos.map(p => (
-              <div key={p.id} style={{
-                display:"flex", justifyContent:"space-between", alignItems:"center",
-                padding:"8px 10px",
-                border:`2px solid ${p.esSuperDestacado ? "var(--rojo-chile)" : "rgba(255,255,255,0.1)"}`,
-                background: p.esSuperDestacado ? "rgba(214,40,40,0.08)" : "transparent",
-              }}>
-                <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-                  color:"var(--blanco)", lineHeight:1.8 }}>
-                  {p.esSuperDestacado && <span style={{ color:"var(--rojo-chile)" }}>🔴 </span>}
-                  {p.local?.bandera} {p.local?.nombre} vs {p.visitante?.nombre} {p.visitante?.bandera}
-                  <span style={{ color:"var(--gris-claro)", marginLeft:"6px" }}>({p.fecha})</span>
-                </span>
-                <button
-                  onClick={() => toggleSD(p)}
-                  disabled={toggling === p.id}
-                  style={{
-                    fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-                    padding:"4px 10px", cursor:"pointer", flexShrink:0, marginLeft:"8px",
-                    background: p.esSuperDestacado ? "rgba(214,40,40,0.2)" : "transparent",
-                    border:`2px solid ${p.esSuperDestacado ? "var(--rojo-chile)" : "var(--gris)"}`,
-                    color: p.esSuperDestacado ? "var(--rojo-chile)" : "var(--gris-claro)",
-                  }}>
-                  {toggling === p.id ? "⚙" : p.esSuperDestacado ? "🔴 ACTIVO" : "⚪ INACTIVO"}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── SECCIÓN 2: Preguntas en vivo ───────────────────── */}
-      <div style={{ borderTop:"2px solid var(--rojo-chile)", paddingTop:"16px" }}>
-        <p style={{ fontSize:"7px", color:"var(--rojo-chile)", marginBottom:"10px" }}>
-          ❓ PREGUNTAS EN VIVO
-        </p>
-
-        {superDestacados.length === 0 ? (
-          <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2,
-            padding:"10px", border:"1px dashed var(--gris)", textAlign:"center" }}>
-            Activa un partido como Super Destacado arriba para crear preguntas en vivo.
-          </p>
-        ) : (
-          <>
-            {/* Selector de partido (si hay más de uno) */}
-            {superDestacados.length > 1 && (
-              <div style={{ marginBottom:"12px" }}>
-                <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"6px" }}>
-                  SELECCIONA EL PARTIDO:
-                </p>
-                <div style={{ display:"flex", flexDirection:"column", gap:"4px" }}>
-                  {superDestacados.map(p => (
-                    <button key={p.id} onClick={() => seleccionar(p)}
-                      style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-                        padding:"6px 8px", cursor:"pointer", textAlign:"left",
-                        border:`2px solid ${partidoSel?.id===p.id?"var(--rojo-chile)":"var(--gris)"}`,
-                        background:partidoSel?.id===p.id?"rgba(214,40,40,0.1)":"var(--negro)",
-                        color:"var(--blanco)" }}>
-                      🔴 {p.local?.nombre} vs {p.visitante?.nombre}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {partidoSel && (
-              <>
-                <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"12px" }}>
-                  PARTIDO: 🔴 {partidoSel.local?.nombre} vs {partidoSel.visitante?.nombre}
-                </p>
-
-                {/* Pregunta actualmente abierta */}
-                {abierta && (
-                  <div style={{ marginBottom:"14px", padding:"12px",
-                    border:"3px solid var(--rojo-chile)",
-                    background:"rgba(214,40,40,0.06)",
-                    boxShadow:"0 0 16px rgba(214,40,40,0.2)" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between",
-                      alignItems:"center", marginBottom:"10px" }}>
-                      <span style={{ fontFamily:"'Press Start 2P',monospace",
-                        fontSize:"6px", color:"var(--rojo-chile)" }}>
-                        🔴 PREGUNTA ACTIVA
-                      </span>
-                      <span style={{ fontFamily:"'Press Start 2P',monospace",
-                        fontSize:"5px", color:"var(--amarillo)",
-                        border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
-                        +{abierta.puntosEnVivo || 3} PTS · RESPONDIENDO...
-                      </span>
-                    </div>
-
-                    <p style={{ fontFamily:"'Press Start 2P',monospace",
-                      fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
-                      {abierta.texto}
-                    </p>
-
-                    <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
-                      ¿CUÁL ES LA RESPUESTA CORRECTA?
-                    </p>
-                    <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"12px" }}>
-                      {(abierta.opciones||[]).map((op, i) => (
-                        <button key={i}
-                          onClick={() => setRespSels(prev => ({ ...prev, [abierta.id]: op }))}
-                          style={{
-                            fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                            padding:"8px 10px", cursor:"pointer", textAlign:"left",
-                            border:`2px solid ${respSels[abierta.id]===op?"var(--verde-claro)":"var(--gris)"}`,
-                            background:respSels[abierta.id]===op?"rgba(82,183,136,0.15)":"transparent",
-                            color:"var(--blanco)",
-                          }}>
-                          {respSels[abierta.id]===op ? "✅ " : ""}{op}
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      className="btn-pixel btn-rojo w-full"
-                      style={{ fontSize:"7px" }}
-                      onClick={() => cerrar(abierta)}
-                      disabled={!respSels[abierta.id] || cerrando === abierta.id}>
-                      {cerrando === abierta.id
-                        ? "⚙ PROCESANDO..."
-                        : `🔒 CERRAR Y DAR +${abierta.puntosEnVivo||3} PTS A QUIENES ACERTARON`}
-                    </button>
-                  </div>
-                )}
-
-                {/* Formulario nueva pregunta */}
-                {!abierta && (
-                  <div style={{ padding:"12px", border:"2px solid var(--gris)",
-                    marginBottom:"14px" }}>
-                    <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"12px" }}>
-                      + NUEVA PREGUNTA EN VIVO
-                    </p>
-
-                    {/* Texto */}
-                    <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
-                      PREGUNTA:
-                    </p>
-                    <textarea
-                      value={textoNueva}
-                      onChange={e => setTextoNueva(e.target.value)}
-                      rows={2}
-                      placeholder="Ej: ¿Habrá gol antes del minuto 60?"
-                      style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                        width:"100%", padding:"8px", border:"3px solid var(--negro)",
-                        background:"var(--blanco)", color:"var(--negro)",
-                        outline:"none", resize:"none", lineHeight:2, marginBottom:"10px" }}
-                    />
-
-                    {/* Opciones */}
-                    <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
-                      OPCIONES DE RESPUESTA:
-                    </p>
-                    <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"10px" }}>
-                      {opcionesNv.map((op, i) => (
-                        <div key={i} style={{ display:"flex", gap:"5px" }}>
-                          <input
-                            value={op}
-                            onChange={e => setOpcionesNv(prev =>
-                              prev.map((o, idx) => idx===i ? e.target.value : o)
-                            )}
-                            placeholder={`Opción ${i+1}`}
-                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                              flex:1, padding:"5px 8px", border:"2px solid var(--negro)",
-                              background:"var(--blanco)", color:"var(--negro)", outline:"none" }}
-                          />
-                          {opcionesNv.length > 2 && (
-                            <button
-                              onClick={() => setOpcionesNv(prev => prev.filter((_,idx) => idx!==i))}
-                              style={{ background:"var(--rojo-chile)", color:"var(--blanco)",
-                                border:"none", cursor:"pointer", padding:"4px 8px",
-                                fontFamily:"'Press Start 2P',monospace", fontSize:"8px" }}>
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {opcionesNv.length < 5 && (
-                      <button
-                        className="btn-pixel btn-gris w-full"
-                        style={{ fontSize:"5px", marginBottom:"10px" }}
-                        onClick={() => setOpcionesNv(prev => [...prev, ""])}>
-                        + AGREGAR OPCIÓN
-                      </button>
-                    )}
-
-                    {/* Puntaje variable */}
-                    <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
-                      PUNTAJE POR ACERTAR:
-                    </p>
-                    <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"12px" }}>
-                      {[1,2,3,5,7,10].map(n => (
-                        <button key={n}
-                          onClick={() => setPuntosNv(n)}
-                          style={{
-                            fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                            width:"36px", height:"36px", cursor:"pointer",
-                            border:`2px solid ${puntosNv===n?"var(--amarillo)":"var(--gris)"}`,
-                            background: puntosNv===n?"rgba(244,208,63,0.2)":"transparent",
-                            color: puntosNv===n?"var(--amarillo)":"var(--gris-claro)",
-                          }}>
-                          +{n}
-                        </button>
-                      ))}
-                      {/* Input personalizado */}
-                      <input
-                        type="number" min="1" max="20"
-                        value={puntosNv}
-                        onChange={e => setPuntosNv(Math.max(1, Math.min(20, Number(e.target.value))))}
-                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                          width:"50px", height:"36px", textAlign:"center",
-                          border:`2px solid ${[1,2,3,5,7,10].includes(puntosNv)?"var(--gris)":"var(--amarillo)"}`,
-                          background:"var(--negro)", color:"var(--amarillo)", outline:"none" }}
-                      />
-                    </div>
-
-                    <button
-                      className="btn-pixel btn-rojo w-full"
-                      style={{ fontSize:"7px" }}
-                      onClick={crear}
-                      disabled={creando}>
-                      {creando ? "⚙ PUBLICANDO..." : `🔴 PUBLICAR (+${puntosNv} pts)`}
-                    </button>
-                  </div>
-                )}
-
-                {/* Historial de preguntas cerradas */}
-                {preguntas.filter(p => p.estado === "cerrada").length > 0 && (
-                  <div>
-                    <p style={{ fontSize:"5px", color:"var(--gris-claro)",
-                      marginBottom:"6px", letterSpacing:"1px" }}>
-                      HISTORIAL
-                    </p>
-                    <div style={{ display:"flex", flexDirection:"column", gap:"4px" }}>
-                      {preguntas
-                        .filter(p => p.estado === "cerrada")
-                        .map(pq => (
-                          <div key={pq.id} style={{ padding:"8px 10px",
-                            border:"1px solid rgba(82,183,136,0.2)",
-                            background:"rgba(0,0,0,0.2)",
-                            fontSize:"6px", lineHeight:2 }}>
-                            <p style={{ color:"var(--blanco)", marginBottom:"2px" }}>{pq.texto}</p>
-                            <p>
-                              ✅ <span style={{ color:"var(--verde-claro)" }}>{pq.respuestaCorrecta}</span>
-                              <span style={{ color:"var(--amarillo)", marginLeft:"8px" }}>
-                                +{pq.puntosEnVivo||3} pts
-                              </span>
-                            </p>
-                          </div>
-                        ))
-                      }
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="src/components/ModalPerfilCompleto.jsx">
 // src/components/ModalPerfilCompleto.jsx  — v7 (Patch 2)
 // ─────────────────────────────────────────────────────────────
@@ -3391,6 +2942,539 @@ export default defineConfig({
     },
   },
 })
+</file>
+
+<file path="src/components/AdminSuperDestacado.jsx">
+// src/components/AdminSuperDestacado.jsx  — v3
+// ─────────────────────────────────────────────────────────────
+// FIX v3:
+//   • Carga los partidos ÉL MISMO (no depende de la prop).
+//     Así puede refrescarlos inmediatamente tras el toggle.
+//   • Toggle activa/desactiva esSuperDestacado y recarga.
+//   • Sección 2 aparece automáticamente al activar.
+//   • Puntaje variable por pregunta.
+//   • La imagen de fondo para el usuario se configura con el
+//     campo `imagenFondo` del partido en Firestore.
+//     Ejemplo: imagenFondo = "A_PAISES_MARRUECOS.jpg"
+//     La imagen debe estar en /public/A_PAISES_MARRUECOS.jpg
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  collection, getDocs, query, orderBy,
+  doc, setDoc, updateDoc, onSnapshot, serverTimestamp,
+  increment, writeBatch,
+} from "firebase/firestore";
+import { db } from "../firebase";
+
+export default function AdminSuperDestacado({ onMensaje }) {
+  // ── Partidos: carga propia (no prop) ─────────────────────
+  const [partidos,  setPartidos]  = useState([]);
+  const [cargando,  setCargando]  = useState(true);
+  const [toggling,  setToggling]  = useState(null);
+
+  const cargarPartidos = useCallback(async () => {
+    try {
+      const snap = await getDocs(
+        query(collection(db, "partidos"), orderBy("fecha"))
+      );
+      setPartidos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.error("Error cargando partidos:", e);
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  useEffect(() => { cargarPartidos(); }, [cargarPartidos]);
+
+  // ── Toggle Super Destacado ────────────────────────────────
+  const toggleSD = async (p) => {
+    setToggling(p.id);
+    try {
+      const nuevo = !p.esSuperDestacado;
+      await updateDoc(doc(db, "partidos", p.id), { esSuperDestacado: nuevo });
+      // Refrescar lista localmente para respuesta inmediata
+      setPartidos(prev =>
+        prev.map(x => x.id === p.id ? { ...x, esSuperDestacado: nuevo } : x)
+      );
+      onMensaje("ok",
+        nuevo
+          ? `🔴 ${p.local?.nombre} vs ${p.visitante?.nombre} → SUPER DESTACADO ACTIVADO`
+          : `⚪ ${p.local?.nombre} vs ${p.visitante?.nombre} → desactivado`
+      );
+    } catch (e) {
+      onMensaje("error", e.message);
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  // ── Sección 2: preguntas en vivo ─────────────────────────
+  const superDestacados = partidos.filter(p => p.esSuperDestacado);
+  const [partidoSel,  setPartidoSel]  = useState(null);
+  const [preguntas,   setPreguntas]   = useState([]);
+  const unsubRef = useRef(null);
+
+  // Auto-seleccionar cuando hay solo uno
+  useEffect(() => {
+    if (superDestacados.length === 1) {
+      seleccionar(superDestacados[0]);
+    } else if (superDestacados.length === 0) {
+      setPartidoSel(null);
+      setPreguntas([]);
+      if (unsubRef.current) { unsubRef.current(); unsubRef.current = null; }
+    }
+  }, [JSON.stringify(superDestacados.map(p => p.id))]);
+
+  useEffect(() => () => {
+    if (unsubRef.current) unsubRef.current();
+  }, []);
+
+  const seleccionar = (p) => {
+    if (unsubRef.current) unsubRef.current();
+    setPartidoSel(p);
+    setTextoNueva(""); setOpcionesNv(["",""]); setPuntosNv(3); setRespSels({});
+
+    const ref = collection(db, "preguntasEnVivo", p.id, "preguntas");
+    const q   = query(ref, orderBy("creadaEn", "desc"));
+    unsubRef.current = onSnapshot(q,
+      snap => setPreguntas(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      err  => console.error("onSnapshot error:", err)
+    );
+  };
+
+  // ── Form nueva pregunta ───────────────────────────────────
+  const [textoNueva, setTextoNueva] = useState("");
+  const [opcionesNv, setOpcionesNv] = useState(["",""]);
+  const [puntosNv,   setPuntosNv]   = useState(3);
+  const [creando,    setCreando]    = useState(false);
+  const [cerrando,   setCerrando]   = useState(null);
+  const [respSels,   setRespSels]   = useState({});
+
+  const abierta = preguntas.find(p => p.estado === "abierta");
+
+  const crear = async () => {
+    if (!textoNueva.trim() || opcionesNv.filter(o => o.trim()).length < 2) {
+      onMensaje("error", "Escribe la pregunta y al menos 2 opciones."); return;
+    }
+    if (abierta) {
+      onMensaje("error", "Cierra la pregunta activa antes de crear una nueva."); return;
+    }
+    setCreando(true);
+    try {
+      const pregId = `pev_${Date.now()}`;
+      await setDoc(
+        doc(db, "preguntasEnVivo", partidoSel.id, "preguntas", pregId),
+        {
+          texto:             textoNueva.trim(),
+          opciones:          opcionesNv.filter(o => o.trim()),
+          estado:            "abierta",
+          respuestaCorrecta: null,
+          creadaEn:          serverTimestamp(),
+          puntosEnVivo:      Number(puntosNv),
+          // Guardar también la imagen de fondo si el partido la tiene
+          imagenFondo:       partidoSel.imagenFondo || null,
+        }
+      );
+      onMensaje("ok", `🔴 Pregunta publicada. Los usuarios la ven ahora. (+${puntosNv} pts)`);
+      setTextoNueva(""); setOpcionesNv(["",""]); setPuntosNv(3);
+    } catch (e) { onMensaje("error", e.message); }
+    finally { setCreando(false); }
+  };
+
+  const cerrar = async (pregunta) => {
+    const respCorrecta = respSels[pregunta.id];
+    if (!respCorrecta) {
+      onMensaje("error", "Selecciona la respuesta correcta."); return;
+    }
+    setCerrando(pregunta.id);
+    try {
+      const pts = pregunta.puntosEnVivo || 3;
+      await updateDoc(
+        doc(db, "preguntasEnVivo", partidoSel.id, "preguntas", pregunta.id),
+        { estado: "cerrada", respuestaCorrecta: respCorrecta }
+      );
+      const snapR = await getDocs(
+        collection(db, "preguntasEnVivo", partidoSel.id, "respuestasEnVivo")
+      );
+      const batch = writeBatch(db);
+      let acertaron = 0;
+      snapR.docs
+        .map(d => d.data())
+        .filter(r => r.preguntaId === pregunta.id && r.respuesta === respCorrecta)
+        .forEach(r => {
+          batch.update(doc(db, "usuarios", r.uid), { puntosTotal: increment(pts) });
+          acertaron++;
+        });
+      await batch.commit();
+      onMensaje("ok", `✅ Cerrada. ${acertaron} usuarios acertaron → +${pts} pts c/u.`);
+    } catch (e) { onMensaje("error", e.message); }
+    finally { setCerrando(null); }
+  };
+
+  // ── Configuración de imagen de fondo ─────────────────────
+  const [editandoImagen, setEditandoImagen] = useState(null);
+  const [imagenInput,    setImagenInput]    = useState("");
+
+  const guardarImagen = async (p) => {
+    try {
+      await updateDoc(doc(db, "partidos", p.id), { imagenFondo: imagenInput.trim() });
+      setPartidos(prev =>
+        prev.map(x => x.id === p.id ? { ...x, imagenFondo: imagenInput.trim() } : x)
+      );
+      onMensaje("ok", `Imagen "${imagenInput.trim()}" guardada para este partido.`);
+      setEditandoImagen(null);
+      setImagenInput("");
+    } catch (e) { onMensaje("error", e.message); }
+  };
+
+  // ── Render ────────────────────────────────────────────────
+  return (
+    <div>
+      {/* ═══ SECCIÓN 1: ACTIVAR / DESACTIVAR ══════════════════ */}
+      <div style={{ marginBottom:"20px" }}>
+        <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"4px" }}>
+          🔴 ACTIVAR / DESACTIVAR SUPER DESTACADO
+        </p>
+        <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2, marginBottom:"10px" }}>
+          Al activar, los usuarios ven las preguntas en vivo mientras juega el partido.
+          Puedes también configurar la imagen de fondo que se muestra en su pantalla.
+        </p>
+
+        {cargando ? (
+          <p style={{ fontSize:"6px", color:"var(--gris-claro)", textAlign:"center", padding:"12px" }}>
+            ⚙ Cargando partidos...
+          </p>
+        ) : partidos.length === 0 ? (
+          <p style={{ fontSize:"6px", color:"var(--gris-claro)", padding:"12px",
+            border:"1px solid var(--gris)", textAlign:"center" }}>
+            No hay partidos en Firestore.
+          </p>
+        ) : (
+          <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+            {partidos.map(p => (
+              <div key={p.id}>
+                <div style={{
+                  display:"flex", justifyContent:"space-between", alignItems:"center",
+                  padding:"8px 10px",
+                  border:`2px solid ${p.esSuperDestacado ? "var(--rojo-chile)" : "rgba(255,255,255,0.1)"}`,
+                  background: p.esSuperDestacado ? "rgba(214,40,40,0.08)" : "transparent",
+                }}>
+                  <div style={{ flex:1 }}>
+                    <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                      color:"var(--blanco)", lineHeight:1.8 }}>
+                      {p.esSuperDestacado && <span style={{ color:"var(--rojo-chile)" }}>🔴 </span>}
+                      {p.local?.bandera} {p.local?.nombre} vs {p.visitante?.nombre} {p.visitante?.bandera}
+                    </p>
+                    <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                      color:"var(--gris-claro)", marginTop:"2px" }}>
+                      {p.fecha}
+                      {p.imagenFondo && (
+                        <span style={{ color:"var(--verde-claro)", marginLeft:"6px" }}>
+                          📷 {p.imagenFondo}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div style={{ display:"flex", gap:"6px", flexShrink:0 }}>
+                    {/* Botón imagen de fondo */}
+                    <button
+                      onClick={() => {
+                        setEditandoImagen(editandoImagen===p.id ? null : p.id);
+                        setImagenInput(p.imagenFondo || "");
+                      }}
+                      style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                        padding:"4px 6px", cursor:"pointer",
+                        border:"1px solid var(--gris)", background:"transparent",
+                        color:"var(--gris-claro)" }}>
+                      📷
+                    </button>
+                    {/* Botón toggle */}
+                    <button
+                      onClick={() => toggleSD(p)}
+                      disabled={toggling === p.id}
+                      style={{
+                        fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                        padding:"4px 10px", cursor:"pointer",
+                        background: p.esSuperDestacado ? "rgba(214,40,40,0.2)" : "transparent",
+                        border:`2px solid ${p.esSuperDestacado ? "var(--rojo-chile)" : "var(--gris)"}`,
+                        color: p.esSuperDestacado ? "var(--rojo-chile)" : "var(--gris-claro)",
+                      }}>
+                      {toggling===p.id ? "⚙" : p.esSuperDestacado ? "🔴 ACTIVO" : "⚪ INACTIVO"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Campo imagen de fondo */}
+                {editandoImagen === p.id && (
+                  <div style={{ padding:"8px 10px", background:"rgba(0,0,0,0.3)",
+                    border:"1px solid var(--gris)", borderTop:"none" }}>
+                    <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2, marginBottom:"6px" }}>
+                      Nombre del archivo en /public/ (ej: A_PAISES_MARRUECOS.jpg)
+                    </p>
+                    <div style={{ display:"flex", gap:"6px" }}>
+                      <input
+                        value={imagenInput}
+                        onChange={e => setImagenInput(e.target.value)}
+                        placeholder="A_PAISES_MARRUECOS.jpg"
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                          flex:1, padding:"5px 8px", border:"2px solid var(--negro)",
+                          background:"var(--blanco)", color:"var(--negro)", outline:"none" }}
+                      />
+                      <button
+                        onClick={() => guardarImagen(p)}
+                        className="btn-pixel btn-verde"
+                        style={{ fontSize:"6px" }}>
+                        💾
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ═══ SECCIÓN 2: PREGUNTAS EN VIVO ══════════════════════ */}
+      <div style={{ borderTop:"2px solid var(--rojo-chile)", paddingTop:"16px" }}>
+        <p style={{ fontSize:"7px", color:"var(--rojo-chile)", marginBottom:"10px" }}>
+          ❓ PREGUNTAS EN VIVO
+        </p>
+
+        {superDestacados.length === 0 ? (
+          <div style={{ padding:"14px", border:"1px dashed var(--gris)",
+            textAlign:"center", background:"rgba(0,0,0,0.2)" }}>
+            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
+              Activa un partido arriba (⚪ → 🔴) para crear preguntas en vivo.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Selector si hay más de 1 */}
+            {superDestacados.length > 1 && (
+              <div style={{ marginBottom:"12px" }}>
+                <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"6px" }}>
+                  PARTIDO:
+                </p>
+                <div style={{ display:"flex", flexDirection:"column", gap:"4px" }}>
+                  {superDestacados.map(p => (
+                    <button key={p.id} onClick={() => seleccionar(p)}
+                      style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                        padding:"6px 8px", cursor:"pointer", textAlign:"left",
+                        border:`2px solid ${partidoSel?.id===p.id?"var(--rojo-chile)":"var(--gris)"}`,
+                        background:partidoSel?.id===p.id?"rgba(214,40,40,0.1)":"var(--negro)",
+                        color:"var(--blanco)" }}>
+                      🔴 {p.local?.nombre} vs {p.visitante?.nombre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {partidoSel && (
+              <>
+                <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"12px" }}>
+                  🔴 {partidoSel.local?.nombre} vs {partidoSel.visitante?.nombre}
+                </p>
+
+                {/* ── Pregunta activa ──────────────────────── */}
+                {abierta && (
+                  <div style={{ marginBottom:"14px", padding:"12px",
+                    border:"3px solid var(--rojo-chile)",
+                    background:"rgba(214,40,40,0.06)",
+                    boxShadow:"0 0 16px rgba(214,40,40,0.25)" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between",
+                      alignItems:"center", marginBottom:"10px" }}>
+                      <span style={{ fontFamily:"'Press Start 2P',monospace",
+                        fontSize:"6px", color:"var(--rojo-chile)" }}>
+                        🔴 ABIERTA — USUARIOS RESPONDIENDO
+                      </span>
+                      <span style={{ fontFamily:"'Press Start 2P',monospace",
+                        fontSize:"5px", color:"var(--amarillo)",
+                        border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
+                        +{abierta.puntosEnVivo||3} PTS
+                      </span>
+                    </div>
+
+                    <p style={{ fontFamily:"'Press Start 2P',monospace",
+                      fontSize:"8px", color:"var(--blanco)", lineHeight:2,
+                      marginBottom:"12px" }}>
+                      {abierta.texto}
+                    </p>
+
+                    <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
+                      MARCA LA RESPUESTA CORRECTA:
+                    </p>
+                    <div style={{ display:"flex", flexDirection:"column", gap:"5px",
+                      marginBottom:"12px" }}>
+                      {(abierta.opciones||[]).map((op, i) => (
+                        <button key={i}
+                          onClick={() => setRespSels(prev => ({ ...prev, [abierta.id]: op }))}
+                          style={{
+                            fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                            padding:"8px 10px", cursor:"pointer", textAlign:"left",
+                            border:`2px solid ${respSels[abierta.id]===op?"var(--verde-claro)":"var(--gris)"}`,
+                            background:respSels[abierta.id]===op
+                              ?"rgba(82,183,136,0.15)":"transparent",
+                            color:"var(--blanco)",
+                          }}>
+                          {respSels[abierta.id]===op ? "✅ " : ""}{op}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      className="btn-pixel btn-rojo w-full"
+                      style={{ fontSize:"7px" }}
+                      onClick={() => cerrar(abierta)}
+                      disabled={!respSels[abierta.id] || cerrando===abierta.id}>
+                      {cerrando===abierta.id
+                        ? "⚙ PROCESANDO..."
+                        : `🔒 CERRAR Y DAR +${abierta.puntosEnVivo||3} PTS`}
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Nueva pregunta ───────────────────────── */}
+                {!abierta && (
+                  <div style={{ padding:"12px", border:"2px solid rgba(255,255,255,0.15)",
+                    marginBottom:"14px", background:"rgba(0,0,0,0.2)" }}>
+                    <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"12px" }}>
+                      + NUEVA PREGUNTA
+                    </p>
+
+                    <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
+                      PREGUNTA:
+                    </p>
+                    <textarea
+                      value={textoNueva}
+                      onChange={e => setTextoNueva(e.target.value)}
+                      rows={2}
+                      placeholder="Ej: ¿Habrá gol antes del min 60?"
+                      style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                        width:"100%", padding:"8px", border:"3px solid var(--negro)",
+                        background:"var(--blanco)", color:"var(--negro)",
+                        outline:"none", resize:"none", lineHeight:2, marginBottom:"10px" }}
+                    />
+
+                    <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
+                      OPCIONES:
+                    </p>
+                    <div style={{ display:"flex", flexDirection:"column", gap:"5px",
+                      marginBottom:"10px" }}>
+                      {opcionesNv.map((op, i) => (
+                        <div key={i} style={{ display:"flex", gap:"5px" }}>
+                          <input
+                            value={op}
+                            onChange={e => setOpcionesNv(prev =>
+                              prev.map((o, idx) => idx===i ? e.target.value : o)
+                            )}
+                            placeholder={`Opción ${i+1}`}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                              flex:1, padding:"5px 8px", border:"2px solid var(--negro)",
+                              background:"var(--blanco)", color:"var(--negro)",
+                              outline:"none" }}
+                          />
+                          {opcionesNv.length > 2 && (
+                            <button
+                              onClick={() => setOpcionesNv(
+                                prev => prev.filter((_,idx) => idx!==i)
+                              )}
+                              style={{ background:"var(--rojo-chile)", color:"var(--blanco)",
+                                border:"none", cursor:"pointer", padding:"4px 8px",
+                                fontFamily:"'Press Start 2P',monospace", fontSize:"8px" }}>
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {opcionesNv.length < 5 && (
+                      <button
+                        className="btn-pixel btn-gris w-full"
+                        style={{ fontSize:"5px", marginBottom:"10px" }}
+                        onClick={() => setOpcionesNv(prev => [...prev, ""])}>
+                        + AGREGAR OPCIÓN
+                      </button>
+                    )}
+
+                    <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
+                      PUNTAJE:
+                    </p>
+                    <div style={{ display:"flex", alignItems:"center", gap:"6px",
+                      marginBottom:"12px", flexWrap:"wrap" }}>
+                      {[1,2,3,5,7,10].map(n => (
+                        <button key={n} onClick={() => setPuntosNv(n)}
+                          style={{
+                            fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                            width:"34px", height:"34px", cursor:"pointer",
+                            border:`2px solid ${puntosNv===n?"var(--amarillo)":"var(--gris)"}`,
+                            background:puntosNv===n?"rgba(244,208,63,0.2)":"transparent",
+                            color:puntosNv===n?"var(--amarillo)":"var(--gris-claro)",
+                          }}>
+                          +{n}
+                        </button>
+                      ))}
+                      <input
+                        type="number" min="1" max="99"
+                        value={puntosNv}
+                        onChange={e => setPuntosNv(Math.max(1,
+                          Math.min(99, Number(e.target.value) || 1)))}
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                          width:"46px", height:"34px", textAlign:"center",
+                          border:`2px solid var(--amarillo)`,
+                          background:"var(--negro)", color:"var(--amarillo)",
+                          outline:"none" }}
+                      />
+                    </div>
+
+                    <button
+                      className="btn-pixel btn-rojo w-full"
+                      style={{ fontSize:"7px" }}
+                      onClick={crear}
+                      disabled={creando}>
+                      {creando ? "⚙ PUBLICANDO..." : `🔴 PUBLICAR (+${puntosNv} pts)`}
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Historial ────────────────────────────── */}
+                {preguntas.filter(p => p.estado==="cerrada").length > 0 && (
+                  <div>
+                    <p style={{ fontSize:"5px", color:"var(--gris-claro)",
+                      marginBottom:"6px", letterSpacing:"1px" }}>
+                      HISTORIAL
+                    </p>
+                    {preguntas
+                      .filter(p => p.estado==="cerrada")
+                      .map(pq => (
+                        <div key={pq.id} style={{ padding:"8px 10px",
+                          border:"1px solid rgba(82,183,136,0.2)",
+                          background:"rgba(0,0,0,0.2)", marginBottom:"4px",
+                          fontSize:"6px", lineHeight:2 }}>
+                          <p style={{ color:"var(--blanco)" }}>{pq.texto}</p>
+                          <p>
+                            ✅ <span style={{ color:"var(--verde-claro)" }}>
+                              {pq.respuestaCorrecta}
+                            </span>
+                            <span style={{ color:"var(--amarillo)", marginLeft:"8px" }}>
+                              +{pq.puntosEnVivo||3} pts
+                            </span>
+                          </p>
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 </file>
 
 <file path="src/components/ModalPerfilResumido.jsx">
@@ -5856,528 +5940,6 @@ export default function PodioF1({ datos }) {
 }
 </file>
 
-<file path="src/components/SuperDestacado.jsx">
-// src/components/SuperDestacado.jsx  — v6 (Polling + diseño visual)
-// ─────────────────────────────────────────────────────────────
-// Usa polling (cada 15 segundos) en vez de onSnapshot para
-// reducir lecturas y evitar bloqueos. Obtiene datos del partido
-// desde Firestore para mostrar banderas y nombres.
-// ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect } from "react";
-import {
-  collection, getDocs, query, where, doc,
-  setDoc, getDoc, serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-
-const PTS_EN_VIVO = 3;
-const LS_PREFIX = "cp8b_sd_visto_";
-
-export default function SuperDestacado({ partidoId, nombrePartido }) {
-  const { firebaseUser } = useAuth();
-  const [preguntaActiva, setPreguntaActiva] = useState(null);
-  const [miRespuesta,    setMiRespuesta]    = useState(null);
-  const [enviando,       setEnviando]       = useState(false);
-  const [resultado,      setResultado]      = useState(null);
-  const [resultadoVisto, setResultadoVisto] = useState(false);
-  const [partidoData,    setPartidoData]    = useState(null);
-  const [cargando,       setCargando]       = useState(true);
-
-  // Cargar datos del partido
-  useEffect(() => {
-    if (!partidoId) return;
-    const cargarPartido = async () => {
-      try {
-        const snap = await getDoc(doc(db, "partidos", partidoId));
-        if (snap.exists()) setPartidoData(snap.data());
-      } catch (e) {
-        console.error("Error cargando partido:", e);
-      }
-    };
-    cargarPartido();
-  }, [partidoId]);
-
-  // Polling de preguntas en vivo
-  useEffect(() => {
-    if (!partidoId) return;
-    let intervalo;
-
-    const cargarPreguntas = async () => {
-      try {
-        setCargando(true);
-        const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
-
-        // 1. Buscar pregunta abierta
-        const qAbierta = query(ref, where("estado", "==", "abierta"));
-        const snapAbierta = await getDocs(qAbierta);
-
-        if (!snapAbierta.empty) {
-          const pregData = { id: snapAbierta.docs[0].id, ...snapAbierta.docs[0].data() };
-          setPreguntaActiva(pregData);
-          setResultado(null); // limpiar resultado anterior
-
-          // Verificar si ya respondí
-          if (firebaseUser) {
-            const respRef = doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
-              `${firebaseUser.uid}_${pregData.id}`);
-            const respSnap = await getDoc(respRef);
-            if (respSnap.exists()) setMiRespuesta(respSnap.data().respuesta);
-            else setMiRespuesta(null);
-          }
-        } else {
-          // 2. Si no hay abierta, buscar cerrada (resultado)
-          setPreguntaActiva(null);
-          const qCerrada = query(ref, where("estado", "==", "cerrada"));
-          const snapCerrada = await getDocs(qCerrada);
-          if (!snapCerrada.empty) {
-            const cerradas = snapCerrada.docs.map(d => ({ id: d.id, ...d.data() }))
-              .sort((a, b) => (b.creadaEn?.seconds || 0) - (a.creadaEn?.seconds || 0));
-            const ultima = cerradas[0];
-            const clave = `${LS_PREFIX}${partidoId}_${ultima.id}`;
-            const yaVista = localStorage.getItem(clave) === "true";
-            setResultado(ultima);
-            setResultadoVisto(yaVista);
-          } else {
-            setResultado(null);
-            setResultadoVisto(false);
-          }
-        }
-        setCargando(false);
-      } catch (e) {
-        console.error("Error en polling de preguntas:", e);
-        setCargando(false);
-      }
-    };
-
-    // Ejecutar al montar y luego cada 15 segundos
-    cargarPreguntas();
-    intervalo = setInterval(cargarPreguntas, 15000);
-
-    return () => clearInterval(intervalo);
-  }, [partidoId, firebaseUser]);
-
-  const responder = async (opcion) => {
-    if (!firebaseUser || !preguntaActiva || miRespuesta) return;
-    setEnviando(true);
-    try {
-      const respId = `${firebaseUser.uid}_${preguntaActiva.id}`;
-      await setDoc(
-        doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo", respId),
-        {
-          uid:        firebaseUser.uid,
-          preguntaId: preguntaActiva.id,
-          respuesta:  opcion,
-          partidoId,
-          timestamp:  serverTimestamp(),
-        }
-      );
-      setMiRespuesta(opcion);
-    } catch (e) { console.error(e); }
-    finally { setEnviando(false); }
-  };
-
-  const ocultarResultado = () => {
-    if (!resultado) return;
-    const clave = `${LS_PREFIX}${partidoId}_${resultado.id}`;
-    localStorage.setItem(clave, "true");
-    setResultadoVisto(true);
-  };
-
-  // ── Si no hay partidoId, no renderizar nada ──────────────
-  if (!partidoId) return null;
-
-  // ── Si hay resultado y ya fue visto, ocultar ──────────────
-  if (resultado && resultadoVisto) return null;
-
-  // ── Si no hay pregunta activa ni resultado, no mostrar ────
-  if (!preguntaActiva && !resultado) return null;
-
-  // ── Datos para mostrar ─────────────────────────────────────
-  const localBandera = partidoData?.local?.bandera || "🏳️";
-  const visitanteBandera = partidoData?.visitante?.bandera || "🏳️";
-  const localNombre = partidoData?.local?.nombre || "Local";
-  const visitanteNombre = partidoData?.visitante?.nombre || "Visitante";
-  const nombreMostrado = partidoData
-    ? `${localNombre} vs ${visitanteNombre}`
-    : nombrePartido || "Partido en vivo";
-  const imgFondo = `/pvivo_${partidoId || '0'}.jpg`;
-
-  // ── Renderizado ─────────────────────────────────────────────
-  return (
-    <div style={{
-      position: "fixed",
-      bottom: "80px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "calc(100% - 24px)",
-      maxWidth: "420px",
-      zIndex: 500,
-      fontFamily: "'Press Start 2P', monospace",
-    }}>
-      {/* Pregunta abierta */}
-      {preguntaActiva && (
-        <div style={{
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: "8px",
-          border: "4px solid var(--rojo-chile)",
-          boxShadow: "0 0 30px rgba(214,40,40,0.7), 4px 4px 0 var(--rojo-oscuro)",
-          animation: "pulseRojo 2s infinite",
-          background: "#0a0a0a",
-        }}>
-          {/* Fondo con imagen */}
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url(${imgFondo})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: 0.25,
-            filter: "brightness(0.6) saturate(1.2)",
-          }} />
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)",
-          }} />
-
-          <div style={{ position: "relative", padding: "16px 14px 14px", zIndex: 1 }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "8px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "28px", lineHeight: 1 }}>{localBandera}</span>
-                <span style={{ fontSize: "6px", color: "var(--gris-claro)" }}>vs</span>
-                <span style={{ fontSize: "28px", lineHeight: 1 }}>{visitanteBandera}</span>
-              </div>
-              <span style={{
-                fontSize: "6px",
-                color: "var(--amarillo)",
-                background: "rgba(244,208,63,0.15)",
-                padding: "2px 6px",
-                border: "1px solid var(--amarillo)",
-              }}>
-                +{PTS_EN_VIVO} pts
-              </span>
-            </div>
-
-            <p style={{
-              fontSize: "6px",
-              color: "var(--blanco)",
-              marginBottom: "8px",
-              textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
-            }}>
-              🔴 EN VIVO — {nombreMostrado}
-            </p>
-
-            <p style={{
-              fontSize: "8px",
-              color: "var(--blanco)",
-              lineHeight: 2,
-              marginBottom: "12px",
-              textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
-              fontWeight: "bold",
-            }}>
-              {preguntaActiva.texto}
-            </p>
-
-            {!miRespuesta ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {(preguntaActiva.opciones || []).map((op, i) => (
-                  <button key={i}
-                    onClick={() => responder(op)}
-                    disabled={enviando}
-                    style={{
-                      fontFamily: "'Press Start 2P',monospace",
-                      fontSize: "7px",
-                      padding: "8px 10px",
-                      background: "rgba(0,0,0,0.6)",
-                      border: "2px solid rgba(255,255,255,0.2)",
-                      color: "var(--blanco)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      transition: "border-color 0.1s, background 0.1s",
-                      backdropFilter: "blur(4px)",
-                    }}
-                    onMouseEnter={e => {
-                      e.target.style.borderColor = "var(--amarillo)";
-                      e.target.style.background = "rgba(244,208,63,0.15)";
-                    }}
-                    onMouseLeave={e => {
-                      e.target.style.borderColor = "rgba(255,255,255,0.2)";
-                      e.target.style.background = "rgba(0,0,0,0.6)";
-                    }}
-                  >
-                    {op}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div style={{ textAlign:"center", padding:"8px", background:"rgba(0,0,0,0.5)", borderRadius:"4px" }}>
-                <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
-                  ✅ Respondiste: <strong style={{ color:"var(--amarillo)" }}>{miRespuesta}</strong>
-                </p>
-                <p style={{ fontSize:"6px", color:"var(--gris-claro)", marginTop:"4px" }}>
-                  Esperando que el admin cierre la pregunta...
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Resultado de pregunta cerrada */}
-      {!preguntaActiva && resultado && !resultadoVisto && (
-        <ResultadoEnVivo
-          resultado={resultado}
-          miRespuesta={miRespuesta}
-          onCerrar={ocultarResultado}
-          localBandera={localBandera}
-          visitanteBandera={visitanteBandera}
-          nombrePartido={nombreMostrado}
-          imgFondo={imgFondo}
-        />
-      )}
-
-      <style>{`
-        @keyframes pulseRojo {
-          0%,100% { box-shadow: 0 0 15px rgba(214,40,40,0.5), 4px 4px 0 var(--rojo-oscuro); }
-          50%      { box-shadow: 0 0 40px rgba(214,40,40,0.9), 4px 4px 0 var(--rojo-oscuro); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function ResultadoEnVivo({
-  resultado,
-  miRespuesta,
-  onCerrar,
-  localBandera,
-  visitanteBandera,
-  nombrePartido,
-  imgFondo,
-}) {
-  const correcta   = resultado.respuestaCorrecta;
-  const acertaste  = miRespuesta === correcta;
-
-  return (
-    <div style={{
-      position: "relative",
-      overflow: "hidden",
-      borderRadius: "8px",
-      border: `4px solid ${acertaste ? "var(--verde-claro)" : "var(--gris)"}`,
-      boxShadow: `0 0 30px ${acertaste ? "rgba(82,183,136,0.5)" : "rgba(255,255,255,0.1)"}, 4px 4px 0 var(--negro)`,
-      background: "#0a0a0a",
-    }}>
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        backgroundImage: `url(${imgFondo})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        opacity: 0.2,
-        filter: "brightness(0.5) saturate(0.8)",
-      }} />
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.8) 100%)",
-      }} />
-
-      <div style={{ position: "relative", padding: "14px", zIndex: 1 }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "8px",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "28px", lineHeight: 1 }}>{localBandera}</span>
-            <span style={{ fontSize: "6px", color: "var(--gris-claro)" }}>vs</span>
-            <span style={{ fontSize: "28px", lineHeight: 1 }}>{visitanteBandera}</span>
-          </div>
-          <button
-            onClick={onCerrar}
-            style={{
-              background: "rgba(0,0,0,0.5)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              color: "var(--blanco)",
-              cursor: "pointer",
-              fontSize: "14px",
-              padding: "2px 8px",
-              borderRadius: "4px",
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        <p style={{
-          fontSize: "6px",
-          color: "var(--gris-claro)",
-          marginBottom: "6px",
-          textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
-        }}>
-          RESULTADO EN VIVO — {nombrePartido}
-        </p>
-
-        <p style={{
-          fontSize: "7px",
-          color: "var(--blanco)",
-          lineHeight: 2,
-          marginBottom: "6px",
-          textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
-        }}>
-          {resultado.texto}
-        </p>
-
-        <p style={{
-          fontSize: "7px",
-          color: "var(--amarillo)",
-          marginBottom: "6px",
-          textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
-        }}>
-          ✅ Respuesta correcta: <strong>{correcta}</strong>
-        </p>
-
-        {miRespuesta ? (
-          <p style={{
-            fontSize: "7px",
-            color: acertaste ? "var(--verde-claro)" : "var(--rojo-chile)",
-            textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
-          }}>
-            {acertaste
-              ? `🎉 ¡Acertaste! +${PTS_EN_VIVO} pts`
-              : `❌ Tu respuesta: ${miRespuesta}`
-            }
-          </p>
-        ) : (
-          <p style={{
-            fontSize: "7px",
-            color: "var(--gris-claro)",
-            textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
-          }}>
-            No respondiste esta pregunta.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="firestore.rules">
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // ── Helpers ────────────────────────────────────────────────
-    function esAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    // ── usuarios ───────────────────────────────────────────────
-    match /usuarios/{uid} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if request.auth != null;
-      
-      match /notificaciones/{notifId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
-      }
-    }
-
-    // ── predicciones ───────────────────────────────────────────
-    match /predicciones/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── respuestas ─────────────────────────────────────────────
-    match /respuestas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── partidos ───────────────────────────────────────────────
-    match /partidos/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── preguntas ──────────────────────────────────────────────
-    match /preguntas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── puntosDelDia ───────────────────────────────────────────
-    match /puntosDelDia/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // ── cartasDelUsuario ───────────────────────────────────────
-    match /cartasDelUsuario/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // ── config ──────────────────────────────────────────────────
-    match /config/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── mensajesDia ────────────────────────────────────────────
-    match /mensajesDia/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
-    }
-
-    // ── Reacciones en mensajes ────────────────────────────────
-    match /mensajesDia/{docId}/reacciones/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-
-    // ── admins ──────────────────────────────────────────────────
-    match /admins/{uid} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-
-    // ── sobresDelDia ───────────────────────────────────────────
-    match /sobresDelDia/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── NUEVO: preguntasEnVivo (Super Destacado) ───────────────
-    // El admin crea preguntas; los usuarios las leen y responden.
-    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
-      allow read: if request.auth != null;
-      // Cada usuario solo puede crear/leer su propia respuesta
-      allow create: if request.auth != null;
-      allow update: if false; // No se puede cambiar una respuesta ya enviada
-      allow delete: if false;
-    }
-
-  }
-}
-</file>
-
 <file path="src/data/sampleData.js">
 // src/data/sampleData.js  — v3
 // ─────────────────────────────────────────────────────────────
@@ -6570,284 +6132,110 @@ export const BANCO_PREGUNTAS = [
 ];
 </file>
 
-<file path="src/utils/helpers.js">
-// src/utils/helpers.js  — v6 (Fase 3)
-// CAMBIO v6: procesarResultadoPartido consume carta (decrement -1)
-// usando flag cartaConsumida para evitar doble descuento en recálculo.
-// Todo lo demás idéntico a v5.
-import {
-  collection, getDocs, query, where, doc,
-  updateDoc, setDoc, increment, getDoc, addDoc, serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
-import {
-  calcularPuntosPartido, calcularPuntosPregunta,
-  aplicarMultiplicadorCarta, cartaSeAplica,
-} from "./scoring";
+<file path="firestore.rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ── Helpers ────────────────────────────────────────────────
+    function esAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
 
-// Re-export para compatibilidad con quien importe desde helpers.
-export { calcularPuntosPartido, calcularPuntosPregunta, aplicarMultiplicadorCarta };
-
-export function hoyStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-export function ayerStr() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-export function formatHora(h) { return `${h} hrs`; }
-export function formatFecha(fechaStr) {
-  const [y,m,d] = fechaStr.split("-").map(Number);
-  return new Date(y,m-1,d).toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long"});
-}
-export function diaNumero() {
-  const inicio = new Date("2026-06-11T00:00:00");
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const diff = Math.floor((hoy - inicio) / 86400000);
-  return diff < 0 ? 0 : diff + 1;
-}
-export function partidoAbierto(partido) {
-  if (!partido || !partido.cierre) return true;
-  let cd;
-  if (typeof partido.cierre.toDate === "function") cd = partido.cierre.toDate();
-  else if (partido.cierre._seconds !== undefined)  cd = new Date(partido.cierre._seconds * 1000);
-  else if (typeof partido.cierre === "number")     cd = new Date(partido.cierre * 1000);
-  else if (typeof partido.cierre === "string")     cd = new Date(partido.cierre);
-  else return true;
-  return new Date() < cd;
-}
-
-// ── Notificación interna ─────────────────────────────────────
-async function _notif(uid, datos) {
-  try {
-    await addDoc(collection(db,"usuarios",uid,"notificaciones"),
-      { ...datos, leido: false, timestamp: serverTimestamp() });
-  } catch(e) { console.error("notif error", e); }
-}
-function _txtPred(pred, dest) {
-  if (dest) return `${pred.golesLocalPred??'?'} - ${pred.golesVisitantePred??'?'}`;
-  const g = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
-  return g + (pred.diferencia ? ` (dif. ${pred.diferencia})` : "");
-}
-function _txtRes(res) {
-  const b = `${res.golesLocal}-${res.golesVisitante}`;
-  if (res.definicion === "penales") return `${b} (pen. ${res.penalesLocal}-${res.penalesVisitante})`;
-  if (res.definicion === "alargue") return `${b} (alg.)`;
-  return b;
-}
-
-// ── procesarResultadoPartido v6 (consume carta) ──────────────
-export async function procesarResultadoPartido(partidoId, resultado, fase, estaDestacado, fecha) {
-  let procesados = 0, errores = 0;
-  try {
-    let nombrePartido = partidoId;
-    try {
-      const ps = await getDoc(doc(db,"partidos",partidoId));
-      if (ps.exists()) {
-        const pd = ps.data();
-        nombrePartido = `${pd.local?.bandera??''}${pd.local?.nombre??''} vs ${pd.visitante?.nombre??''}${pd.visitante?.bandera??''}`;
+    // ── usuarios ───────────────────────────────────────────────
+    match /usuarios/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null;
+      
+      match /notificaciones/{notifId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
       }
-    } catch(_) {}
-
-    const snap = await getDocs(query(collection(db,"predicciones"),where("partidoId","==",partidoId)));
-    if (snap.empty) return { procesados:0, errores:0 };
-
-    const deltasPorUid = {}, notifsPorUid = {};
-
-    // Cache de inventario de cartas por uid: la carta solo multiplica si el
-    // usuario tiene stock al momento de procesar (evita que una misma carta
-    // multiplique varios partidos y que el contador quede negativo).
-    const stockCartas = {};
-    async function stockDisponible(uid, cartaId) {
-      if (!(uid in stockCartas)) {
-        try {
-          const us = await getDoc(doc(db,"usuarios",uid));
-          stockCartas[uid] = us.exists() ? (us.data().cartas || {}) : {};
-        } catch { stockCartas[uid] = {}; }
-      }
-      return (stockCartas[uid][cartaId] || 0) > 0;
     }
 
-    for (const pDoc of snap.docs) {
-      try {
-        const pred = pDoc.data();
-        const uid  = pred.uid;
-        const puntosViejos = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
-        const yaConsumio   = pred.cartaConsumida === true;
-
-        // ¿La carta se aplica? (lógica pura en scoring.cartaSeAplica)
-        const stock = pred.cartaId && !yaConsumio ? (await stockDisponible(uid, pred.cartaId) ? 1 : 0) : 0;
-        const cartaAplica = cartaSeAplica(!!pred.cartaId, yaConsumio, stock);
-
-        const { puntos: base, esMaximo } = calcularPuntosPartido(pred, resultado, fase, estaDestacado);
-        const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, cartaAplica ? pred.cartaId : null);
-        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
-
-        // Actualizar predicción
-        const upd = { puntosGanados: puntosNuevos, puntosBase: base, esMaximo, calculadoEn: new Date().toISOString() };
-        if (cartaAplica && !yaConsumio) upd.cartaConsumida = true;
-        await updateDoc(doc(db,"predicciones",pDoc.id), upd);
-
-        // Consumir carta (solo primera vez y si había stock; descuenta del cache local)
-        if (cartaAplica && !yaConsumio) {
-          try {
-            await updateDoc(doc(db,"usuarios",uid), { [`cartas.${pred.cartaId}`]: increment(-1) });
-            stockCartas[uid][pred.cartaId] = (stockCartas[uid][pred.cartaId] || 0) - 1;
-          } catch(e) { console.error("Error consumiendo carta:", e); }
-        }
-
-        if (delta !== 0) {
-          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
-          deltasPorUid[uid] = (deltasPorUid[uid] || 0) + delta;
-        }
-
-        // Notificar solo en el primer procesamiento o si el puntaje cambió
-        // (evita spam de notificaciones al re-guardar un resultado sin cambios).
-        if (puntosViejos === null || delta !== 0) {
-          notifsPorUid[uid] = {
-            tipo:"resultado_partido", partidoId, nombrePartido,
-            tuApuesta: _txtPred(pred, estaDestacado), resultado: _txtRes(resultado),
-            acertaste: esMaximo, puntosGanados: puntosNuevos, fecha,
-          };
-        }
-        procesados++;
-      } catch(e) { console.error("Error pred:", pDoc.id, e); errores++; }
+    // ── predicciones ───────────────────────────────────────────
+    match /predicciones/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
-    for (const [uid, delta] of Object.entries(deltasPorUid)) {
-      if (delta === 0) continue;
-      try {
-        const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
-        const diaSnap = await getDoc(diaRef);
-        if (diaSnap.exists()) {
-          await updateDoc(diaRef, { puntos: increment(delta) });
-        } else {
-          const uSnap = await getDoc(doc(db,"usuarios",uid));
-          const ud = uSnap.exists() ? uSnap.data() : {};
-          await setDoc(diaRef, { uid, fecha, puntos: delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
-        }
-      } catch(e) { console.error("puntosDelDia error:", uid, e); }
+    // ── respuestas ─────────────────────────────────────────────
+    match /respuestas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
-    for (const [uid, datos] of Object.entries(notifsPorUid)) await _notif(uid, datos);
-    return { procesados, errores };
-  } catch(e) {
-    console.error("Error general procesarResultadoPartido:", e);
-    return { procesados:0, errores:1 };
+    // ── partidos ───────────────────────────────────────────────
+    match /partidos/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── preguntas ──────────────────────────────────────────────
+    match /preguntas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── puntosDelDia ───────────────────────────────────────────
+    match /puntosDelDia/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── cartasDelUsuario ───────────────────────────────────────
+    match /cartasDelUsuario/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── config ──────────────────────────────────────────────────
+    match /config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── mensajesDia ────────────────────────────────────────────
+    match /mensajesDia/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // ── Reacciones en mensajes ────────────────────────────────
+    match /mensajesDia/{docId}/reacciones/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── admins ──────────────────────────────────────────────────
+    match /admins/{uid} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── sobresDelDia ───────────────────────────────────────────
+    match /sobresDelDia/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── NUEVO: preguntasEnVivo (Super Destacado) ───────────────
+    // El admin crea preguntas; los usuarios las leen y responden.
+    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
+      allow read: if request.auth != null;
+      // Cada usuario solo puede crear/leer su propia respuesta
+      allow create: if request.auth != null;
+      allow update: if false; // No se puede cambiar una respuesta ya enviada
+      allow delete: if false;
+    }
+
   }
-}
-
-// ── procesarPreguntaDelDia ────────────────────────────────────
-export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha) {
-  let procesados = 0;
-  try {
-    let textoPregunta = "Pregunta del día";
-    try {
-      const ps = await getDoc(doc(db,"preguntas",preguntaId));
-      if (ps.exists()) textoPregunta = ps.data().texto || textoPregunta;
-    } catch(_) {}
-
-    const snap = await getDocs(query(collection(db,"respuestas"),where("preguntaId","==",preguntaId)));
-    for (const rDoc of snap.docs) {
-      try {
-        const data = rDoc.data(); const uid = data.uid;
-        const puntosViejos = typeof data.puntosGanados === "number" ? data.puntosGanados : null;
-        const esCorrecta   = data.respuesta === respuestaCorrecta;
-        const puntosNuevos = esCorrecta ? 2 : 0;
-        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
-
-        await updateDoc(doc(db,"respuestas",rDoc.id), { esCorrecta, puntosGanados: puntosNuevos });
-
-        if (delta !== 0) {
-          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
-          const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
-          const diaSnap = await getDoc(diaRef);
-          if (diaSnap.exists()) {
-            await updateDoc(diaRef, { puntos: increment(delta) });
-          } else {
-            const uSnap = await getDoc(doc(db,"usuarios",uid));
-            const ud = uSnap.exists() ? uSnap.data() : {};
-            await setDoc(diaRef, { uid, fecha, puntos:delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
-          }
-        }
-
-        await _notif(uid, {
-          tipo:"resultado_pregunta", preguntaId, textoPregunta,
-          tuRespuesta:data.respuesta, respuestaCorrecta,
-          acertaste:esCorrecta, puntosGanados:puntosNuevos, fecha,
-        });
-        if (esCorrecta) procesados++;
-      } catch(e) { console.error("Error resp:", rDoc.id, e); }
-    }
-    return { ok:true, procesados };
-  } catch(e) {
-    console.error("Error procesarPreguntaDelDia:", e);
-    return { ok:false, error:e.message };
-  }
-}
-
-// ── calcularGanadorDelDia ─────────────────────────────────────
-export async function calcularGanadorDelDia(fecha) {
-  try {
-    const snap = await getDocs(query(collection(db,"puntosDelDia"),where("fecha","==",fecha)));
-    if (snap.empty) return { ok:false, mensaje:"Sin datos de puntosDelDia para ese día." };
-
-    const jug = snap.docs.map(d=>({docId:d.id,...d.data()})).sort((a,b)=>b.puntos-a.puntos);
-
-    // ── Protección: si ya se entregaron bonus y cartas, no repetir ────
-    if (jug.some(j => j.esGanador === true)) {
-      return {
-        ok: false,
-        yaEntregado: true,
-        mensaje: `Las cartas y bonus del día ${fecha} ya fueron entregados. Para revertir, elimina el campo esGanador desde Firebase Console.`,
-      };
-    }
-    const maxPts = jug[0].puntos;
-    // No premiar si nadie sumó puntos ese día (evita carta x4 + bonus a un "líder" con 0 pts).
-    if (maxPts <= 0) return { ok:false, mensaje:`Nadie sumó puntos el día ${fecha}; no se entregan cartas ni bonus.` };
-    const l1 = jug.filter(j=>j.puntos===maxPts);
-    const r1 = jug.filter(j=>j.puntos<maxPts);
-    const p2 = r1[0]?.puntos;
-    const l2 = p2!==undefined ? r1.filter(j=>j.puntos===p2) : [];
-    const r2 = r1.filter(j=>j.puntos<(p2??-Infinity));
-    const p3 = r2[0]?.puntos;
-    const l3 = p3!==undefined ? r2.filter(j=>j.puntos===p3) : [];
-
-    for (const j of l1) {
-      await updateDoc(doc(db,"puntosDelDia",j.docId),{esGanador:true,bonusGanador:2});
-      await updateDoc(doc(db,"usuarios",j.uid),{puntosTotal:increment(2)});
-      await _asignarCarta(j.uid,4,fecha);
-      await _notif(j.uid,{tipo:"bonus_ganador",lugar:1,bonus:2,fecha,mensaje:`🥇 ¡Ganaste el día ${fecha}! +2 pts bonus y una carta x4.`});
-    }
-    for (const j of l2) { await _asignarCarta(j.uid,3,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:2,bonus:0,fecha,mensaje:`🥈 Quedaste 2° el día ${fecha}. ¡Carta x3!`}); }
-    for (const j of l3) { await _asignarCarta(j.uid,2,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:3,bonus:0,fecha,mensaje:`🥉 Quedaste 3° el día ${fecha}. ¡Carta x2!`}); }
-
-    return { ok:true, ganador:l1.map(j=>j.nickname).join(", "), totalJugadores:jug.length,
-      lugar1:l1.map(j=>j.nickname), lugar2:l2.map(j=>j.nickname), lugar3:l3.map(j=>j.nickname) };
-  } catch(e) {
-    console.error("Error calcularGanadorDelDia:", e);
-    return { ok:false, error:e.message };
-  }
-}
-
-async function _asignarCarta(uid, mult, fecha) {
-  const carta = cartaAleatoriaPorMultiplicador(mult);
-  if (!carta) return;
-  await setDoc(doc(db,"cartasDelUsuario",`${uid}_${carta.id}_${fecha}`),{
-    uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
-    multiplicador:carta.multiplicador, rareza:carta.rareza, fecha, visto:false,
-  });
-  await updateDoc(doc(db,"usuarios",uid),{[`cartas.${carta.id}`]:increment(1)});
-}
-
-export async function publicarAvisoAdmin(texto) {
-  await setDoc(doc(db,"config","avisoAdmin"),{texto,fecha:new Date().toISOString(),activo:true});
-}
-export async function cerrarAvisoAdmin() {
-  await updateDoc(doc(db,"config","avisoAdmin"),{activo:false});
 }
 </file>
 
@@ -7175,6 +6563,627 @@ export default function OnboardingModal({ isOpen, onClose }) {
 }
 </file>
 
+<file path="src/components/SuperDestacado.jsx">
+// src/components/SuperDestacado.jsx  — v7
+// ─────────────────────────────────────────────────────────────
+// Vista del USUARIO durante un partido Super Destacado.
+// • Polling cada 8 segundos (más rápido que v6).
+// • La imagen de fondo viene del campo `imagenFondo` del partido
+//   en Firestore. Ejemplo: imagenFondo = "A_PAISES_MARRUECOS.jpg"
+//   → la imagen debe estar en /public/A_PAISES_MARRUECOS.jpg
+// • Si no hay imagenFondo definida, usa gradiente por defecto.
+// • Ocupa PANTALLA COMPLETA como modal (fullscreen overlay).
+// • Muestra banderas grandes de ambos equipos.
+// • Puntaje variable (lee puntosEnVivo de cada pregunta).
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect } from "react";
+import {
+  collection, getDocs, query, where, doc,
+  setDoc, getDoc, serverTimestamp,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+
+const LS_PREFIX = "cp8b_sd_visto_";
+
+export default function SuperDestacado({ partidoId, nombrePartido }) {
+  const { firebaseUser } = useAuth();
+  const [preguntaActiva, setPreguntaActiva] = useState(null);
+  const [miRespuesta,    setMiRespuesta]    = useState(null);
+  const [enviando,       setEnviando]       = useState(false);
+  const [resultado,      setResultado]      = useState(null);
+  const [resultadoVisto, setResultadoVisto] = useState(false);
+  const [partidoData,    setPartidoData]    = useState(null);
+
+  // Cargar datos del partido una vez
+  useEffect(() => {
+    if (!partidoId) return;
+    getDoc(doc(db, "partidos", partidoId))
+      .then(snap => { if (snap.exists()) setPartidoData(snap.data()); })
+      .catch(() => {});
+  }, [partidoId]);
+
+  // Polling cada 8 segundos
+  useEffect(() => {
+    if (!partidoId) return;
+    let cancelado = false;
+
+    const poll = async () => {
+      try {
+        const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
+
+        // 1. Buscar pregunta abierta
+        const snapA = await getDocs(query(ref, where("estado","==","abierta")));
+        if (cancelado) return;
+
+        if (!snapA.empty) {
+          const preg = { id: snapA.docs[0].id, ...snapA.docs[0].data() };
+          setPreguntaActiva(preg);
+          setResultado(null);
+
+          // ¿Ya respondí?
+          if (firebaseUser) {
+            const rSnap = await getDoc(
+              doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
+                  `${firebaseUser.uid}_${preg.id}`)
+            );
+            if (!cancelado)
+              setMiRespuesta(rSnap.exists() ? rSnap.data().respuesta : null);
+          }
+        } else {
+          // 2. Buscar la más reciente cerrada
+          setPreguntaActiva(null);
+          const snapC = await getDocs(query(ref, where("estado","==","cerrada")));
+          if (cancelado) return;
+
+          if (!snapC.empty) {
+            const cerradas = snapC.docs
+              .map(d => ({ id: d.id, ...d.data() }))
+              .sort((a,b) => (b.creadaEn?.seconds||0) - (a.creadaEn?.seconds||0));
+            const ultima = cerradas[0];
+            const clave  = `${LS_PREFIX}${partidoId}_${ultima.id}`;
+            setResultado(ultima);
+            setResultadoVisto(localStorage.getItem(clave) === "true");
+          } else {
+            setResultado(null);
+          }
+        }
+      } catch (_) {}
+    };
+
+    poll();
+    const iv = setInterval(poll, 8000);
+    return () => { cancelado = true; clearInterval(iv); };
+  }, [partidoId, firebaseUser]);
+
+  const responder = async (opcion) => {
+    if (!firebaseUser || !preguntaActiva || miRespuesta || enviando) return;
+    setEnviando(true);
+    try {
+      await setDoc(
+        doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
+            `${firebaseUser.uid}_${preguntaActiva.id}`),
+        {
+          uid:        firebaseUser.uid,
+          preguntaId: preguntaActiva.id,
+          respuesta:  opcion,
+          partidoId,
+          timestamp:  serverTimestamp(),
+        }
+      );
+      setMiRespuesta(opcion);
+    } catch (_) {}
+    finally { setEnviando(false); }
+  };
+
+  const ocultarResultado = () => {
+    if (!resultado) return;
+    localStorage.setItem(`${LS_PREFIX}${partidoId}_${resultado.id}`, "true");
+    setResultadoVisto(true);
+  };
+
+  if (!partidoId) return null;
+  if (!preguntaActiva && !resultado) return null;
+  if (resultado && resultadoVisto) return null;
+
+  // Datos visuales
+  const localBandera     = partidoData?.local?.bandera     || "🏳️";
+  const visitanteBandera = partidoData?.visitante?.bandera || "🏳️";
+  const localNombre      = partidoData?.local?.nombre      || "Local";
+  const visitanteNombre  = partidoData?.visitante?.nombre  || "Visitante";
+  const imagenFondo      = partidoData?.imagenFondo;
+  const pts              = preguntaActiva?.puntosEnVivo || resultado?.puntosEnVivo || 3;
+
+  // ── MODAL FULLSCREEN ────────────────────────────────────────
+  return (
+    <div style={{
+      position:"fixed", inset:0, zIndex:700,
+      display:"flex", flexDirection:"column",
+      alignItems:"center", justifyContent:"center",
+      fontFamily:"'Press Start 2P', monospace",
+    }}>
+      {/* Capa de imagen de fondo */}
+      {imagenFondo ? (
+        <div style={{
+          position:"absolute", inset:0,
+          backgroundImage:`url(/${imagenFondo})`,
+          backgroundSize:"cover", backgroundPosition:"center",
+          filter:"brightness(0.35) saturate(1.3)",
+        }} />
+      ) : (
+        <div style={{
+          position:"absolute", inset:0,
+          background:"radial-gradient(ellipse at center, #1a0a2e 0%, #0a0510 100%)",
+        }} />
+      )}
+
+      {/* Overlay oscuro degradado */}
+      <div style={{
+        position:"absolute", inset:0,
+        background:"linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.85) 100%)",
+      }} />
+
+      {/* Contenido */}
+      <div style={{
+        position:"relative", zIndex:1,
+        width:"100%", maxWidth:"440px",
+        padding:"20px 16px",
+        display:"flex", flexDirection:"column", alignItems:"center",
+      }}>
+
+        {/* Banderas grandes */}
+        <div style={{
+          display:"flex", alignItems:"center", gap:"16px",
+          marginBottom:"12px",
+        }}>
+          <span style={{ fontSize:"52px", lineHeight:1,
+            filter:"drop-shadow(0 0 8px rgba(255,255,255,0.3))" }}>
+            {localBandera}
+          </span>
+          <div style={{ textAlign:"center" }}>
+            <p style={{ fontSize:"6px", color:"rgba(255,255,255,0.6)", lineHeight:2 }}>VS</p>
+            <div style={{
+              background:"var(--rojo-chile)", color:"var(--blanco)",
+              padding:"2px 8px", fontSize:"5px",
+              border:"1px solid rgba(255,255,255,0.3)",
+              animation:"parpadeo 1s ease-in-out infinite",
+            }}>
+              🔴 EN VIVO
+            </div>
+          </div>
+          <span style={{ fontSize:"52px", lineHeight:1,
+            filter:"drop-shadow(0 0 8px rgba(255,255,255,0.3))" }}>
+            {visitanteBandera}
+          </span>
+        </div>
+
+        {/* Nombres */}
+        <p style={{ fontSize:"6px", color:"rgba(255,255,255,0.7)",
+          marginBottom:"16px", textAlign:"center", lineHeight:2 }}>
+          {localNombre} vs {visitanteNombre}
+        </p>
+
+        {/* ── PREGUNTA ACTIVA ─────────────────────────────── */}
+        {preguntaActiva && (
+          <div style={{ width:"100%" }}>
+            {/* Badge de puntos */}
+            <div style={{ textAlign:"center", marginBottom:"12px" }}>
+              <span style={{
+                background:"rgba(244,208,63,0.2)",
+                border:"2px solid var(--amarillo)",
+                color:"var(--amarillo)",
+                fontSize:"7px", padding:"4px 12px",
+                boxShadow:"0 0 12px rgba(244,208,63,0.4)",
+              }}>
+                ¡RESPONDE Y GANA +{pts} PTS!
+              </span>
+            </div>
+
+            {/* Texto de la pregunta */}
+            <div style={{
+              background:"rgba(0,0,0,0.6)",
+              border:"2px solid rgba(255,255,255,0.15)",
+              padding:"14px 12px", marginBottom:"12px",
+              backdropFilter:"blur(4px)",
+            }}>
+              <p style={{ fontSize:"8px", color:"var(--blanco)",
+                lineHeight:2, textAlign:"center",
+                textShadow:"2px 2px 4px rgba(0,0,0,0.8)" }}>
+                {preguntaActiva.texto}
+              </p>
+            </div>
+
+            {/* Opciones o confirmación */}
+            {!miRespuesta ? (
+              <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                {(preguntaActiva.opciones||[]).map((op, i) => (
+                  <button key={i}
+                    onClick={() => responder(op)}
+                    disabled={enviando}
+                    style={{
+                      fontFamily:"'Press Start 2P',monospace",
+                      fontSize:"7px", padding:"10px 12px",
+                      background:"rgba(0,0,0,0.65)",
+                      border:"2px solid rgba(255,255,255,0.25)",
+                      color:"var(--blanco)", cursor:"pointer",
+                      textAlign:"left",
+                      backdropFilter:"blur(4px)",
+                      transition:"all 0.15s",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = "var(--amarillo)";
+                      e.currentTarget.style.background  = "rgba(244,208,63,0.18)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)";
+                      e.currentTarget.style.background  = "rgba(0,0,0,0.65)";
+                    }}
+                  >
+                    {op}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                background:"rgba(82,183,136,0.15)",
+                border:"2px solid var(--verde-claro)",
+                padding:"14px", textAlign:"center",
+              }}>
+                <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
+                  ✅ Tu respuesta:
+                </p>
+                <p style={{ fontSize:"8px", color:"var(--amarillo)",
+                  marginTop:"4px", lineHeight:2 }}>
+                  {miRespuesta}
+                </p>
+                <p style={{ fontSize:"5px", color:"var(--gris-claro)",
+                  marginTop:"6px", lineHeight:2 }}>
+                  Esperando que el admin cierre la pregunta...
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── RESULTADO ───────────────────────────────────── */}
+        {!preguntaActiva && resultado && !resultadoVisto && (
+          <div style={{ width:"100%" }}>
+            <div style={{
+              background:"rgba(0,0,0,0.7)",
+              border:`3px solid ${miRespuesta===resultado.respuestaCorrecta
+                ? "var(--verde-claro)" : "var(--gris)"}`,
+              padding:"16px 14px",
+              backdropFilter:"blur(4px)",
+            }}>
+              <p style={{ fontSize:"6px", color:"var(--gris-claro)",
+                marginBottom:"8px", textAlign:"center" }}>
+                RESULTADO DE LA PREGUNTA
+              </p>
+              <p style={{ fontSize:"7px", color:"var(--blanco)",
+                lineHeight:2, marginBottom:"10px", textAlign:"center" }}>
+                {resultado.texto}
+              </p>
+              <p style={{ fontSize:"7px", color:"var(--amarillo)",
+                marginBottom:"8px", textAlign:"center" }}>
+                ✅ Correcta: <strong>{resultado.respuestaCorrecta}</strong>
+              </p>
+              {miRespuesta ? (
+                <p style={{ fontSize:"8px", textAlign:"center",
+                  color: miRespuesta===resultado.respuestaCorrecta
+                    ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
+                  {miRespuesta===resultado.respuestaCorrecta
+                    ? `🎉 ¡ACERTASTE! +${resultado.puntosEnVivo||3} PTS`
+                    : `❌ Respondiste: ${miRespuesta}`}
+                </p>
+              ) : (
+                <p style={{ fontSize:"6px", color:"var(--gris-claro)",
+                  textAlign:"center" }}>
+                  No respondiste esta pregunta.
+                </p>
+              )}
+              <button
+                onClick={ocultarResultado}
+                className="btn-pixel btn-gris w-full"
+                style={{ fontSize:"7px", marginTop:"14px" }}>
+                CERRAR ✕
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes parpadeo {
+          0%,100% { opacity:1; }
+          50%      { opacity:0.6; }
+        }
+      `}</style>
+    </div>
+  );
+}
+</file>
+
+<file path="src/utils/helpers.js">
+// src/utils/helpers.js  — v6 (Fase 3)
+// CAMBIO v6: procesarResultadoPartido consume carta (decrement -1)
+// usando flag cartaConsumida para evitar doble descuento en recálculo.
+// Todo lo demás idéntico a v5.
+import {
+  collection, getDocs, query, where, doc,
+  updateDoc, setDoc, increment, getDoc, addDoc, serverTimestamp,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+import {
+  calcularPuntosPartido, calcularPuntosPregunta,
+  aplicarMultiplicadorCarta, cartaSeAplica,
+} from "./scoring";
+
+// Re-export para compatibilidad con quien importe desde helpers.
+export { calcularPuntosPartido, calcularPuntosPregunta, aplicarMultiplicadorCarta };
+
+export function hoyStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+export function ayerStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+export function formatHora(h) { return `${h} hrs`; }
+export function formatFecha(fechaStr) {
+  const [y,m,d] = fechaStr.split("-").map(Number);
+  return new Date(y,m-1,d).toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long"});
+}
+export function diaNumero() {
+  const inicio = new Date("2026-06-11T00:00:00");
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diff = Math.floor((hoy - inicio) / 86400000);
+  return diff < 0 ? 0 : diff + 1;
+}
+export function partidoAbierto(partido) {
+  if (!partido || !partido.cierre) return true;
+  let cd;
+  if (typeof partido.cierre.toDate === "function") cd = partido.cierre.toDate();
+  else if (partido.cierre._seconds !== undefined)  cd = new Date(partido.cierre._seconds * 1000);
+  else if (typeof partido.cierre === "number")     cd = new Date(partido.cierre * 1000);
+  else if (typeof partido.cierre === "string")     cd = new Date(partido.cierre);
+  else return true;
+  return new Date() < cd;
+}
+
+// ── Notificación interna ─────────────────────────────────────
+async function _notif(uid, datos) {
+  try {
+    await addDoc(collection(db,"usuarios",uid,"notificaciones"),
+      { ...datos, leido: false, timestamp: serverTimestamp() });
+  } catch(e) { console.error("notif error", e); }
+}
+function _txtPred(pred, dest) {
+  if (dest) return `${pred.golesLocalPred??'?'} - ${pred.golesVisitantePred??'?'}`;
+  const g = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
+  return g + (pred.diferencia ? ` (dif. ${pred.diferencia})` : "");
+}
+function _txtRes(res) {
+  const b = `${res.golesLocal}-${res.golesVisitante}`;
+  if (res.definicion === "penales") return `${b} (pen. ${res.penalesLocal}-${res.penalesVisitante})`;
+  if (res.definicion === "alargue") return `${b} (alg.)`;
+  return b;
+}
+
+// ── procesarResultadoPartido v6 (consume carta) ──────────────
+export async function procesarResultadoPartido(partidoId, resultado, fase, estaDestacado, fecha) {
+  let procesados = 0, errores = 0;
+  try {
+    let nombrePartido = partidoId;
+    try {
+      const ps = await getDoc(doc(db,"partidos",partidoId));
+      if (ps.exists()) {
+        const pd = ps.data();
+        nombrePartido = `${pd.local?.bandera??''}${pd.local?.nombre??''} vs ${pd.visitante?.nombre??''}${pd.visitante?.bandera??''}`;
+      }
+    } catch(_) {}
+
+    const snap = await getDocs(query(collection(db,"predicciones"),where("partidoId","==",partidoId)));
+    if (snap.empty) return { procesados:0, errores:0 };
+
+    const deltasPorUid = {}, notifsPorUid = {};
+
+    // Cache de inventario de cartas por uid: la carta solo multiplica si el
+    // usuario tiene stock al momento de procesar (evita que una misma carta
+    // multiplique varios partidos y que el contador quede negativo).
+    const stockCartas = {};
+    async function stockDisponible(uid, cartaId) {
+      if (!(uid in stockCartas)) {
+        try {
+          const us = await getDoc(doc(db,"usuarios",uid));
+          stockCartas[uid] = us.exists() ? (us.data().cartas || {}) : {};
+        } catch { stockCartas[uid] = {}; }
+      }
+      return (stockCartas[uid][cartaId] || 0) > 0;
+    }
+
+    for (const pDoc of snap.docs) {
+      try {
+        const pred = pDoc.data();
+        const uid  = pred.uid;
+        const puntosViejos = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
+        const yaConsumio   = pred.cartaConsumida === true;
+
+        // ¿La carta se aplica? (lógica pura en scoring.cartaSeAplica)
+        const stock = pred.cartaId && !yaConsumio ? (await stockDisponible(uid, pred.cartaId) ? 1 : 0) : 0;
+        const cartaAplica = cartaSeAplica(!!pred.cartaId, yaConsumio, stock);
+
+        const { puntos: base, esMaximo } = calcularPuntosPartido(pred, resultado, fase, estaDestacado);
+        const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, cartaAplica ? pred.cartaId : null);
+        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
+
+        // Actualizar predicción
+        const upd = { puntosGanados: puntosNuevos, puntosBase: base, esMaximo, calculadoEn: new Date().toISOString() };
+        if (cartaAplica && !yaConsumio) upd.cartaConsumida = true;
+        await updateDoc(doc(db,"predicciones",pDoc.id), upd);
+
+        // Consumir carta (solo primera vez y si había stock; descuenta del cache local)
+        if (cartaAplica && !yaConsumio) {
+          try {
+            await updateDoc(doc(db,"usuarios",uid), { [`cartas.${pred.cartaId}`]: increment(-1) });
+            stockCartas[uid][pred.cartaId] = (stockCartas[uid][pred.cartaId] || 0) - 1;
+          } catch(e) { console.error("Error consumiendo carta:", e); }
+        }
+
+        if (delta !== 0) {
+          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
+          deltasPorUid[uid] = (deltasPorUid[uid] || 0) + delta;
+        }
+
+        // Notificar solo en el primer procesamiento o si el puntaje cambió
+        // (evita spam de notificaciones al re-guardar un resultado sin cambios).
+        if (puntosViejos === null || delta !== 0) {
+          notifsPorUid[uid] = {
+            tipo:"resultado_partido", partidoId, nombrePartido,
+            tuApuesta: _txtPred(pred, estaDestacado), resultado: _txtRes(resultado),
+            acertaste: esMaximo, puntosGanados: puntosNuevos, fecha,
+          };
+        }
+        procesados++;
+      } catch(e) { console.error("Error pred:", pDoc.id, e); errores++; }
+    }
+
+    for (const [uid, delta] of Object.entries(deltasPorUid)) {
+      if (delta === 0) continue;
+      try {
+        const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
+        const diaSnap = await getDoc(diaRef);
+        if (diaSnap.exists()) {
+          await updateDoc(diaRef, { puntos: increment(delta) });
+        } else {
+          const uSnap = await getDoc(doc(db,"usuarios",uid));
+          const ud = uSnap.exists() ? uSnap.data() : {};
+          await setDoc(diaRef, { uid, fecha, puntos: delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
+        }
+      } catch(e) { console.error("puntosDelDia error:", uid, e); }
+    }
+
+    for (const [uid, datos] of Object.entries(notifsPorUid)) await _notif(uid, datos);
+    return { procesados, errores };
+  } catch(e) {
+    console.error("Error general procesarResultadoPartido:", e);
+    return { procesados:0, errores:1 };
+  }
+}
+
+// ── procesarPreguntaDelDia ────────────────────────────────────
+export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha) {
+  let procesados = 0;
+  try {
+    let textoPregunta = "Pregunta del día";
+    try {
+      const ps = await getDoc(doc(db,"preguntas",preguntaId));
+      if (ps.exists()) textoPregunta = ps.data().texto || textoPregunta;
+    } catch(_) {}
+
+    const snap = await getDocs(query(collection(db,"respuestas"),where("preguntaId","==",preguntaId)));
+    for (const rDoc of snap.docs) {
+      try {
+        const data = rDoc.data(); const uid = data.uid;
+        const puntosViejos = typeof data.puntosGanados === "number" ? data.puntosGanados : null;
+        const esCorrecta   = data.respuesta === respuestaCorrecta;
+        const puntosNuevos = esCorrecta ? 2 : 0;
+        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
+
+        await updateDoc(doc(db,"respuestas",rDoc.id), { esCorrecta, puntosGanados: puntosNuevos });
+
+        if (delta !== 0) {
+          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
+          const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
+          const diaSnap = await getDoc(diaRef);
+          if (diaSnap.exists()) {
+            await updateDoc(diaRef, { puntos: increment(delta) });
+          } else {
+            const uSnap = await getDoc(doc(db,"usuarios",uid));
+            const ud = uSnap.exists() ? uSnap.data() : {};
+            await setDoc(diaRef, { uid, fecha, puntos:delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
+          }
+        }
+
+        await _notif(uid, {
+          tipo:"resultado_pregunta", preguntaId, textoPregunta,
+          tuRespuesta:data.respuesta, respuestaCorrecta,
+          acertaste:esCorrecta, puntosGanados:puntosNuevos, fecha,
+        });
+        if (esCorrecta) procesados++;
+      } catch(e) { console.error("Error resp:", rDoc.id, e); }
+    }
+    return { ok:true, procesados };
+  } catch(e) {
+    console.error("Error procesarPreguntaDelDia:", e);
+    return { ok:false, error:e.message };
+  }
+}
+
+// ── calcularGanadorDelDia ─────────────────────────────────────
+export async function calcularGanadorDelDia(fecha) {
+  try {
+    const snap = await getDocs(query(collection(db,"puntosDelDia"),where("fecha","==",fecha)));
+    if (snap.empty) return { ok:false, mensaje:"Sin datos de puntosDelDia para ese día." };
+
+    const jug = snap.docs.map(d=>({docId:d.id,...d.data()})).sort((a,b)=>b.puntos-a.puntos);
+
+    // ── Protección: si ya se entregaron bonus y cartas, no repetir ────
+    if (jug.some(j => j.esGanador === true)) {
+      return {
+        ok: false,
+        yaEntregado: true,
+        mensaje: `Las cartas y bonus del día ${fecha} ya fueron entregados. Para revertir, elimina el campo esGanador desde Firebase Console.`,
+      };
+    }
+    const maxPts = jug[0].puntos;
+    // No premiar si nadie sumó puntos ese día (evita carta x4 + bonus a un "líder" con 0 pts).
+    if (maxPts <= 0) return { ok:false, mensaje:`Nadie sumó puntos el día ${fecha}; no se entregan cartas ni bonus.` };
+    const l1 = jug.filter(j=>j.puntos===maxPts);
+    const r1 = jug.filter(j=>j.puntos<maxPts);
+    const p2 = r1[0]?.puntos;
+    const l2 = p2!==undefined ? r1.filter(j=>j.puntos===p2) : [];
+    const r2 = r1.filter(j=>j.puntos<(p2??-Infinity));
+    const p3 = r2[0]?.puntos;
+    const l3 = p3!==undefined ? r2.filter(j=>j.puntos===p3) : [];
+
+    for (const j of l1) {
+      await updateDoc(doc(db,"puntosDelDia",j.docId),{esGanador:true,bonusGanador:2});
+      await updateDoc(doc(db,"usuarios",j.uid),{puntosTotal:increment(2)});
+      await _asignarCarta(j.uid,4,fecha);
+      await _notif(j.uid,{tipo:"bonus_ganador",lugar:1,bonus:2,fecha,mensaje:`🥇 ¡Ganaste el día ${fecha}! +2 pts bonus y una carta x4.`});
+    }
+    for (const j of l2) { await _asignarCarta(j.uid,3,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:2,bonus:0,fecha,mensaje:`🥈 Quedaste 2° el día ${fecha}. ¡Carta x3!`}); }
+    for (const j of l3) { await _asignarCarta(j.uid,2,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:3,bonus:0,fecha,mensaje:`🥉 Quedaste 3° el día ${fecha}. ¡Carta x2!`}); }
+
+    return { ok:true, ganador:l1.map(j=>j.nickname).join(", "), totalJugadores:jug.length,
+      lugar1:l1.map(j=>j.nickname), lugar2:l2.map(j=>j.nickname), lugar3:l3.map(j=>j.nickname) };
+  } catch(e) {
+    console.error("Error calcularGanadorDelDia:", e);
+    return { ok:false, error:e.message };
+  }
+}
+
+async function _asignarCarta(uid, mult, fecha) {
+  const carta = cartaAleatoriaPorMultiplicador(mult);
+  if (!carta) return;
+  await setDoc(doc(db,"cartasDelUsuario",`${uid}_${carta.id}_${fecha}`),{
+    uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
+    multiplicador:carta.multiplicador, rareza:carta.rareza, fecha, visto:false,
+  });
+  await updateDoc(doc(db,"usuarios",uid),{[`cartas.${carta.id}`]:increment(1)});
+}
+
+export async function publicarAvisoAdmin(texto) {
+  await setDoc(doc(db,"config","avisoAdmin"),{texto,fecha:new Date().toISOString(),activo:true});
+}
+export async function cerrarAvisoAdmin() {
+  await updateDoc(doc(db,"config","avisoAdmin"),{activo:false});
+}
+</file>
+
 <file path="src/components/VozHinchada.jsx">
 // src/components/VozHinchada.jsx  — v7 (Bugfix 3)
 // ─────────────────────────────────────────────────────────────
@@ -7498,289 +7507,6 @@ export default function VozHinchada() {
             <MensajeItem key={m.docId} mensaje={m}
               colorIdx={i} miUid={firebaseUser?.uid} />
           ))
-        )}
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/TabPartidos.jsx">
-// src/components/TabPartidos.jsx  — v8 (Fase 4)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v8:
-//   Punto 10: Integra <SuperDestacado> para partidos con
-//             esSuperDestacado:true. El componente escucha en
-//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
-//   Todo lo demás idéntico a v7.
-// ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  collection, getDocs, query, where, doc, getDoc,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-import { hoyStr, partidoAbierto } from "../utils/helpers";
-import PartidoCard from "./PartidoCard";
-import PreguntaCard from "./PreguntaCard";
-import SuperDestacado from "./SuperDestacado";
-
-const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
-
-// ── Hook: sonido ambiental ────────────────────────────────────
-function useSonidoAmbiental(activado) {
-  const audioRef = useRef(null);
-  useEffect(() => {
-    let activo = true;
-    const iniciar = async () => {
-      try {
-        const snap = await getDoc(doc(db, "config", "sonidoDia"));
-        if (!snap.exists() || !activo) return;
-        const { archivo, volumen = 0.4 } = snap.data();
-        if (!archivo || !activado) return;
-        const audio = new Audio(`/sounds/${archivo}`);
-        audio.loop = true; audio.volume = 0;
-        audioRef.current = audio;
-        await audio.play().catch(() => {});
-        let vol = 0;
-        const target = Math.min(1, Math.max(0, Number(volumen)));
-        const fade = setInterval(() => {
-          if (!activo) { clearInterval(fade); return; }
-          vol = Math.min(target, vol + 0.02);
-          if (audioRef.current) audioRef.current.volume = vol;
-          if (vol >= target) clearInterval(fade);
-        }, 80);
-      } catch(_) {}
-    };
-    iniciar();
-    return () => {
-      activo = false;
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    };
-  }, [activado]);
-  useEffect(() => {
-    if (!audioRef.current) return;
-    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
-  }, [activado]);
-}
-
-export default function TabPartidos({ onGuardado }) {
-  const { firebaseUser } = useAuth();
-  const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
-  useSonidoAmbiental(sonidosActivados);
-
-  const [partidos,    setPartidos]    = useState([]);
-  const [pregunta,    setPregunta]    = useState(null);
-  const [cargando,    setCargando]    = useState(true);
-  const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
-  const [respuestaUsuario, setRespuestaUsuario] = useState(null);
-
-  // Partido super destacado activo (para preguntas en vivo)
-  const [superDestacado, setSuperDestacado] = useState(null);
-
-  const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
-  const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
-  const [textoMensaje, setTextoMensaje] = useState("");
-  const [urlMensaje,   setUrlMensaje]   = useState("");
-  const [enviandoMsg,  setEnviandoMsg]  = useState(false);
-  const [msgEnviado,   setMsgEnviado]   = useState(false);
-  const hoy = hoyStr();
-
-  useEffect(() => { cargarDatos(); }, []);
-  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
-  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
-
-  const cargarDatos = async () => {
-    setCargando(true);
-    try {
-      let lista = [];
-      try {
-        // Partidos de hoy
-        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
-        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
-
-        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
-        let d16Lista = [];
-        try {
-          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
-          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
-        } catch(_) {}
-
-        // Combinar sin duplicados
-        const idsHoy = new Set(hoyLista.map(p => p.id));
-        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
-      } catch(_) {}
-      setPartidos(lista);
-
-      // Detectar partido super destacado activo (sin resultado)
-      const sd = lista.find(p => p.esSuperDestacado && !p.resultado);
-      setSuperDestacado(sd || null);
-
-      try {
-        const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
-        if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
-      } catch(_) {}
-    } finally { setCargando(false); }
-  };
-
-  const verificarPredicciones = async () => {
-    if (!firebaseUser) return;
-    const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
-    if (abiertos.length === 0) return;
-    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
-    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
-    const idsAbiertos = new Set(abiertos.map(p => p.id));
-    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
-    const nuevas = new Set();
-    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
-    setPrediccionesGuardadas(nuevas);
-  };
-
-  const verificarRespuestaPregunta = async () => {
-    if (!firebaseUser || !pregunta) return;
-    try {
-      const snap = await getDoc(doc(db,"respuestas",`${firebaseUser.uid}_${pregunta.id}`));
-      if (snap.exists()) setRespuestaUsuario(snap.data().respuesta || "✓");
-    } catch(_) {}
-  };
-
-  const handlePrediccionGuardada = useCallback(() => {
-    setTimeout(verificarPredicciones, 500);
-    if (onGuardado) onGuardado();
-    const lsKey = LS_HINCHADA_KEY + hoy;
-    if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
-  }, [partidos, firebaseUser, hoy]);
-
-  const cerrarModalHinchada = () => {
-    localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
-    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
-    setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
-  };
-
-  const enviarMensajeHinchada = async () => {
-    if (!textoMensaje.trim() || !firebaseUser) return;
-    setEnviandoMsg(true);
-    try {
-      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
-      const ahora = new Date();
-      await addDoc(col(db,"mensajesDia"), {
-        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
-        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
-        timestamp:serverTimestamp(), fecha:hoy,
-        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
-        uid:firebaseUser.uid,
-      });
-      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
-    } catch(e) { console.error(e); }
-    finally { setEnviandoMsg(false); }
-  };
-
-  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
-  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
-
-  if (cargando) return (
-    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
-      <span className="spinner">⚙</span><p>CARGANDO...</p>
-    </div>
-  );
-
-  return (
-    <div style={{ paddingBottom:"80px" }}>
-      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
-      {superDestacado && (
-  <SuperDestacado
-    partidoId={superDestacado.id}
-    nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
-  />
-)}
-
-      {/* Modal hinchada */}
-      {mostrarModalHinchada && (
-        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
-          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
-          <div style={{ background:"var(--negro)",border:"4px solid var(--amarillo)",
-            boxShadow:"6px 6px 0 var(--amarillo-oscuro)",
-            padding:"24px 20px",maxWidth:"360px",width:"100%",
-            display:"flex",flexDirection:"column",gap:"14px" }}>
-            {!mostrarFormHinchada ? (
-              <>
-                <p style={{ fontSize:"24px",textAlign:"center" }}>📢</p>
-                <p style={{ fontSize:"8px",color:"var(--blanco)",textAlign:"center",lineHeight:2 }}>
-                  ¿Algún mensaje<br/>para la hinchada?
-                </p>
-                <div style={{ display:"flex",gap:"8px" }}>
-                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
-                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
-                  <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
-                    onClick={cerrarModalHinchada}>NO</button>
-                </div>
-              </>
-            ) : msgEnviado ? (
-              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
-            ) : (
-              <>
-                <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
-                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
-                  placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-                    width:"100%",padding:"8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",
-                    outline:"none",resize:"none",lineHeight:2 }} />
-                <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
-                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
-                  placeholder="URL opcional"
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-                    width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
-                <div style={{ display:"flex",gap:"8px" }}>
-                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
-                    onClick={enviarMensajeHinchada}
-                    disabled={enviandoMsg||!textoMensaje.trim()}>
-                    {enviandoMsg?"⚙...":"✅ ENVIAR"}
-                  </button>
-                  <button className="btn-pixel btn-gris" style={{ fontSize:"7px" }}
-                    onClick={cerrarModalHinchada}>✕</button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="contenedor">
-        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
-        {partidos.length>0 ? (
-          partidos.map(p => (
-            <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
-          ))
-        ) : (
-          <div className="caja-pixel mb-16 text-center">
-            <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
-          </div>
-        )}
-        {abiertos.length>0 && (
-          <div style={{ padding:"8px 12px",marginBottom:"12px",
-            border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
-            fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-            color:"var(--verde-claro)",textAlign:"center" }}>
-            {todosPredecidos
-              ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
-              : `📝 ${prediccionesGuardadas.size} / ${abiertos.length} PRONÓSTICOS GUARDADOS`
-            }
-          </div>
-        )}
-        {pregunta && (
-          <>
-            <div className="seccion-titulo">
-              ❓ PREGUNTA DEL DÍA
-              {respuestaUsuario && (
-                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
-                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
-                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
-              )}
-            </div>
-            <PreguntaCard pregunta={pregunta} />
-          </>
         )}
       </div>
     </div>
@@ -8384,6 +8110,300 @@ function PartidoCard({ partido, onGuardado }) {
 // Memo: evita re-render de todas las cards cuando el padre cambia
 // estado no relacionado (onGuardado va memorizado con useCallback).
 export default React.memo(PartidoCard);
+</file>
+
+<file path="src/components/TabPartidos.jsx">
+// src/components/TabPartidos.jsx  — v8 (Fase 4)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v8:
+//   Punto 10: Integra <SuperDestacado> para partidos con
+//             esSuperDestacado:true. El componente escucha en
+//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
+//   Todo lo demás idéntico a v7.
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  collection, getDocs, query, where, doc, getDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { hoyStr, partidoAbierto } from "../utils/helpers";
+import PartidoCard from "./PartidoCard";
+import PreguntaCard from "./PreguntaCard";
+import SuperDestacado from "./SuperDestacado";
+
+const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
+
+// ── Hook: sonido ambiental ────────────────────────────────────
+function useSonidoAmbiental(activado) {
+  const audioRef = useRef(null);
+  useEffect(() => {
+    let activo = true;
+    const iniciar = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "sonidoDia"));
+        if (!snap.exists() || !activo) return;
+        const { archivo, volumen = 0.4 } = snap.data();
+        if (!archivo || !activado) return;
+        const audio = new Audio(`/sounds/${archivo}`);
+        audio.loop = true; audio.volume = 0;
+        audioRef.current = audio;
+        await audio.play().catch(() => {});
+        let vol = 0;
+        const target = Math.min(1, Math.max(0, Number(volumen)));
+        const fade = setInterval(() => {
+          if (!activo) { clearInterval(fade); return; }
+          vol = Math.min(target, vol + 0.02);
+          if (audioRef.current) audioRef.current.volume = vol;
+          if (vol >= target) clearInterval(fade);
+        }, 80);
+      } catch(_) {}
+    };
+    iniciar();
+    return () => {
+      activo = false;
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    };
+  }, [activado]);
+  useEffect(() => {
+    if (!audioRef.current) return;
+    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
+  }, [activado]);
+}
+
+export default function TabPartidos({ onGuardado }) {
+  const { firebaseUser } = useAuth();
+  const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
+  useSonidoAmbiental(sonidosActivados);
+
+  const [partidos,    setPartidos]    = useState([]);
+  const [pregunta,    setPregunta]    = useState(null);
+  const [cargando,    setCargando]    = useState(true);
+  const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
+  const [respuestaUsuario, setRespuestaUsuario] = useState(null);
+
+  // Partido super destacado activo (para preguntas en vivo)
+  const [superDestacado, setSuperDestacado] = useState(null);
+
+  const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
+  const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
+  const [textoMensaje, setTextoMensaje] = useState("");
+  const [urlMensaje,   setUrlMensaje]   = useState("");
+  const [enviandoMsg,  setEnviandoMsg]  = useState(false);
+  const [msgEnviado,   setMsgEnviado]   = useState(false);
+  const hoy = hoyStr();
+
+  useEffect(() => { cargarDatos(); }, []);
+  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
+  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
+
+  const cargarDatos = async () => {
+    setCargando(true);
+    try {
+      let lista = [];
+      try {
+        // Partidos de hoy
+        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
+        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
+
+        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
+        let d16Lista = [];
+        try {
+          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
+          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
+        } catch(_) {}
+
+        // Combinar sin duplicados
+        const idsHoy = new Set(hoyLista.map(p => p.id));
+        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
+      } catch(_) {}
+      setPartidos(lista);
+
+      // Detectar partido super destacado — búsqueda separada (sin filtro de fecha)
+      // para que funcione aunque el partido no sea de hoy
+            let sd = lista.find(p => p.esSuperDestacado && !p.resultado);
+      if (!sd) {
+        try {
+          const snapSD = await getDocs(query(
+            collection(db,"partidos"), where("esSuperDestacado","==",true)
+          ));
+          sd = snapSD.docs
+            .map(d => ({ id:d.id, ...d.data() }))
+            .find(p => !p.resultado) || null;
+        } catch(_) {}
+      }
+      setSuperDestacado(sd || null);
+
+      try {
+        const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
+        if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
+      } catch(_) {}
+    } finally { setCargando(false); }
+  };
+
+  const verificarPredicciones = async () => {
+    if (!firebaseUser) return;
+    const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
+    if (abiertos.length === 0) return;
+    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
+    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
+    const idsAbiertos = new Set(abiertos.map(p => p.id));
+    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
+    const nuevas = new Set();
+    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
+    setPrediccionesGuardadas(nuevas);
+  };
+
+  const verificarRespuestaPregunta = async () => {
+    if (!firebaseUser || !pregunta) return;
+    try {
+      const snap = await getDoc(doc(db,"respuestas",`${firebaseUser.uid}_${pregunta.id}`));
+      if (snap.exists()) setRespuestaUsuario(snap.data().respuesta || "✓");
+    } catch(_) {}
+  };
+
+  const handlePrediccionGuardada = useCallback(() => {
+    setTimeout(verificarPredicciones, 500);
+    if (onGuardado) onGuardado();
+    const lsKey = LS_HINCHADA_KEY + hoy;
+    if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
+  }, [partidos, firebaseUser, hoy]);
+
+  const cerrarModalHinchada = () => {
+    localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
+    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
+    setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
+  };
+
+  const enviarMensajeHinchada = async () => {
+    if (!textoMensaje.trim() || !firebaseUser) return;
+    setEnviandoMsg(true);
+    try {
+      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
+      const ahora = new Date();
+      await addDoc(col(db,"mensajesDia"), {
+        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
+        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
+        timestamp:serverTimestamp(), fecha:hoy,
+        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
+        uid:firebaseUser.uid,
+      });
+      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
+    } catch(e) { console.error(e); }
+    finally { setEnviandoMsg(false); }
+  };
+
+  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
+  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
+
+  if (cargando) return (
+    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
+      <span className="spinner">⚙</span><p>CARGANDO...</p>
+    </div>
+  );
+
+  return (
+    <div style={{ paddingBottom:"80px" }}>
+      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
+      {superDestacado && (
+  <SuperDestacado
+    partidoId={superDestacado.id}
+    nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
+  />
+)}
+
+      {/* Modal hinchada */}
+      {mostrarModalHinchada && (
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
+          <div style={{ background:"var(--negro)",border:"4px solid var(--amarillo)",
+            boxShadow:"6px 6px 0 var(--amarillo-oscuro)",
+            padding:"24px 20px",maxWidth:"360px",width:"100%",
+            display:"flex",flexDirection:"column",gap:"14px" }}>
+            {!mostrarFormHinchada ? (
+              <>
+                <p style={{ fontSize:"24px",textAlign:"center" }}>📢</p>
+                <p style={{ fontSize:"8px",color:"var(--blanco)",textAlign:"center",lineHeight:2 }}>
+                  ¿Algún mensaje<br/>para la hinchada?
+                </p>
+                <div style={{ display:"flex",gap:"8px" }}>
+                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
+                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
+                  <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
+                    onClick={cerrarModalHinchada}>NO</button>
+                </div>
+              </>
+            ) : msgEnviado ? (
+              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
+            ) : (
+              <>
+                <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
+                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
+                  placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
+                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
+                    width:"100%",padding:"8px",border:"2px solid var(--negro)",
+                    background:"var(--blanco)",color:"var(--negro)",
+                    outline:"none",resize:"none",lineHeight:2 }} />
+                <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
+                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
+                  placeholder="URL opcional"
+                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+                    width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
+                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
+                <div style={{ display:"flex",gap:"8px" }}>
+                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
+                    onClick={enviarMensajeHinchada}
+                    disabled={enviandoMsg||!textoMensaje.trim()}>
+                    {enviandoMsg?"⚙...":"✅ ENVIAR"}
+                  </button>
+                  <button className="btn-pixel btn-gris" style={{ fontSize:"7px" }}
+                    onClick={cerrarModalHinchada}>✕</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="contenedor">
+        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
+        {partidos.length>0 ? (
+          partidos.map(p => (
+            <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
+          ))
+        ) : (
+          <div className="caja-pixel mb-16 text-center">
+            <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
+          </div>
+        )}
+        {abiertos.length>0 && (
+          <div style={{ padding:"8px 12px",marginBottom:"12px",
+            border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
+            fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+            color:"var(--verde-claro)",textAlign:"center" }}>
+            {todosPredecidos
+              ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
+              : `📝 ${prediccionesGuardadas.size} / ${abiertos.length} PRONÓSTICOS GUARDADOS`
+            }
+          </div>
+        )}
+        {pregunta && (
+          <>
+            <div className="seccion-titulo">
+              ❓ PREGUNTA DEL DÍA
+              {respuestaUsuario && (
+                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
+                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
+                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
+              )}
+            </div>
+            <PreguntaCard pregunta={pregunta} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 </file>
 
 <file path="src/components/AdminPanel.jsx">

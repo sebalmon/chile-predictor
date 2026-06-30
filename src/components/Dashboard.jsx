@@ -20,6 +20,7 @@ import NotificacionCartas from "./NotificacionCartas";
 import AvisoAdmin from "./AvisoAdmin";
 import NotificacionesModal from "./NotificacionesModal";
 import VozHinchada from "./VozHinchada";
+import EventoEnVivo from "./EventoEnVivo";
 import SeccionLaminas from "./SeccionLaminas";
 
 // ── Contexto de sonidos ───────────────────────────────────────
@@ -467,6 +468,7 @@ function WithShell({ children, userProfile, onPerfil, onLogout,
       <NotificacionCartas />
       <AvisoAdmin />
       <NotificacionesModal />
+      <EventoEnVivo />
 
       <TopBar userProfile={userProfile} onPerfil={onPerfil} onLogout={onLogout}
         diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos} />

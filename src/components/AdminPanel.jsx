@@ -22,6 +22,7 @@ import {
 } from "../utils/helpers";
 import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
 import AdminSuperDestacado from "./AdminSuperDestacado";
+import AdminEventoEnVivo from "./AdminEventoEnVivo";
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
@@ -95,7 +96,7 @@ function AdminPanelInterno({ onVolver }) {
 
   const TABS = [
     { id:"partidos",  label:"⚽ PARTIDOS" },
-    { id:"superdes",  label:"🔴 EN VIVO" },
+    { id:"envivo",    label:"🔴 EN VIVO" },
     { id:"preguntas", label:"❓ PREGUNTAS" },
     { id:"cartas",    label:"🃏 CARTAS Y BONUS" },
     { id:"aviso",     label:"📢 AVISO" },
@@ -140,7 +141,7 @@ function AdminPanelInterno({ onVolver }) {
       ) : (
         <>
           {tab==="partidos"  && <TabPartidosAdmin partidos={partidos} onActualizar={cargarDatos} onMensaje={msg} />}
-          {tab==="superdes"  && <AdminSuperDestacado partidos={partidos} onMensaje={msg} />}
+          {tab==="envivo"    && <AdminEventoEnVivo onMensaje={msg} />}
           {tab==="preguntas" && <TabPreguntasAdmin preguntas={preguntas} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="cartas"    && <TabCartasBonus preguntas={preguntas} onMensaje={msg} />}
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
