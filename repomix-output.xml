@@ -111,6 +111,8 @@ public/inicio2.png
 public/inicio3.png
 public/inicio3b.png
 public/inicio4.jpg
+public/pvivo_0.jpg
+public/pvivo_1.jpg
 public/sounds/ale.mp3
 public/sounds/brasil.mp3
 public/sounds/japo.mp3
@@ -1365,6 +1367,118 @@ export default function AvisoAdmin() {
 }
 </file>
 
+<file path="src/components/FraseCinema.jsx">
+// src/components/FraseCinema.jsx
+// ─────────────────────────────────────────────────────────────
+// Pantalla cinematográfica de la frase del día.
+// MODIFICADO: Se muestra SIEMPRE al iniciar/recargar la app.
+// Tiempos extendidos para una mayor duración en pantalla.
+// ─────────────────────────────────────────────────────────────
+import React, { useEffect, useState } from "react";
+import { FRASES_DEL_DIA } from "../data/sampleData";
+import { hoyStr } from "../utils/helpers";
+
+// Elige la frase del día de forma determinista según la fecha
+function getFraseDelDia() {
+  const hoy = hoyStr();
+  // Índice basado en el día del año (0-based), cíclico sobre el array
+  const inicio = new Date("2026-06-11");
+  const ahora  = new Date();
+  const diffDias = Math.max(0, Math.floor((ahora - inicio) / 86400000));
+  const idx = diffDias % FRASES_DEL_DIA.length;
+  return FRASES_DEL_DIA[idx];
+}
+
+// Forzamos a que siempre devuelva falso para que la App no se salte este componente
+export function fraseCinemaYaVistahoy() {
+  return false; 
+}
+
+// ── Componente ────────────────────────────────────────────────
+export default function FraseCinema({ onTerminar }) {
+  const [fase, setFase] = useState("fadein"); // "fadein" | "visible" | "fadeout"
+  const frase = getFraseDelDia();
+
+  useEffect(() => {
+    // NUEVA CRONOLOGÍA EXTENDIDA:
+    // 0.8s fade-in → 7.0s visible (Dura el doble) → 0.8s fade-out → callback final
+    const t1 = setTimeout(() => setFase("visible"), 800);
+    const t2 = setTimeout(() => setFase("fadeout"), 8800); // 800ms + 7000ms
+    const t3 = setTimeout(() => {
+      onTerminar();
+    }, 9600); // 7800ms + 800ms de fadeout
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onTerminar]);
+
+  const opacity =
+    fase === "fadein"   ? 0   :
+    fase === "visible"  ? 1   : 0;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "#000",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+        padding: "32px",
+        cursor: "pointer"
+      }}
+      // Saltar al tocar en cualquier momento
+      onClick={onTerminar}
+    >
+      <div
+        style={{
+          opacity,
+          transition: "opacity 0.8s ease",
+          textAlign: "center",
+          maxWidth: "460px",
+        }}
+      >
+        {/* Línea decorativa superior */}
+        <div style={{
+          width: "60px", height: "3px",
+          background: "linear-gradient(90deg, transparent, #f4d03f, transparent)",
+          margin: "0 auto 28px",
+        }} />
+
+        <p style={{
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize: "clamp(8px, 2.5vw, 11px)",
+          color: "#f4d03f",
+          lineHeight: 2.4,
+          letterSpacing: "1px",
+          textShadow: "0 0 20px rgba(244,208,63,0.4)",
+          whiteSpace: "pre-line",
+        }}>
+          "{frase}"
+        </p>
+
+        {/* Línea decorativa inferior */}
+        <div style={{
+          width: "60px", height: "3px",
+          background: "linear-gradient(90deg, transparent, #f4d03f, transparent)",
+          margin: "28px auto 0",
+        }} />
+
+        <p style={{
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize: "6px",
+          color: "rgba(255,255,255,0.25)",
+          marginTop: "20px",
+        }}>
+          toca para continuar
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="src/components/NotificacionesModal.jsx">
 // src/components/NotificacionesModal.jsx  — v5 (Fase 2)
 // ─────────────────────────────────────────────────────────────
@@ -1943,225 +2057,109 @@ export default function Registro() {
 }
 </file>
 
-<file path="src/components/SuperDestacado.jsx">
-// src/components/SuperDestacado.jsx  — v1 (Fase 4)
+<file path="src/components/Splash.jsx">
+// src/components/Splash.jsx
 // ─────────────────────────────────────────────────────────────
-// Componente para USUARIOS durante un partido Super Destacado.
-// • Escucha en tiempo real (onSnapshot) la colección
-//   preguntasEnVivo/{partidoId}/preguntas
-// • Si hay una pregunta abierta (estado:"abierta"), la muestra
-//   como modal o banner flotante urgente.
-// • El usuario responde una vez. Al cerrar el admin la pregunta,
-//   aparece el resultado (quién acertó, puntos ganados).
-// • Puntos: +3 si acierta la pregunta en vivo.
+// Splash cinematográfico con imágenes secuenciales.
+// NUEVO: acepta prop `onFin` (callback cuando termina).
+// NUEVO: al aparecer START, cualquier toque/clic lo salta.
 // ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect } from "react";
-import {
-  collection, onSnapshot, query, where, doc,
-  setDoc, getDoc, serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useEffect, useState, useCallback } from "react";
 
-const PTS_EN_VIVO = 3;
+export default function Splash({ onFin }) {
+  const [imagenesListas, setImagenesListas] = useState(false);
+  const [mostrar1,   setMostrar1]   = useState(false);
+  const [mostrar2,   setMostrar2]   = useState(false);
+  const [mostrar3,   setMostrar3]   = useState(false);
+  const [mostrar3b,  setMostrar3b]  = useState(false);
+  const [mostrar4,   setMostrar4]   = useState(false);
+  const [mostrarTexto, setMostrarTexto] = useState(false);
+  const [mostrarStart, setMostrarStart] = useState(false);
+  const [terminado,  setTerminado]  = useState(false);
 
-export default function SuperDestacado({ partidoId, nombrePartido }) {
-  const { firebaseUser } = useAuth();
-  const [preguntaActiva, setPreguntaActiva] = useState(null);
-  const [miRespuesta,    setMiRespuesta]    = useState(null);
-  const [enviando,       setEnviando]       = useState(false);
-  const [resultado,      setResultado]      = useState(null); // cuando cierra el admin
-
+  // Precargar imágenes
   useEffect(() => {
-    if (!partidoId) return;
-
-    // Escuchar en tiempo real la única pregunta abierta
-    const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
-    const q   = query(ref, where("estado", "==", "abierta"));
-
-    const unsub = onSnapshot(q, async snap => {
-      if (snap.empty) {
-        setPreguntaActiva(null);
-        return;
-      }
-      const pregData = { id: snap.docs[0].id, ...snap.docs[0].data() };
-      setPreguntaActiva(pregData);
-
-      // Verificar si ya respondí
-      if (firebaseUser) {
-        const respRef  = doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
-          `${firebaseUser.uid}_${pregData.id}`);
-        const respSnap = await getDoc(respRef);
-        if (respSnap.exists()) setMiRespuesta(respSnap.data().respuesta);
-        else setMiRespuesta(null);
-      }
+    const imagenes = [
+      "/inicio1.jpg", "/inicio2.png",
+      "/inicio3.png", "/inicio3b.png", "/inicio4.jpg",
+    ];
+    let cargadas = 0;
+    imagenes.forEach((src) => {
+      const img = new Image();
+      img.onload  = img.onerror = () => {
+        cargadas++;
+        if (cargadas === imagenes.length) setImagenesListas(true);
+      };
+      img.src = src;
     });
+  }, []);
 
-    // También escuchar preguntas recién cerradas (para mostrar resultado)
-    const qCerrada = query(ref, where("estado", "==", "cerrada"));
-    const unsubCerrada = onSnapshot(qCerrada, snap => {
-      if (snap.empty) { setResultado(null); return; }
-      // Mostrar resultado de la más reciente
-      const cerradas = snap.docs.map(d => ({ id:d.id, ...d.data() }))
-        .sort((a,b) => (b.creadaEn?.seconds||0) - (a.creadaEn?.seconds||0));
-      setResultado(cerradas[0]);
-    });
+  const terminar = useCallback(() => {
+    if (terminado) return;
+    setTerminado(true);
+    onFin && onFin();
+  }, [terminado, onFin]);
 
-    return () => { unsub(); unsubCerrada(); };
-  }, [partidoId, firebaseUser]);
+  // Secuencia de timers
+  useEffect(() => {
+    if (!imagenesListas) return;
 
-  const responder = async (opcion) => {
-    if (!firebaseUser || !preguntaActiva || miRespuesta) return;
-    setEnviando(true);
-    try {
-      const respId = `${firebaseUser.uid}_${preguntaActiva.id}`;
-      await setDoc(
-        doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo", respId),
-        {
-          uid:        firebaseUser.uid,
-          preguntaId: preguntaActiva.id,
-          respuesta:  opcion,
-          partidoId,
-          timestamp:  serverTimestamp(),
-        }
-      );
-      setMiRespuesta(opcion);
-    } catch (e) { console.error(e); }
-    finally { setEnviando(false); }
+    setMostrar1(true);
+    const t2  = setTimeout(() => setMostrar2(true),    500);
+    const t3  = setTimeout(() => setMostrar3(true),   1000);
+    const t3b = setTimeout(() => setMostrar3b(true),  1500);
+    const t4  = setTimeout(() => setMostrar4(true),   2400);
+    const tOc = setTimeout(() => {
+      setMostrar1(false); setMostrar2(false);
+      setMostrar3(false); setMostrar3b(false);
+      setMostrarTexto(true);
+    }, 3000);
+    const tS  = setTimeout(() => setMostrarStart(true), 4000);
+    // Auto-terminar a los 8s si el usuario no toca
+    const tFin = setTimeout(terminar, 8000);
+
+    return () => {
+      clearTimeout(t2); clearTimeout(t3); clearTimeout(t3b);
+      clearTimeout(t4); clearTimeout(tOc); clearTimeout(tS);
+      clearTimeout(tFin);
+    };
+  }, [imagenesListas, terminar]);
+
+  // Handler de clic: solo funciona cuando START ya apareció
+  const handleClick = () => {
+    if (mostrarStart) terminar();
   };
 
-  // Sin pregunta activa ni resultado reciente → no renderizar nada
-  if (!preguntaActiva && !resultado) return null;
+  if (!imagenesListas) {
+    return (
+      <div style={{
+        position: "fixed", inset: 0,
+        backgroundColor: "rgb(225,225,225)", zIndex: 9999,
+      }} />
+    );
+  }
 
   return (
-    <div style={{
-      position: "fixed",
-      bottom: "80px", // sobre el menú inferior
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "calc(100% - 24px)",
-      maxWidth: "420px",
-      zIndex: 500,
-      fontFamily: "'Press Start 2P', monospace",
-    }}>
-      {/* ── Pregunta abierta ─────────────────────────────────── */}
-      {preguntaActiva && (
-        <div style={{
-          background: "var(--negro)",
-          border: "4px solid var(--rojo-chile)",
-          boxShadow: "0 0 20px rgba(214,40,40,0.6), 4px 4px 0 var(--rojo-oscuro)",
-          padding: "14px 14px 10px",
-          animation: "pulseRojo 1.5s infinite",
-        }}>
-          {/* Cabecera parpadeante */}
-          <div style={{ display:"flex", justifyContent:"space-between",
-            alignItems:"center", marginBottom:"10px" }}>
-            <span style={{ fontSize:"7px", color:"var(--rojo-chile)" }}>
-              🔴 EN VIVO — {nombrePartido}
-            </span>
-            <span style={{ fontSize:"6px", color:"var(--amarillo)",
-              background:"rgba(244,208,63,0.15)", padding:"2px 6px",
-              border:"1px solid var(--amarillo)" }}>
-              +{PTS_EN_VIVO} pts
-            </span>
-          </div>
+    <div
+      className="splash-container-unificado"
+      onClick={handleClick}
+      style={{ cursor: mostrarStart ? "pointer" : "default" }}
+    >
+      {mostrar1  && <img src="/inicio1.jpg"  alt="" className="splash-fondo" />}
+      {mostrar2  && <img src="/inicio2.png"  alt="" className="splash-fondo fade-in" />}
+      {mostrar3  && <img src="/inicio3.png"  alt="" className="splash-fondo slide-in-right" />}
+      {mostrar3b && <img src="/inicio3b.png" alt="" className="splash-fondo fade-in" />}
+      {mostrar4  && <img src="/inicio4.jpg"  alt="" className="splash-fondo" />}
 
-          <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
-            {preguntaActiva.texto}
-          </p>
-
-          {!miRespuesta ? (
-            <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
-              {(preguntaActiva.opciones || []).map((op, i) => (
-                <button key={i}
-                  onClick={() => responder(op)}
-                  disabled={enviando}
-                  style={{
-                    fontFamily: "'Press Start 2P',monospace",
-                    fontSize: "7px", padding: "8px 10px",
-                    background: "rgba(255,255,255,0.05)",
-                    border: "2px solid var(--gris)",
-                    color: "var(--blanco)", cursor: "pointer",
-                    textAlign: "left",
-                    transition: "border-color 0.1s",
-                  }}
-                  onMouseEnter={e => e.target.style.borderColor = "var(--amarillo)"}
-                  onMouseLeave={e => e.target.style.borderColor = "var(--gris)"}
-                >
-                  {op}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign:"center", padding:"8px" }}>
-              <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
-                ✅ Respondiste: <strong style={{ color:"var(--amarillo)" }}>{miRespuesta}</strong>
-              </p>
-              <p style={{ fontSize:"6px", color:"var(--gris-claro)", marginTop:"4px" }}>
-                Esperando que el admin cierre la pregunta...
-              </p>
-            </div>
-          )}
+      {mostrarTexto && (
+        <div className="splash-texto-final">
+          <p>©1995 KONAMIGOS</p>
+          <p>TODOS LOS DERECHOS RESERVADOS A</p>
+          <p>TU APPWEB FAVORITA y ALVAROCK</p>
         </div>
       )}
 
-      {/* ── Resultado de pregunta recién cerrada ──────────────── */}
-      {!preguntaActiva && resultado && (
-        <ResultadoEnVivo resultado={resultado} miRespuesta={miRespuesta} />
-      )}
-
-      <style>{`
-        @keyframes pulseRojo {
-          0%,100% { box-shadow: 0 0 12px rgba(214,40,40,0.5), 4px 4px 0 var(--rojo-oscuro); }
-          50%      { box-shadow: 0 0 28px rgba(214,40,40,0.9), 4px 4px 0 var(--rojo-oscuro); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function ResultadoEnVivo({ resultado, miRespuesta }) {
-  const [visible, setVisible] = useState(true);
-  const correcta   = resultado.respuestaCorrecta;
-  const acertaste  = miRespuesta === correcta;
-
-  if (!visible) return null;
-
-  return (
-    <div style={{
-      background: "var(--negro)",
-      border: `4px solid ${acertaste ? "var(--verde-claro)" : "var(--gris)"}`,
-      boxShadow: `4px 4px 0 ${acertaste ? "var(--verde-oscuro)" : "var(--negro)"}`,
-      padding: "14px",
-      fontFamily: "'Press Start 2P',monospace",
-    }}>
-      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"8px" }}>
-        <span style={{ fontSize:"7px", color:"var(--gris-claro)" }}>
-          RESULTADO EN VIVO
-        </span>
-        <button onClick={() => setVisible(false)}
-          style={{ background:"none", border:"none", color:"var(--gris)",
-            cursor:"pointer", fontSize:"10px" }}>✕</button>
-      </div>
-      <p style={{ fontSize:"7px", color:"var(--blanco)", lineHeight:2, marginBottom:"8px" }}>
-        {resultado.texto}
-      </p>
-      <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"6px" }}>
-        ✅ Respuesta correcta: <strong>{correcta}</strong>
-      </p>
-      {miRespuesta ? (
-        <p style={{ fontSize:"7px",
-          color: acertaste ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
-          {acertaste
-            ? `🎉 ¡Acertaste! +${PTS_EN_VIVO} pts`
-            : `❌ Tu respuesta: ${miRespuesta}`
-          }
-        </p>
-      ) : (
-        <p style={{ fontSize:"7px", color:"var(--gris-claro)" }}>
-          No respondiste esta pregunta.
-        </p>
-      )}
+      {mostrarStart && <div className="splash-start">START</div>}
     </div>
   );
 }
@@ -2909,118 +2907,6 @@ export default function AdminSuperDestacado({ partidos = [], onMensaje }) {
 }
 </file>
 
-<file path="src/components/FraseCinema.jsx">
-// src/components/FraseCinema.jsx
-// ─────────────────────────────────────────────────────────────
-// Pantalla cinematográfica de la frase del día.
-// MODIFICADO: Se muestra SIEMPRE al iniciar/recargar la app.
-// Tiempos extendidos para una mayor duración en pantalla.
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
-import { FRASES_DEL_DIA } from "../data/sampleData";
-import { hoyStr } from "../utils/helpers";
-
-// Elige la frase del día de forma determinista según la fecha
-function getFraseDelDia() {
-  const hoy = hoyStr();
-  // Índice basado en el día del año (0-based), cíclico sobre el array
-  const inicio = new Date("2026-06-11");
-  const ahora  = new Date();
-  const diffDias = Math.max(0, Math.floor((ahora - inicio) / 86400000));
-  const idx = diffDias % FRASES_DEL_DIA.length;
-  return FRASES_DEL_DIA[idx];
-}
-
-// Forzamos a que siempre devuelva falso para que la App no se salte este componente
-export function fraseCinemaYaVistahoy() {
-  return false; 
-}
-
-// ── Componente ────────────────────────────────────────────────
-export default function FraseCinema({ onTerminar }) {
-  const [fase, setFase] = useState("fadein"); // "fadein" | "visible" | "fadeout"
-  const frase = getFraseDelDia();
-
-  useEffect(() => {
-    // NUEVA CRONOLOGÍA EXTENDIDA:
-    // 0.8s fade-in → 7.0s visible (Dura el doble) → 0.8s fade-out → callback final
-    const t1 = setTimeout(() => setFase("visible"), 800);
-    const t2 = setTimeout(() => setFase("fadeout"), 8800); // 800ms + 7000ms
-    const t3 = setTimeout(() => {
-      onTerminar();
-    }, 9600); // 7800ms + 800ms de fadeout
-
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [onTerminar]);
-
-  const opacity =
-    fase === "fadein"   ? 0   :
-    fase === "visible"  ? 1   : 0;
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "#000",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        padding: "32px",
-        cursor: "pointer"
-      }}
-      // Saltar al tocar en cualquier momento
-      onClick={onTerminar}
-    >
-      <div
-        style={{
-          opacity,
-          transition: "opacity 0.8s ease",
-          textAlign: "center",
-          maxWidth: "460px",
-        }}
-      >
-        {/* Línea decorativa superior */}
-        <div style={{
-          width: "60px", height: "3px",
-          background: "linear-gradient(90deg, transparent, #f4d03f, transparent)",
-          margin: "0 auto 28px",
-        }} />
-
-        <p style={{
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: "clamp(8px, 2.5vw, 11px)",
-          color: "#f4d03f",
-          lineHeight: 2.4,
-          letterSpacing: "1px",
-          textShadow: "0 0 20px rgba(244,208,63,0.4)",
-          whiteSpace: "pre-line",
-        }}>
-          "{frase}"
-        </p>
-
-        {/* Línea decorativa inferior */}
-        <div style={{
-          width: "60px", height: "3px",
-          background: "linear-gradient(90deg, transparent, #f4d03f, transparent)",
-          margin: "28px auto 0",
-        }} />
-
-        <p style={{
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: "6px",
-          color: "rgba(255,255,255,0.25)",
-          marginTop: "20px",
-        }}>
-          toca para continuar
-        </p>
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="src/components/ModalPerfilCompleto.jsx">
 // src/components/ModalPerfilCompleto.jsx  — v7 (Patch 2)
 // ─────────────────────────────────────────────────────────────
@@ -3238,114 +3124,6 @@ export default function ModalPrediccionesAmigos({ partidoId, onCerrar }) {
           CERRAR
         </button>
       </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/Splash.jsx">
-// src/components/Splash.jsx
-// ─────────────────────────────────────────────────────────────
-// Splash cinematográfico con imágenes secuenciales.
-// NUEVO: acepta prop `onFin` (callback cuando termina).
-// NUEVO: al aparecer START, cualquier toque/clic lo salta.
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState, useCallback } from "react";
-
-export default function Splash({ onFin }) {
-  const [imagenesListas, setImagenesListas] = useState(false);
-  const [mostrar1,   setMostrar1]   = useState(false);
-  const [mostrar2,   setMostrar2]   = useState(false);
-  const [mostrar3,   setMostrar3]   = useState(false);
-  const [mostrar3b,  setMostrar3b]  = useState(false);
-  const [mostrar4,   setMostrar4]   = useState(false);
-  const [mostrarTexto, setMostrarTexto] = useState(false);
-  const [mostrarStart, setMostrarStart] = useState(false);
-  const [terminado,  setTerminado]  = useState(false);
-
-  // Precargar imágenes
-  useEffect(() => {
-    const imagenes = [
-      "/inicio1.jpg", "/inicio2.png",
-      "/inicio3.png", "/inicio3b.png", "/inicio4.jpg",
-    ];
-    let cargadas = 0;
-    imagenes.forEach((src) => {
-      const img = new Image();
-      img.onload  = img.onerror = () => {
-        cargadas++;
-        if (cargadas === imagenes.length) setImagenesListas(true);
-      };
-      img.src = src;
-    });
-  }, []);
-
-  const terminar = useCallback(() => {
-    if (terminado) return;
-    setTerminado(true);
-    onFin && onFin();
-  }, [terminado, onFin]);
-
-  // Secuencia de timers
-  useEffect(() => {
-    if (!imagenesListas) return;
-
-    setMostrar1(true);
-    const t2  = setTimeout(() => setMostrar2(true),    500);
-    const t3  = setTimeout(() => setMostrar3(true),   1000);
-    const t3b = setTimeout(() => setMostrar3b(true),  1500);
-    const t4  = setTimeout(() => setMostrar4(true),   2400);
-    const tOc = setTimeout(() => {
-      setMostrar1(false); setMostrar2(false);
-      setMostrar3(false); setMostrar3b(false);
-      setMostrarTexto(true);
-    }, 3000);
-    const tS  = setTimeout(() => setMostrarStart(true), 4000);
-    // Auto-terminar a los 8s si el usuario no toca
-    const tFin = setTimeout(terminar, 8000);
-
-    return () => {
-      clearTimeout(t2); clearTimeout(t3); clearTimeout(t3b);
-      clearTimeout(t4); clearTimeout(tOc); clearTimeout(tS);
-      clearTimeout(tFin);
-    };
-  }, [imagenesListas, terminar]);
-
-  // Handler de clic: solo funciona cuando START ya apareció
-  const handleClick = () => {
-    if (mostrarStart) terminar();
-  };
-
-  if (!imagenesListas) {
-    return (
-      <div style={{
-        position: "fixed", inset: 0,
-        backgroundColor: "rgb(225,225,225)", zIndex: 9999,
-      }} />
-    );
-  }
-
-  return (
-    <div
-      className="splash-container-unificado"
-      onClick={handleClick}
-      style={{ cursor: mostrarStart ? "pointer" : "default" }}
-    >
-      {mostrar1  && <img src="/inicio1.jpg"  alt="" className="splash-fondo" />}
-      {mostrar2  && <img src="/inicio2.png"  alt="" className="splash-fondo fade-in" />}
-      {mostrar3  && <img src="/inicio3.png"  alt="" className="splash-fondo slide-in-right" />}
-      {mostrar3b && <img src="/inicio3b.png" alt="" className="splash-fondo fade-in" />}
-      {mostrar4  && <img src="/inicio4.jpg"  alt="" className="splash-fondo" />}
-
-      {mostrarTexto && (
-        <div className="splash-texto-final">
-          <p>©1995 KONAMIGOS</p>
-          <p>TODOS LOS DERECHOS RESERVADOS A</p>
-          <p>TU APPWEB FAVORITA y ALVAROCK</p>
-        </div>
-      )}
-
-      {mostrarStart && <div className="splash-start">START</div>}
     </div>
   );
 }
@@ -6078,282 +5856,414 @@ export default function PodioF1({ datos }) {
 }
 </file>
 
-<file path="src/components/TabPartidos.jsx">
-// src/components/TabPartidos.jsx  — v8 (Fase 4)
+<file path="src/components/SuperDestacado.jsx">
+// src/components/SuperDestacado.jsx  — v6 (Polling + diseño visual)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v8:
-//   Punto 10: Integra <SuperDestacado> para partidos con
-//             esSuperDestacado:true. El componente escucha en
-//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
-//   Todo lo demás idéntico a v7.
+// Usa polling (cada 15 segundos) en vez de onSnapshot para
+// reducir lecturas y evitar bloqueos. Obtiene datos del partido
+// desde Firestore para mostrar banderas y nombres.
 // ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  collection, getDocs, query, where, doc, getDoc,
+  collection, getDocs, query, where, doc,
+  setDoc, getDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { hoyStr, partidoAbierto } from "../utils/helpers";
-import PartidoCard from "./PartidoCard";
-import PreguntaCard from "./PreguntaCard";
-import SuperDestacado from "./SuperDestacado";
 
-const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
+const PTS_EN_VIVO = 3;
+const LS_PREFIX = "cp8b_sd_visto_";
 
-// ── Hook: sonido ambiental ────────────────────────────────────
-function useSonidoAmbiental(activado) {
-  const audioRef = useRef(null);
-  useEffect(() => {
-    let activo = true;
-    const iniciar = async () => {
-      try {
-        const snap = await getDoc(doc(db, "config", "sonidoDia"));
-        if (!snap.exists() || !activo) return;
-        const { archivo, volumen = 0.4 } = snap.data();
-        if (!archivo || !activado) return;
-        const audio = new Audio(`/sounds/${archivo}`);
-        audio.loop = true; audio.volume = 0;
-        audioRef.current = audio;
-        await audio.play().catch(() => {});
-        let vol = 0;
-        const target = Math.min(1, Math.max(0, Number(volumen)));
-        const fade = setInterval(() => {
-          if (!activo) { clearInterval(fade); return; }
-          vol = Math.min(target, vol + 0.02);
-          if (audioRef.current) audioRef.current.volume = vol;
-          if (vol >= target) clearInterval(fade);
-        }, 80);
-      } catch(_) {}
-    };
-    iniciar();
-    return () => {
-      activo = false;
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    };
-  }, [activado]);
-  useEffect(() => {
-    if (!audioRef.current) return;
-    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
-  }, [activado]);
-}
-
-export default function TabPartidos({ onGuardado }) {
+export default function SuperDestacado({ partidoId, nombrePartido }) {
   const { firebaseUser } = useAuth();
-  const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
-  useSonidoAmbiental(sonidosActivados);
+  const [preguntaActiva, setPreguntaActiva] = useState(null);
+  const [miRespuesta,    setMiRespuesta]    = useState(null);
+  const [enviando,       setEnviando]       = useState(false);
+  const [resultado,      setResultado]      = useState(null);
+  const [resultadoVisto, setResultadoVisto] = useState(false);
+  const [partidoData,    setPartidoData]    = useState(null);
+  const [cargando,       setCargando]       = useState(true);
 
-  const [partidos,    setPartidos]    = useState([]);
-  const [pregunta,    setPregunta]    = useState(null);
-  const [cargando,    setCargando]    = useState(true);
-  const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
-  const [respuestaUsuario, setRespuestaUsuario] = useState(null);
-
-  // Partido super destacado activo (para preguntas en vivo)
-  const [superDestacado, setSuperDestacado] = useState(null);
-
-  const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
-  const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
-  const [textoMensaje, setTextoMensaje] = useState("");
-  const [urlMensaje,   setUrlMensaje]   = useState("");
-  const [enviandoMsg,  setEnviandoMsg]  = useState(false);
-  const [msgEnviado,   setMsgEnviado]   = useState(false);
-  const hoy = hoyStr();
-
-  useEffect(() => { cargarDatos(); }, []);
-  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
-  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
-
-  const cargarDatos = async () => {
-    setCargando(true);
-    try {
-      let lista = [];
+  // Cargar datos del partido
+  useEffect(() => {
+    if (!partidoId) return;
+    const cargarPartido = async () => {
       try {
-        // Partidos de hoy
-        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
-        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
+        const snap = await getDoc(doc(db, "partidos", partidoId));
+        if (snap.exists()) setPartidoData(snap.data());
+      } catch (e) {
+        console.error("Error cargando partido:", e);
+      }
+    };
+    cargarPartido();
+  }, [partidoId]);
 
-        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
-        let d16Lista = [];
-        try {
-          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
-          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
-        } catch(_) {}
+  // Polling de preguntas en vivo
+  useEffect(() => {
+    if (!partidoId) return;
+    let intervalo;
 
-        // Combinar sin duplicados
-        const idsHoy = new Set(hoyLista.map(p => p.id));
-        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
-      } catch(_) {}
-      setPartidos(lista);
-
-      // Detectar partido super destacado activo (sin resultado)
-      const sd = lista.find(p => p.esSuperDestacado && !p.resultado);
-      setSuperDestacado(sd || null);
-
+    const cargarPreguntas = async () => {
       try {
-        const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
-        if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
-      } catch(_) {}
-    } finally { setCargando(false); }
-  };
+        setCargando(true);
+        const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
 
-  const verificarPredicciones = async () => {
-    if (!firebaseUser) return;
-    const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
-    if (abiertos.length === 0) return;
-    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
-    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
-    const idsAbiertos = new Set(abiertos.map(p => p.id));
-    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
-    const nuevas = new Set();
-    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
-    setPrediccionesGuardadas(nuevas);
-  };
+        // 1. Buscar pregunta abierta
+        const qAbierta = query(ref, where("estado", "==", "abierta"));
+        const snapAbierta = await getDocs(qAbierta);
 
-  const verificarRespuestaPregunta = async () => {
-    if (!firebaseUser || !pregunta) return;
+        if (!snapAbierta.empty) {
+          const pregData = { id: snapAbierta.docs[0].id, ...snapAbierta.docs[0].data() };
+          setPreguntaActiva(pregData);
+          setResultado(null); // limpiar resultado anterior
+
+          // Verificar si ya respondí
+          if (firebaseUser) {
+            const respRef = doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
+              `${firebaseUser.uid}_${pregData.id}`);
+            const respSnap = await getDoc(respRef);
+            if (respSnap.exists()) setMiRespuesta(respSnap.data().respuesta);
+            else setMiRespuesta(null);
+          }
+        } else {
+          // 2. Si no hay abierta, buscar cerrada (resultado)
+          setPreguntaActiva(null);
+          const qCerrada = query(ref, where("estado", "==", "cerrada"));
+          const snapCerrada = await getDocs(qCerrada);
+          if (!snapCerrada.empty) {
+            const cerradas = snapCerrada.docs.map(d => ({ id: d.id, ...d.data() }))
+              .sort((a, b) => (b.creadaEn?.seconds || 0) - (a.creadaEn?.seconds || 0));
+            const ultima = cerradas[0];
+            const clave = `${LS_PREFIX}${partidoId}_${ultima.id}`;
+            const yaVista = localStorage.getItem(clave) === "true";
+            setResultado(ultima);
+            setResultadoVisto(yaVista);
+          } else {
+            setResultado(null);
+            setResultadoVisto(false);
+          }
+        }
+        setCargando(false);
+      } catch (e) {
+        console.error("Error en polling de preguntas:", e);
+        setCargando(false);
+      }
+    };
+
+    // Ejecutar al montar y luego cada 15 segundos
+    cargarPreguntas();
+    intervalo = setInterval(cargarPreguntas, 15000);
+
+    return () => clearInterval(intervalo);
+  }, [partidoId, firebaseUser]);
+
+  const responder = async (opcion) => {
+    if (!firebaseUser || !preguntaActiva || miRespuesta) return;
+    setEnviando(true);
     try {
-      const snap = await getDoc(doc(db,"respuestas",`${firebaseUser.uid}_${pregunta.id}`));
-      if (snap.exists()) setRespuestaUsuario(snap.data().respuesta || "✓");
-    } catch(_) {}
+      const respId = `${firebaseUser.uid}_${preguntaActiva.id}`;
+      await setDoc(
+        doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo", respId),
+        {
+          uid:        firebaseUser.uid,
+          preguntaId: preguntaActiva.id,
+          respuesta:  opcion,
+          partidoId,
+          timestamp:  serverTimestamp(),
+        }
+      );
+      setMiRespuesta(opcion);
+    } catch (e) { console.error(e); }
+    finally { setEnviando(false); }
   };
 
-  const handlePrediccionGuardada = useCallback(() => {
-    setTimeout(verificarPredicciones, 500);
-    if (onGuardado) onGuardado();
-    const lsKey = LS_HINCHADA_KEY + hoy;
-    if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
-  }, [partidos, firebaseUser, hoy]);
-
-  const cerrarModalHinchada = () => {
-    localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
-    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
-    setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
+  const ocultarResultado = () => {
+    if (!resultado) return;
+    const clave = `${LS_PREFIX}${partidoId}_${resultado.id}`;
+    localStorage.setItem(clave, "true");
+    setResultadoVisto(true);
   };
 
-  const enviarMensajeHinchada = async () => {
-    if (!textoMensaje.trim() || !firebaseUser) return;
-    setEnviandoMsg(true);
-    try {
-      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
-      const ahora = new Date();
-      await addDoc(col(db,"mensajesDia"), {
-        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
-        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
-        timestamp:serverTimestamp(), fecha:hoy,
-        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
-        uid:firebaseUser.uid,
-      });
-      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
-    } catch(e) { console.error(e); }
-    finally { setEnviandoMsg(false); }
-  };
+  // ── Si no hay partidoId, no renderizar nada ──────────────
+  if (!partidoId) return null;
 
-  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
-  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
+  // ── Si hay resultado y ya fue visto, ocultar ──────────────
+  if (resultado && resultadoVisto) return null;
 
-  if (cargando) return (
-    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
-      <span className="spinner">⚙</span><p>CARGANDO...</p>
-    </div>
-  );
+  // ── Si no hay pregunta activa ni resultado, no mostrar ────
+  if (!preguntaActiva && !resultado) return null;
 
+  // ── Datos para mostrar ─────────────────────────────────────
+  const localBandera = partidoData?.local?.bandera || "🏳️";
+  const visitanteBandera = partidoData?.visitante?.bandera || "🏳️";
+  const localNombre = partidoData?.local?.nombre || "Local";
+  const visitanteNombre = partidoData?.visitante?.nombre || "Visitante";
+  const nombreMostrado = partidoData
+    ? `${localNombre} vs ${visitanteNombre}`
+    : nombrePartido || "Partido en vivo";
+  const imgFondo = `/pvivo_${partidoId || '0'}.jpg`;
+
+  // ── Renderizado ─────────────────────────────────────────────
   return (
-    <div style={{ paddingBottom:"80px" }}>
-      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
-      {superDestacado && (
-        <SuperDestacado
-          partidoId={superDestacado.id}
-          nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
-        />
-      )}
+    <div style={{
+      position: "fixed",
+      bottom: "80px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "calc(100% - 24px)",
+      maxWidth: "420px",
+      zIndex: 500,
+      fontFamily: "'Press Start 2P', monospace",
+    }}>
+      {/* Pregunta abierta */}
+      {preguntaActiva && (
+        <div style={{
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: "8px",
+          border: "4px solid var(--rojo-chile)",
+          boxShadow: "0 0 30px rgba(214,40,40,0.7), 4px 4px 0 var(--rojo-oscuro)",
+          animation: "pulseRojo 2s infinite",
+          background: "#0a0a0a",
+        }}>
+          {/* Fondo con imagen */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: `url(${imgFondo})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.25,
+            filter: "brightness(0.6) saturate(1.2)",
+          }} />
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)",
+          }} />
 
-      {/* Modal hinchada */}
-      {mostrarModalHinchada && (
-        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
-          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
-          <div style={{ background:"var(--negro)",border:"4px solid var(--amarillo)",
-            boxShadow:"6px 6px 0 var(--amarillo-oscuro)",
-            padding:"24px 20px",maxWidth:"360px",width:"100%",
-            display:"flex",flexDirection:"column",gap:"14px" }}>
-            {!mostrarFormHinchada ? (
-              <>
-                <p style={{ fontSize:"24px",textAlign:"center" }}>📢</p>
-                <p style={{ fontSize:"8px",color:"var(--blanco)",textAlign:"center",lineHeight:2 }}>
-                  ¿Algún mensaje<br/>para la hinchada?
-                </p>
-                <div style={{ display:"flex",gap:"8px" }}>
-                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
-                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
-                  <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
-                    onClick={cerrarModalHinchada}>NO</button>
-                </div>
-              </>
-            ) : msgEnviado ? (
-              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
-            ) : (
-              <>
-                <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
-                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
-                  placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-                    width:"100%",padding:"8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",
-                    outline:"none",resize:"none",lineHeight:2 }} />
-                <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
-                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
-                  placeholder="URL opcional"
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-                    width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
-                <div style={{ display:"flex",gap:"8px" }}>
-                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
-                    onClick={enviarMensajeHinchada}
-                    disabled={enviandoMsg||!textoMensaje.trim()}>
-                    {enviandoMsg?"⚙...":"✅ ENVIAR"}
+          <div style={{ position: "relative", padding: "16px 14px 14px", zIndex: 1 }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "8px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "28px", lineHeight: 1 }}>{localBandera}</span>
+                <span style={{ fontSize: "6px", color: "var(--gris-claro)" }}>vs</span>
+                <span style={{ fontSize: "28px", lineHeight: 1 }}>{visitanteBandera}</span>
+              </div>
+              <span style={{
+                fontSize: "6px",
+                color: "var(--amarillo)",
+                background: "rgba(244,208,63,0.15)",
+                padding: "2px 6px",
+                border: "1px solid var(--amarillo)",
+              }}>
+                +{PTS_EN_VIVO} pts
+              </span>
+            </div>
+
+            <p style={{
+              fontSize: "6px",
+              color: "var(--blanco)",
+              marginBottom: "8px",
+              textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
+            }}>
+              🔴 EN VIVO — {nombreMostrado}
+            </p>
+
+            <p style={{
+              fontSize: "8px",
+              color: "var(--blanco)",
+              lineHeight: 2,
+              marginBottom: "12px",
+              textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
+              fontWeight: "bold",
+            }}>
+              {preguntaActiva.texto}
+            </p>
+
+            {!miRespuesta ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {(preguntaActiva.opciones || []).map((op, i) => (
+                  <button key={i}
+                    onClick={() => responder(op)}
+                    disabled={enviando}
+                    style={{
+                      fontFamily: "'Press Start 2P',monospace",
+                      fontSize: "7px",
+                      padding: "8px 10px",
+                      background: "rgba(0,0,0,0.6)",
+                      border: "2px solid rgba(255,255,255,0.2)",
+                      color: "var(--blanco)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "border-color 0.1s, background 0.1s",
+                      backdropFilter: "blur(4px)",
+                    }}
+                    onMouseEnter={e => {
+                      e.target.style.borderColor = "var(--amarillo)";
+                      e.target.style.background = "rgba(244,208,63,0.15)";
+                    }}
+                    onMouseLeave={e => {
+                      e.target.style.borderColor = "rgba(255,255,255,0.2)";
+                      e.target.style.background = "rgba(0,0,0,0.6)";
+                    }}
+                  >
+                    {op}
                   </button>
-                  <button className="btn-pixel btn-gris" style={{ fontSize:"7px" }}
-                    onClick={cerrarModalHinchada}>✕</button>
-                </div>
-              </>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign:"center", padding:"8px", background:"rgba(0,0,0,0.5)", borderRadius:"4px" }}>
+                <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
+                  ✅ Respondiste: <strong style={{ color:"var(--amarillo)" }}>{miRespuesta}</strong>
+                </p>
+                <p style={{ fontSize:"6px", color:"var(--gris-claro)", marginTop:"4px" }}>
+                  Esperando que el admin cierre la pregunta...
+                </p>
+              </div>
             )}
           </div>
         </div>
       )}
 
-      <div className="contenedor">
-        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
-        {partidos.length>0 ? (
-          partidos.map(p => (
-            <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
-          ))
-        ) : (
-          <div className="caja-pixel mb-16 text-center">
-            <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
+      {/* Resultado de pregunta cerrada */}
+      {!preguntaActiva && resultado && !resultadoVisto && (
+        <ResultadoEnVivo
+          resultado={resultado}
+          miRespuesta={miRespuesta}
+          onCerrar={ocultarResultado}
+          localBandera={localBandera}
+          visitanteBandera={visitanteBandera}
+          nombrePartido={nombreMostrado}
+          imgFondo={imgFondo}
+        />
+      )}
+
+      <style>{`
+        @keyframes pulseRojo {
+          0%,100% { box-shadow: 0 0 15px rgba(214,40,40,0.5), 4px 4px 0 var(--rojo-oscuro); }
+          50%      { box-shadow: 0 0 40px rgba(214,40,40,0.9), 4px 4px 0 var(--rojo-oscuro); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function ResultadoEnVivo({
+  resultado,
+  miRespuesta,
+  onCerrar,
+  localBandera,
+  visitanteBandera,
+  nombrePartido,
+  imgFondo,
+}) {
+  const correcta   = resultado.respuestaCorrecta;
+  const acertaste  = miRespuesta === correcta;
+
+  return (
+    <div style={{
+      position: "relative",
+      overflow: "hidden",
+      borderRadius: "8px",
+      border: `4px solid ${acertaste ? "var(--verde-claro)" : "var(--gris)"}`,
+      boxShadow: `0 0 30px ${acertaste ? "rgba(82,183,136,0.5)" : "rgba(255,255,255,0.1)"}, 4px 4px 0 var(--negro)`,
+      background: "#0a0a0a",
+    }}>
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        backgroundImage: `url(${imgFondo})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        opacity: 0.2,
+        filter: "brightness(0.5) saturate(0.8)",
+      }} />
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.8) 100%)",
+      }} />
+
+      <div style={{ position: "relative", padding: "14px", zIndex: 1 }}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "8px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "28px", lineHeight: 1 }}>{localBandera}</span>
+            <span style={{ fontSize: "6px", color: "var(--gris-claro)" }}>vs</span>
+            <span style={{ fontSize: "28px", lineHeight: 1 }}>{visitanteBandera}</span>
           </div>
-        )}
-        {abiertos.length>0 && (
-          <div style={{ padding:"8px 12px",marginBottom:"12px",
-            border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
-            fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-            color:"var(--verde-claro)",textAlign:"center" }}>
-            {todosPredecidos
-              ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
-              : `📝 ${prediccionesGuardadas.size} / ${abiertos.length} PRONÓSTICOS GUARDADOS`
+          <button
+            onClick={onCerrar}
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              color: "var(--blanco)",
+              cursor: "pointer",
+              fontSize: "14px",
+              padding: "2px 8px",
+              borderRadius: "4px",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <p style={{
+          fontSize: "6px",
+          color: "var(--gris-claro)",
+          marginBottom: "6px",
+          textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
+        }}>
+          RESULTADO EN VIVO — {nombrePartido}
+        </p>
+
+        <p style={{
+          fontSize: "7px",
+          color: "var(--blanco)",
+          lineHeight: 2,
+          marginBottom: "6px",
+          textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
+        }}>
+          {resultado.texto}
+        </p>
+
+        <p style={{
+          fontSize: "7px",
+          color: "var(--amarillo)",
+          marginBottom: "6px",
+          textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
+        }}>
+          ✅ Respuesta correcta: <strong>{correcta}</strong>
+        </p>
+
+        {miRespuesta ? (
+          <p style={{
+            fontSize: "7px",
+            color: acertaste ? "var(--verde-claro)" : "var(--rojo-chile)",
+            textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
+          }}>
+            {acertaste
+              ? `🎉 ¡Acertaste! +${PTS_EN_VIVO} pts`
+              : `❌ Tu respuesta: ${miRespuesta}`
             }
-          </div>
-        )}
-        {pregunta && (
-          <>
-            <div className="seccion-titulo">
-              ❓ PREGUNTA DEL DÍA
-              {respuestaUsuario && (
-                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
-                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
-                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
-              )}
-            </div>
-            <PreguntaCard pregunta={pregunta} />
-          </>
+          </p>
+        ) : (
+          <p style={{
+            fontSize: "7px",
+            color: "var(--gris-claro)",
+            textShadow: "2px 2px 0 rgba(0,0,0,0.8)",
+          }}>
+            No respondiste esta pregunta.
+          </p>
         )}
       </div>
     </div>
@@ -6466,6 +6376,198 @@ service cloud.firestore {
 
   }
 }
+</file>
+
+<file path="src/data/sampleData.js">
+// src/data/sampleData.js  — v3
+// ─────────────────────────────────────────────────────────────
+
+export const PARTIDOS_EJEMPLO = [
+  {
+    id: "p1",
+    fecha: "2026-06-11",
+    horaInicio: "12:00",
+    local:     { nombre: "Chile",    bandera: "🇨🇱" },
+    visitante: { nombre: "España",   bandera: "🇪🇸" },
+    fase: "grupos",
+    estaDestacado: true,
+    resultado: null,
+  },
+  {
+    id: "p2",
+    fecha: "2026-06-11",
+    horaInicio: "15:00",
+    local:     { nombre: "Brasil",   bandera: "🇧🇷" },
+    visitante: { nombre: "Argentina",bandera: "🇦🇷" },
+    fase: "grupos",
+    estaDestacado: false,
+    resultado: null,
+  },
+  {
+    id: "p3",
+    fecha: "2026-06-11",
+    horaInicio: "18:00",
+    local:     { nombre: "Francia",  bandera: "🇫🇷" },
+    visitante: { nombre: "Alemania", bandera: "🇩🇪" },
+    fase: "grupos",
+    estaDestacado: false,
+    resultado: null,
+  },
+];
+
+export const PREGUNTAS_EJEMPLO = [
+  {
+    id: "q1",
+    fecha: "2026-06-11",
+    texto: "¿Cuántos goles se marcarán en el partido Chile vs España?",
+    opciones: ["0-1 goles", "2-3 goles", "4-5 goles", "6 o más"],
+    respuestaCorrecta: null,
+  },
+];
+
+// ── FRASES DEL DÍA ─────────────────────────────────────────────
+// Una por cada día del mundial (o más); se rotan cíclicamente.
+export const FRASES_DEL_DIA = [
+  "El lunes\nquieres cambiarlos a todos,\nel viernes piensas\nque puedes recuperar a cinco o seis,\ny el domingo juegan los mismos\nonce cabrones de siempre.\n\nJ.B Toshack",
+  "La prensa es muy mentirosa.\nDicen que me he acostado con 200 mujeres, pero solo fueron 100.\n\n George Best",
+  "El fútbol es un deporte que inventaron los ingleses,\njuegan once contra once, y siempre gana Alemania.\n\nGary Lineker",
+  "Dios estaba de nuestro lado,\npero el árbitro era francés.\n\nHristo Stoichkov",
+  "Un partido de fútbol sin goles,\nes como un domingo sin sol.\n\n- Di Stefano",
+  "El fútbol es la única religión\nque no tiene ateos.\n\nEduardo Galeano",
+  "No hay nada más peligroso\nque no arriesgarse.\n\nPep Guardiola",
+  "Dios es redondo.\n\nJuan Villoro",
+  "Como presidente del club tengo la obligación\nde respaldar al técnico del equipo\nhasta cinco minutos antes de echarlo.\n\nAlfredo Davicce, presidente del Inter",
+  "Nosotros no compramos superestrellas.\nNosotros las hacemos.\n\nArsène Wenger",
+  "Siempre es difícil perder\npara quien no está acostumbrado.\n\nMourinho",
+  "En el fútbol opino lo mismo\nque Ivan Lendl respecto al tenis:\nsi quieres tener un amigo,\ncómprate un perro.\n\nMarco van Basten",
+  "Si yo hubiese nacido feo,\nno habríais oído hablar de Pelé.\n\nGeorge Best",
+  "¿Usted ya se puso de acuerdo con los rivales\npara dejarnos hacer todo eso?\n\nGarrincha",
+  "Ver fútbol es como ver sexo.\nEstá bien, pero es mejor practicarlo.\n\nAlex James",
+  "Algunas personas creen que el fútbol\nes una cuestión de vida o muerte.\nMe decepciona esa actitud. Es más importante que eso.\n\nBill Shanky",
+  "Tenemos la mejor hinchada del mundo,\npero nunca he visto a un hincha marcar un gol.\n\nJock Stein",
+  "A mí siempre me pareció más interesante\n marcar un autogol que un gol.\nUn gol, salvo si uno se llama Pelé, es algo eminentemente vulgar y muy descortés con el arquero contrario\nmientras que un autogol es un gesto de independencia.\n\nRoberto Bolaño",
+  "El fútbol es un milagro que le permitió a Europa\nodiarse sin destruirse.\n\nPaul Auster",
+  "Gasté mucho dinero en coches,\nalcohol y mujeres.\nEl resto lo he malgastado.\n\nGeorge Best",
+  "El fútbol es como el ajedrez\npero sin dados.\n\nLukas Podolski",
+  "Recibí un golpe en mi tobillo izquierdo.\nPero algo me dijo que era mi derecho.\n\nLee Hendrie",
+  "Voy a correr como un negro\npara vivir como un blanco.\n\nSamuel Eto`o",
+  "Bueno, del país no puedo contarles nada…\nsolo puedo adelantarle que se trata\nde un equipo brasileño…\n\nMurci Rojas",
+  "…y bueno,\nsin duda es difícil jugar\na 3.000 kilómetros de altura\n\nManuel López",
+  "Esta ciudad tiene dos grandes equipos:\nel Liverpool y los suplentes del Liverpool.\n\nBill Shankly",
+  "Yo crecí en un barrio\nprivado de Buenos Aires…\nPrivado de agua, de luz y de teléfono.\n\nMaradona",
+  "No me importaría perder todos los partidos,\nsiempre y cuando ganemos la Liga.\n\nMark Viduka",
+  "Cuando un equipo anda bien,\nno anda mal y viceversa.\n\nMariano Puyol",
+  "Primero que nada un saludo\n a todos los señores televisores.\n\nJuan Carlos Letelier",
+  "A veces, en el fútbol,\ntienes que marcar goles.\n\nThierry Henry",
+  "El que inventó el color de camisetas es un fenómeno,\nLos del mismo color se la pasan entre ellos\ny patean al arco donde está el tipo\nque no almorzó con nosotros.\n\nBilardo",
+  "No hay nada entre medio.\nO eres bueno, o eres malo.\nNosotros estuvimos entre medio.\n\nGary Lineker",
+  "En 1969 dejé las mujeres y el alcohol.\nFueron los peores 20 minutos de mi vida.”\n\nGeorge Best",
+  "¿Cuántos pulmones tengo?\nBueno… Uno, como toda la gente, ¿no?\n\nHéctor Puebla",
+  "El fútbol es la cosa más importante\nde las cosas menos importantes.\n\nJorge Valdano",
+  "Ganar no es lo importante,\nsiempre y cuando ganes.\n\nVinnie Jones",
+  "En un partido de fútbol\ntodo se complica por la presencia\ndel equipo contrario.\n\nJean Paul Sartre",
+  "El Golde Maradona con la mano es,\npor ahora, la única prueba fiable\nde la existencia de Dios.\n\nMario Benedetti",
+  "El fútbol\nes la recuperación semanal de la infancia.\n\nJavier Marías",
+  "La cancha es el único lugar\ndonde los pobres pueden cobrar revancha\n\nJuan Villoro",
+];
+
+// ── AVATARES — 12 personajes con imágenes animadas ────────────
+// Las imágenes se guardan en /public/avatares/
+// Nombre de archivo: {slug}-1.png, {slug}-2.png, {slug}-3.png
+export const AVATARES = [
+  { id: "av1",  slug: "chancho-lorenzo",        nombre: "Chancho Lorenzo"         },
+  { id: "av2",  slug: "azkargorta",             nombre: "Azkargorta"              },
+  { id: "av3",  slug: "chinquihuin",            nombre: "Chinquihuin"             },
+  { id: "av4",  slug: "julio-martinez",         nombre: "Julio Martínez"          },
+  { id: "av5",  slug: "caszely",               nombre: "Caszely"                 },
+  { id: "av6",  slug: "dr-orozco",             nombre: "Dr Orozco"               },
+  { id: "av7",  slug: "peter-veneno",          nombre: "Peter Veneno"            },
+  { id: "av8",  slug: "bielsa",               nombre: "Bielsa"                  },
+  { id: "av9",  slug: "carcuro",              nombre: "Carcuro"                 },
+  { id: "av10", slug: "el-sapo",              nombre: "El Sapo"                 },
+  { id: "av11", slug: "el-hombre-del-maletin", nombre: "El Hombre del Maletín"   },
+  { id: "av12", slug: "ff17",                 nombre: "FF17"                    },
+];
+
+// Helper: retorna la URL del fotograma N (1, 2 o 3) de un avatar
+export function avatarFrame(slug, frame) {
+  return `/avatares/${slug}-${frame}.png`;
+}
+
+// ── CARTAS COLECCIONABLES ──────────────────────────────────────
+// Imágenes en /public/cartas/{slug}.png
+// multiplicador: 4 | 3 | 2
+export const CARTAS = [
+  // x4 — Legendarias
+  { id: "cx4-1", slug: "vargas-elimina-espana",   nombre: "Vargas elimina a España",      multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-2", slug: "penal-gato-silva",         nombre: "El Penal del Gato Silva",       multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-3", slug: "maniobra-heimlich",         nombre: "La Maniobra de Heimlich",       multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-4", slug: "el-perro-ron",             nombre: "El Perro Ron",                  multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-5", slug: "el-maracanazo",            nombre: "El Maracanazo",                 multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-6", slug: "el-dedo-de-jarita",        nombre: "El dedo de Jarita",             multiplicador: 4, rareza: "legendaria" },
+  // x3 — Raras
+  { id: "cx3-1", slug: "historico-orellana",       nombre: "El histórico de Orellana",      multiplicador: 3, rareza: "rara" },
+  { id: "cx3-2", slug: "matador-en-wembley",       nombre: "El Matador en Wembley",          multiplicador: 3, rareza: "rara" },
+  { id: "cx3-3", slug: "mi-familia-esta-bien",      nombre: "Mi familia está bien",           multiplicador: 3, rareza: "rara" },
+  { id: "cx3-4", slug: "ahi-quedo-brasil",         nombre: "Ahí Quedó Brasil",              multiplicador: 3, rareza: "rara" },
+  { id: "cx3-5", slug: "el-palo-de-pinilla",       nombre: "El Palo de Pinilla",             multiplicador: 3, rareza: "rara" },
+  { id: "cx3-6", slug: "pero-con-respeto",         nombre: "Pero con Respeto",              multiplicador: 3, rareza: "rara" },
+  // x2 — Comunes
+  { id: "cx2-1", slug: "las-luces-rojas",          nombre: "Las Luces Rojas",               multiplicador: 2, rareza: "comun" },
+  { id: "cx2-2", slug: "vargas-ataja-chilavert",   nombre: "Vargas ataja a Chilavert",      multiplicador: 2, rareza: "comun" },
+  { id: "cx2-3", slug: "que-sucede",               nombre: "¿Qué sucede?",                  multiplicador: 2, rareza: "comun" },
+  { id: "cx2-4", slug: "el-dublinazo",             nombre: "El dublinazo",                  multiplicador: 2, rareza: "comun" },
+  { id: "cx2-5", slug: "lesion-a-francescoli",     nombre: "Lesión a Francescoli",          multiplicador: 2, rareza: "comun" },
+  { id: "cx2-6", slug: "el-bautizazo",             nombre: "El Bautizazo",                  multiplicador: 2, rareza: "comun" },
+];
+
+// Helpers de cartas
+export function getCarta(cartaId) {
+  return CARTAS.find((c) => c.id === cartaId) || null;
+}
+
+export function cartasPorMultiplicador(multi) {
+  return CARTAS.filter((c) => c.multiplicador === multi);
+}
+
+export function cartaAleatoriaPorMultiplicador(multi) {
+  const pool = cartasPorMultiplicador(multi);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── FASES ──────────────────────────────────────────────────────
+export const FASE_LABELS = {
+  grupos:        "Fase de Grupos",
+  dieciseisavos: "Dieciseisavos de Final",
+  octavos:       "Octavos de Final",
+  cuartos:       "Cuartos de Final",
+  semifinal:     "Semifinal",
+  tercer_lugar:  "Tercer y Cuarto Lugar",
+  final:         "FINAL",
+};
+
+export const FASES_ELIMINATORIAS = [
+  "dieciseisavos", "octavos", "cuartos",
+  "semifinal", "tercer_lugar", "final",
+];
+
+// ── BANCO DE PREGUNTAS (estructura para el admin) ──────────────
+// El admin elige una de estas para el día.
+// Las opciones reales las pondrás tú; por ahora el array tiene
+// la estructura correcta para 104 preguntas.
+export const BANCO_PREGUNTAS = [
+  {
+    id: "bq1",
+    texto: "Cuántos goles se marcan hoy",
+    opciones: ["ente 0 y 1", "2", "mas de 3","100"],
+  },
+  {
+    id: "bq2",
+    texto: "¿Quién será el jugador del partido en el Chile vs España?",
+    opciones: ["Vargas", "Alexis", "Pulgar", "Otro"],
+  },
+  // → Agrega las 104 preguntas aquí con el mismo formato.
+];
 </file>
 
 <file path="src/utils/helpers.js">
@@ -7403,6 +7505,289 @@ export default function VozHinchada() {
 }
 </file>
 
+<file path="src/components/TabPartidos.jsx">
+// src/components/TabPartidos.jsx  — v8 (Fase 4)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v8:
+//   Punto 10: Integra <SuperDestacado> para partidos con
+//             esSuperDestacado:true. El componente escucha en
+//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
+//   Todo lo demás idéntico a v7.
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  collection, getDocs, query, where, doc, getDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { hoyStr, partidoAbierto } from "../utils/helpers";
+import PartidoCard from "./PartidoCard";
+import PreguntaCard from "./PreguntaCard";
+import SuperDestacado from "./SuperDestacado";
+
+const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
+
+// ── Hook: sonido ambiental ────────────────────────────────────
+function useSonidoAmbiental(activado) {
+  const audioRef = useRef(null);
+  useEffect(() => {
+    let activo = true;
+    const iniciar = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "sonidoDia"));
+        if (!snap.exists() || !activo) return;
+        const { archivo, volumen = 0.4 } = snap.data();
+        if (!archivo || !activado) return;
+        const audio = new Audio(`/sounds/${archivo}`);
+        audio.loop = true; audio.volume = 0;
+        audioRef.current = audio;
+        await audio.play().catch(() => {});
+        let vol = 0;
+        const target = Math.min(1, Math.max(0, Number(volumen)));
+        const fade = setInterval(() => {
+          if (!activo) { clearInterval(fade); return; }
+          vol = Math.min(target, vol + 0.02);
+          if (audioRef.current) audioRef.current.volume = vol;
+          if (vol >= target) clearInterval(fade);
+        }, 80);
+      } catch(_) {}
+    };
+    iniciar();
+    return () => {
+      activo = false;
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    };
+  }, [activado]);
+  useEffect(() => {
+    if (!audioRef.current) return;
+    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
+  }, [activado]);
+}
+
+export default function TabPartidos({ onGuardado }) {
+  const { firebaseUser } = useAuth();
+  const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
+  useSonidoAmbiental(sonidosActivados);
+
+  const [partidos,    setPartidos]    = useState([]);
+  const [pregunta,    setPregunta]    = useState(null);
+  const [cargando,    setCargando]    = useState(true);
+  const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
+  const [respuestaUsuario, setRespuestaUsuario] = useState(null);
+
+  // Partido super destacado activo (para preguntas en vivo)
+  const [superDestacado, setSuperDestacado] = useState(null);
+
+  const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
+  const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
+  const [textoMensaje, setTextoMensaje] = useState("");
+  const [urlMensaje,   setUrlMensaje]   = useState("");
+  const [enviandoMsg,  setEnviandoMsg]  = useState(false);
+  const [msgEnviado,   setMsgEnviado]   = useState(false);
+  const hoy = hoyStr();
+
+  useEffect(() => { cargarDatos(); }, []);
+  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
+  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
+
+  const cargarDatos = async () => {
+    setCargando(true);
+    try {
+      let lista = [];
+      try {
+        // Partidos de hoy
+        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
+        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
+
+        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
+        let d16Lista = [];
+        try {
+          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
+          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
+        } catch(_) {}
+
+        // Combinar sin duplicados
+        const idsHoy = new Set(hoyLista.map(p => p.id));
+        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
+      } catch(_) {}
+      setPartidos(lista);
+
+      // Detectar partido super destacado activo (sin resultado)
+      const sd = lista.find(p => p.esSuperDestacado && !p.resultado);
+      setSuperDestacado(sd || null);
+
+      try {
+        const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
+        if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
+      } catch(_) {}
+    } finally { setCargando(false); }
+  };
+
+  const verificarPredicciones = async () => {
+    if (!firebaseUser) return;
+    const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
+    if (abiertos.length === 0) return;
+    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
+    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
+    const idsAbiertos = new Set(abiertos.map(p => p.id));
+    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
+    const nuevas = new Set();
+    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
+    setPrediccionesGuardadas(nuevas);
+  };
+
+  const verificarRespuestaPregunta = async () => {
+    if (!firebaseUser || !pregunta) return;
+    try {
+      const snap = await getDoc(doc(db,"respuestas",`${firebaseUser.uid}_${pregunta.id}`));
+      if (snap.exists()) setRespuestaUsuario(snap.data().respuesta || "✓");
+    } catch(_) {}
+  };
+
+  const handlePrediccionGuardada = useCallback(() => {
+    setTimeout(verificarPredicciones, 500);
+    if (onGuardado) onGuardado();
+    const lsKey = LS_HINCHADA_KEY + hoy;
+    if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
+  }, [partidos, firebaseUser, hoy]);
+
+  const cerrarModalHinchada = () => {
+    localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
+    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
+    setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
+  };
+
+  const enviarMensajeHinchada = async () => {
+    if (!textoMensaje.trim() || !firebaseUser) return;
+    setEnviandoMsg(true);
+    try {
+      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
+      const ahora = new Date();
+      await addDoc(col(db,"mensajesDia"), {
+        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
+        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
+        timestamp:serverTimestamp(), fecha:hoy,
+        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
+        uid:firebaseUser.uid,
+      });
+      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
+    } catch(e) { console.error(e); }
+    finally { setEnviandoMsg(false); }
+  };
+
+  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
+  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
+
+  if (cargando) return (
+    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
+      <span className="spinner">⚙</span><p>CARGANDO...</p>
+    </div>
+  );
+
+  return (
+    <div style={{ paddingBottom:"80px" }}>
+      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
+      {superDestacado && (
+  <SuperDestacado
+    partidoId={superDestacado.id}
+    nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
+  />
+)}
+
+      {/* Modal hinchada */}
+      {mostrarModalHinchada && (
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
+          <div style={{ background:"var(--negro)",border:"4px solid var(--amarillo)",
+            boxShadow:"6px 6px 0 var(--amarillo-oscuro)",
+            padding:"24px 20px",maxWidth:"360px",width:"100%",
+            display:"flex",flexDirection:"column",gap:"14px" }}>
+            {!mostrarFormHinchada ? (
+              <>
+                <p style={{ fontSize:"24px",textAlign:"center" }}>📢</p>
+                <p style={{ fontSize:"8px",color:"var(--blanco)",textAlign:"center",lineHeight:2 }}>
+                  ¿Algún mensaje<br/>para la hinchada?
+                </p>
+                <div style={{ display:"flex",gap:"8px" }}>
+                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
+                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
+                  <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
+                    onClick={cerrarModalHinchada}>NO</button>
+                </div>
+              </>
+            ) : msgEnviado ? (
+              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
+            ) : (
+              <>
+                <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
+                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
+                  placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
+                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
+                    width:"100%",padding:"8px",border:"2px solid var(--negro)",
+                    background:"var(--blanco)",color:"var(--negro)",
+                    outline:"none",resize:"none",lineHeight:2 }} />
+                <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
+                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
+                  placeholder="URL opcional"
+                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+                    width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
+                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
+                <div style={{ display:"flex",gap:"8px" }}>
+                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
+                    onClick={enviarMensajeHinchada}
+                    disabled={enviandoMsg||!textoMensaje.trim()}>
+                    {enviandoMsg?"⚙...":"✅ ENVIAR"}
+                  </button>
+                  <button className="btn-pixel btn-gris" style={{ fontSize:"7px" }}
+                    onClick={cerrarModalHinchada}>✕</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="contenedor">
+        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
+        {partidos.length>0 ? (
+          partidos.map(p => (
+            <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
+          ))
+        ) : (
+          <div className="caja-pixel mb-16 text-center">
+            <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
+          </div>
+        )}
+        {abiertos.length>0 && (
+          <div style={{ padding:"8px 12px",marginBottom:"12px",
+            border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
+            fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+            color:"var(--verde-claro)",textAlign:"center" }}>
+            {todosPredecidos
+              ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
+              : `📝 ${prediccionesGuardadas.size} / ${abiertos.length} PRONÓSTICOS GUARDADOS`
+            }
+          </div>
+        )}
+        {pregunta && (
+          <>
+            <div className="seccion-titulo">
+              ❓ PREGUNTA DEL DÍA
+              {respuestaUsuario && (
+                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
+                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
+                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
+              )}
+            </div>
+            <PreguntaCard pregunta={pregunta} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="src/components/PartidoCard.jsx">
 // src/components/PartidoCard.jsx  — v6 (Fase 3)
 // ─────────────────────────────────────────────────────────────
@@ -7999,198 +8384,6 @@ function PartidoCard({ partido, onGuardado }) {
 // Memo: evita re-render de todas las cards cuando el padre cambia
 // estado no relacionado (onGuardado va memorizado con useCallback).
 export default React.memo(PartidoCard);
-</file>
-
-<file path="src/data/sampleData.js">
-// src/data/sampleData.js  — v3
-// ─────────────────────────────────────────────────────────────
-
-export const PARTIDOS_EJEMPLO = [
-  {
-    id: "p1",
-    fecha: "2026-06-11",
-    horaInicio: "12:00",
-    local:     { nombre: "Chile",    bandera: "🇨🇱" },
-    visitante: { nombre: "España",   bandera: "🇪🇸" },
-    fase: "grupos",
-    estaDestacado: true,
-    resultado: null,
-  },
-  {
-    id: "p2",
-    fecha: "2026-06-11",
-    horaInicio: "15:00",
-    local:     { nombre: "Brasil",   bandera: "🇧🇷" },
-    visitante: { nombre: "Argentina",bandera: "🇦🇷" },
-    fase: "grupos",
-    estaDestacado: false,
-    resultado: null,
-  },
-  {
-    id: "p3",
-    fecha: "2026-06-11",
-    horaInicio: "18:00",
-    local:     { nombre: "Francia",  bandera: "🇫🇷" },
-    visitante: { nombre: "Alemania", bandera: "🇩🇪" },
-    fase: "grupos",
-    estaDestacado: false,
-    resultado: null,
-  },
-];
-
-export const PREGUNTAS_EJEMPLO = [
-  {
-    id: "q1",
-    fecha: "2026-06-11",
-    texto: "¿Cuántos goles se marcarán en el partido Chile vs España?",
-    opciones: ["0-1 goles", "2-3 goles", "4-5 goles", "6 o más"],
-    respuestaCorrecta: null,
-  },
-];
-
-// ── FRASES DEL DÍA ─────────────────────────────────────────────
-// Una por cada día del mundial (o más); se rotan cíclicamente.
-export const FRASES_DEL_DIA = [
-  "El lunes\nquieres cambiarlos a todos,\nel viernes piensas\nque puedes recuperar a cinco o seis,\ny el domingo juegan los mismos\nonce cabrones de siempre.\n\nJ.B Toshack",
-  "La prensa es muy mentirosa.\nDicen que me he acostado con 200 mujeres, pero solo fueron 100.\n\n George Best",
-  "El fútbol es un deporte que inventaron los ingleses,\njuegan once contra once, y siempre gana Alemania.\n\nGary Lineker",
-  "Dios estaba de nuestro lado,\npero el árbitro era francés.\n\nHristo Stoichkov",
-  "Un partido de fútbol sin goles,\nes como un domingo sin sol.\n\n- Di Stefano",
-  "El fútbol es la única religión\nque no tiene ateos.\n\nEduardo Galeano",
-  "No hay nada más peligroso\nque no arriesgarse.\n\nPep Guardiola",
-  "Dios es redondo.\n\nJuan Villoro",
-  "Como presidente del club tengo la obligación\nde respaldar al técnico del equipo\nhasta cinco minutos antes de echarlo.\n\nAlfredo Davicce, presidente del Inter",
-  "Nosotros no compramos superestrellas.\nNosotros las hacemos.\n\nArsène Wenger",
-  "Siempre es difícil perder\npara quien no está acostumbrado.\n\nMourinho",
-  "En el fútbol opino lo mismo\nque Ivan Lendl respecto al tenis:\nsi quieres tener un amigo,\ncómprate un perro.\n\nMarco van Basten",
-  "Si yo hubiese nacido feo,\nno habríais oído hablar de Pelé.\n\nGeorge Best",
-  "¿Usted ya se puso de acuerdo con los rivales\npara dejarnos hacer todo eso?\n\nGarrincha",
-  "Ver fútbol es como ver sexo.\nEstá bien, pero es mejor practicarlo.\n\nAlex James",
-  "Algunas personas creen que el fútbol\nes una cuestión de vida o muerte.\nMe decepciona esa actitud. Es más importante que eso.\n\nBill Shanky",
-  "Tenemos la mejor hinchada del mundo,\npero nunca he visto a un hincha marcar un gol.\n\nJock Stein",
-  "A mí siempre me pareció más interesante\n marcar un autogol que un gol.\nUn gol, salvo si uno se llama Pelé, es algo eminentemente vulgar y muy descortés con el arquero contrario\nmientras que un autogol es un gesto de independencia.\n\nRoberto Bolaño",
-  "El fútbol es un milagro que le permitió a Europa\nodiarse sin destruirse.\n\nPaul Auster",
-  "Gasté mucho dinero en coches,\nalcohol y mujeres.\nEl resto lo he malgastado.\n\nGeorge Best",
-  "El fútbol es como el ajedrez\npero sin dados.\n\nLukas Podolski",
-  "Recibí un golpe en mi tobillo izquierdo.\nPero algo me dijo que era mi derecho.\n\nLee Hendrie",
-  "Voy a correr como un negro\npara vivir como un blanco.\n\nSamuel Eto`o",
-  "Bueno, del país no puedo contarles nada…\nsolo puedo adelantarle que se trata\nde un equipo brasileño…\n\nMurci Rojas",
-  "…y bueno,\nsin duda es difícil jugar\na 3.000 kilómetros de altura\n\nManuel López",
-  "Esta ciudad tiene dos grandes equipos:\nel Liverpool y los suplentes del Liverpool.\n\nBill Shankly",
-  "Yo crecí en un barrio\nprivado de Buenos Aires…\nPrivado de agua, de luz y de teléfono.\n\nMaradona",
-  "No me importaría perder todos los partidos,\nsiempre y cuando ganemos la Liga.\n\nMark Viduka",
-  "Cuando un equipo anda bien,\nno anda mal y viceversa.\n\nMariano Puyol",
-  "Primero que nada un saludo\n a todos los señores televisores.\n\nJuan Carlos Letelier",
-  "A veces, en el fútbol,\ntienes que marcar goles.\n\nThierry Henry",
-  "El que inventó el color de camisetas es un fenómeno,\nLos del mismo color se la pasan entre ellos\ny patean al arco donde está el tipo\nque no almorzó con nosotros.\n\nBilardo",
-  "No hay nada entre medio.\nO eres bueno, o eres malo.\nNosotros estuvimos entre medio.\n\nGary Lineker",
-  "En 1969 dejé las mujeres y el alcohol.\nFueron los peores 20 minutos de mi vida.”\n\nGeorge Best",
-  "¿Cuántos pulmones tengo?\nBueno… Uno, como toda la gente, ¿no?\n\nHéctor Puebla",
-  "El fútbol es la cosa más importante\nde las cosas menos importantes.\n\nJorge Valdano",
-  "Ganar no es lo importante,\nsiempre y cuando ganes.\n\nVinnie Jones",
-  "En un partido de fútbol\ntodo se complica por la presencia\ndel equipo contrario.\n\nJean Paul Sartre",
-  "El Golde Maradona con la mano es,\npor ahora, la única prueba fiable\nde la existencia de Dios.\n\nMario Benedetti",
-  "El fútbol\nes la recuperación semanal de la infancia.\n\nJavier Marías",
-  "La cancha es el único lugar\ndonde los pobres pueden cobrar revancha\n\nJuan Villoro",
-];
-
-// ── AVATARES — 12 personajes con imágenes animadas ────────────
-// Las imágenes se guardan en /public/avatares/
-// Nombre de archivo: {slug}-1.png, {slug}-2.png, {slug}-3.png
-export const AVATARES = [
-  { id: "av1",  slug: "chancho-lorenzo",        nombre: "Chancho Lorenzo"         },
-  { id: "av2",  slug: "azkargorta",             nombre: "Azkargorta"              },
-  { id: "av3",  slug: "chinquihuin",            nombre: "Chinquihuin"             },
-  { id: "av4",  slug: "julio-martinez",         nombre: "Julio Martínez"          },
-  { id: "av5",  slug: "caszely",               nombre: "Caszely"                 },
-  { id: "av6",  slug: "dr-orozco",             nombre: "Dr Orozco"               },
-  { id: "av7",  slug: "peter-veneno",          nombre: "Peter Veneno"            },
-  { id: "av8",  slug: "bielsa",               nombre: "Bielsa"                  },
-  { id: "av9",  slug: "carcuro",              nombre: "Carcuro"                 },
-  { id: "av10", slug: "el-sapo",              nombre: "El Sapo"                 },
-  { id: "av11", slug: "el-hombre-del-maletin", nombre: "El Hombre del Maletín"   },
-  { id: "av12", slug: "ff17",                 nombre: "FF17"                    },
-];
-
-// Helper: retorna la URL del fotograma N (1, 2 o 3) de un avatar
-export function avatarFrame(slug, frame) {
-  return `/avatares/${slug}-${frame}.png`;
-}
-
-// ── CARTAS COLECCIONABLES ──────────────────────────────────────
-// Imágenes en /public/cartas/{slug}.png
-// multiplicador: 4 | 3 | 2
-export const CARTAS = [
-  // x4 — Legendarias
-  { id: "cx4-1", slug: "vargas-elimina-espana",   nombre: "Vargas elimina a España",      multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-2", slug: "penal-gato-silva",         nombre: "El Penal del Gato Silva",       multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-3", slug: "maniobra-heimlich",         nombre: "La Maniobra de Heimlich",       multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-4", slug: "el-perro-ron",             nombre: "El Perro Ron",                  multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-5", slug: "el-maracanazo",            nombre: "El Maracanazo",                 multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-6", slug: "el-dedo-de-jarita",        nombre: "El dedo de Jarita",             multiplicador: 4, rareza: "legendaria" },
-  // x3 — Raras
-  { id: "cx3-1", slug: "historico-orellana",       nombre: "El histórico de Orellana",      multiplicador: 3, rareza: "rara" },
-  { id: "cx3-2", slug: "matador-en-wembley",       nombre: "El Matador en Wembley",          multiplicador: 3, rareza: "rara" },
-  { id: "cx3-3", slug: "mi-familia-esta-bien",      nombre: "Mi familia está bien",           multiplicador: 3, rareza: "rara" },
-  { id: "cx3-4", slug: "ahi-quedo-brasil",         nombre: "Ahí Quedó Brasil",              multiplicador: 3, rareza: "rara" },
-  { id: "cx3-5", slug: "el-palo-de-pinilla",       nombre: "El Palo de Pinilla",             multiplicador: 3, rareza: "rara" },
-  { id: "cx3-6", slug: "pero-con-respeto",         nombre: "Pero con Respeto",              multiplicador: 3, rareza: "rara" },
-  // x2 — Comunes
-  { id: "cx2-1", slug: "las-luces-rojas",          nombre: "Las Luces Rojas",               multiplicador: 2, rareza: "comun" },
-  { id: "cx2-2", slug: "vargas-ataja-chilavert",   nombre: "Vargas ataja a Chilavert",      multiplicador: 2, rareza: "comun" },
-  { id: "cx2-3", slug: "que-sucede",               nombre: "¿Qué sucede?",                  multiplicador: 2, rareza: "comun" },
-  { id: "cx2-4", slug: "el-dublinazo",             nombre: "El dublinazo",                  multiplicador: 2, rareza: "comun" },
-  { id: "cx2-5", slug: "lesion-a-francescoli",     nombre: "Lesión a Francescoli",          multiplicador: 2, rareza: "comun" },
-  { id: "cx2-6", slug: "el-bautizazo",             nombre: "El Bautizazo",                  multiplicador: 2, rareza: "comun" },
-];
-
-// Helpers de cartas
-export function getCarta(cartaId) {
-  return CARTAS.find((c) => c.id === cartaId) || null;
-}
-
-export function cartasPorMultiplicador(multi) {
-  return CARTAS.filter((c) => c.multiplicador === multi);
-}
-
-export function cartaAleatoriaPorMultiplicador(multi) {
-  const pool = cartasPorMultiplicador(multi);
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-// ── FASES ──────────────────────────────────────────────────────
-export const FASE_LABELS = {
-  grupos:        "Fase de Grupos",
-  dieciseisavos: "Dieciseisavos de Final",
-  octavos:       "Octavos de Final",
-  cuartos:       "Cuartos de Final",
-  semifinal:     "Semifinal",
-  tercer_lugar:  "Tercer y Cuarto Lugar",
-  final:         "FINAL",
-};
-
-export const FASES_ELIMINATORIAS = [
-  "dieciseisavos", "octavos", "cuartos",
-  "semifinal", "tercer_lugar", "final",
-];
-
-// ── BANCO DE PREGUNTAS (estructura para el admin) ──────────────
-// El admin elige una de estas para el día.
-// Las opciones reales las pondrás tú; por ahora el array tiene
-// la estructura correcta para 104 preguntas.
-export const BANCO_PREGUNTAS = [
-  {
-    id: "bq1",
-    texto: "Cuántos goles se marcan hoy",
-    opciones: ["ente 0 y 1", "2", "mas de 3","100"],
-  },
-  {
-    id: "bq2",
-    texto: "¿Quién será el jugador del partido en el Chile vs España?",
-    opciones: ["Vargas", "Alexis", "Pulgar", "Otro"],
-  },
-  // → Agrega las 104 preguntas aquí con el mismo formato.
-];
 </file>
 
 <file path="src/components/AdminPanel.jsx">
