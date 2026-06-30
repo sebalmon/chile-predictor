@@ -85,7 +85,7 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
-    // ── preguntasEnVivo (Super Destacado legacy) ───────────────
+    // ── preguntasEnVivo (legacy, atado a partidos) ─────────────
     match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
@@ -97,17 +97,20 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ── NUEVO: eventoEnVivo ────────────────────────────────────
-    // Documento principal del evento (admin lo controla)
+    // ── eventoEnVivo (independiente, array de preguntas) ───────
     match /eventoEnVivo/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // Respuestas de los usuarios al evento en vivo
-    match /eventoEnVivo/{docId}/respuestas/{uid} {
+    // Respuestas: clave compuesta {uid}_{preguntaId}
+    // Permite que cada usuario responda varias preguntas del
+    // mismo evento sin sobrescribir respuestas anteriores.
+    match /eventoEnVivo/{docId}/respuestas/{respId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if false;
+      allow delete: if false;
     }
 
   }
