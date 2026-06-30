@@ -1,13 +1,13 @@
-// src/components/EventoEnVivo.jsx  — v3
+// src/components/EventoEnVivo.jsx  — v4
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v3:
-//   • Layout: imagen del partido arriba a todo lo ancho, banderas
-//     y nombres debajo, pregunta y opciones abajo de todo.
-//   • Preguntas como ARRAY: cada una numerada (#1, #2, #3...).
-//     La pregunta abierta se muestra grande; las anteriores
-//     (respondidas) aparecen MINIMIZADAS como tarjetas plegables
-//     dentro del mismo modal — no desaparecen.
-//   • Al acertar, muestra "+N PTS" de forma prominente.
+// CAMBIOS v4:
+//   • La imagen ahora ocupa 42% de la altura de pantalla (40vh-45vh)
+//     en vez de un alto fijo pequeño — se ve grande y completa.
+//   • Banderas y nombres se superponen SOBRE la imagen (parte
+//     inferior, con degradado para legibilidad), no debajo de ella
+//     compitiendo por espacio.
+//   • Todo el contenido de preguntas va en una zona inferior con
+//     scroll propio, dejando la imagen siempre visible y fija.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
@@ -21,18 +21,17 @@ const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
 export default function EventoEnVivo() {
   const { firebaseUser } = useAuth();
   const [evento,        setEvento]        = useState(null);
-  const [misRespuestas, setMisRespuestas] = useState({}); // preguntaId → opcion
-  const [enviando,      setEnviando]      = useState(null); // preguntaId siendo enviado
+  const [misRespuestas, setMisRespuestas] = useState({});
+  const [enviando,      setEnviando]      = useState(null);
   const [minimizado,    setMinimizado]    = useState(false);
   const [imgError,      setImgError]      = useState(false);
-  const [expandidaId,   setExpandidaId]   = useState(null); // pregunta cerrada expandida manualmente
+  const [expandidaId,   setExpandidaId]   = useState(null);
 
   useEffect(() => {
     const unsub = onSnapshot(REF_EVENTO(), snap => {
       if (snap.exists()) {
         const data = snap.data();
         setEvento(data);
-        // Cargar todas mis respuestas desde localStorage
         const preguntas = data.preguntas || [];
         const resp = {};
         preguntas.forEach(p => {
@@ -47,7 +46,6 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, []);
 
-  // Al activarse una nueva pregunta abierta, des-minimizar automáticamente
   const preguntas = evento?.preguntas || [];
   const abierta   = preguntas.find(p => p.estado === "abierta");
   const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
@@ -114,32 +112,31 @@ export default function EventoEnVivo() {
       display:"flex", flexDirection:"column",
       fontFamily:"'Press Start 2P', monospace",
       background:"#0a0510",
-      overflowY:"auto",
     }}>
-      {/* ═══ ZONA SUPERIOR: imagen del partido a todo lo ancho ═══ */}
+      {/* ═══ IMAGEN PROTAGONISTA (fija, 42% de la pantalla) ═══ */}
       <div style={{
-        position:"relative", width:"100%", height:"180px",
-        flexShrink:0, overflow:"hidden",
+        position:"relative", width:"100%", height:"42vh",
+        minHeight:"260px", flexShrink:0, overflow:"hidden",
       }}>
         {imagenFondo && !imgError ? (
-          <>
-            <img
-              src={`/${imagenFondo}`}
-              alt="Imagen del partido"
-              style={{ width:"100%", height:"100%", objectFit:"cover" }}
-              onError={() => setImgError(true)}
-            />
-            <div style={{
-              position:"absolute", inset:0,
-              background:"linear-gradient(180deg, rgba(0,0,0,0.1) 0%, #0a0510 100%)",
-            }} />
-          </>
+          <img
+            src={`/${imagenFondo}`}
+            alt="Imagen del partido"
+            style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+            onError={() => setImgError(true)}
+          />
         ) : (
           <div style={{
             width:"100%", height:"100%",
             background:"radial-gradient(ellipse at center, #2a0050 0%, #0a0510 100%)",
           }} />
         )}
+
+        {/* Degradado solo en la franja inferior, para legibilidad de banderas */}
+        <div style={{
+          position:"absolute", left:0, right:0, bottom:0, height:"50%",
+          background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
+        }} />
 
         {/* Botón minimizar */}
         <button
@@ -169,42 +166,50 @@ export default function EventoEnVivo() {
             ⚠ No se encontró /{imagenFondo}
           </div>
         )}
-      </div>
 
-      {/* ═══ ZONA MEDIA: banderas y nombres ═══════════════════════ */}
-      <div style={{
-        display:"flex", flexDirection:"column", alignItems:"center",
-        padding:"16px 16px 8px", flexShrink:0,
-      }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"16px", marginBottom:"8px" }}>
-          <span style={{ fontSize:"48px", lineHeight:1 }}>{localBandera}</span>
-          <div style={{ textAlign:"center" }}>
-            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)", marginBottom:"4px" }}>VS</p>
-            {abierta && (
-              <span style={{
-                background:"var(--rojo-chile)", color:"var(--blanco)",
-                padding:"2px 8px", fontSize:"5px",
-                animation:"parpadeo 1s ease-in-out infinite",
-              }}>
-                🔴 EN VIVO
-              </span>
-            )}
+        {/* Banderas y nombres SUPERPUESTOS sobre la franja inferior */}
+        <div style={{
+          position:"absolute", left:0, right:0, bottom:0, zIndex:1,
+          padding:"0 16px 14px",
+          display:"flex", flexDirection:"column", alignItems:"center",
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
+            <span style={{ fontSize:"40px", lineHeight:1,
+              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
+              {localBandera}
+            </span>
+            <div style={{ textAlign:"center" }}>
+              {abierta && (
+                <span style={{
+                  background:"var(--rojo-chile)", color:"var(--blanco)",
+                  padding:"2px 8px", fontSize:"5px",
+                  animation:"parpadeo 1s ease-in-out infinite",
+                  display:"inline-block",
+                }}>
+                  🔴 EN VIVO
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize:"40px", lineHeight:1,
+              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
+              {visitanteBandera}
+            </span>
           </div>
-          <span style={{ fontSize:"48px", lineHeight:1 }}>{visitanteBandera}</span>
+          <p style={{ fontSize:"6px", color:"var(--blanco)", textAlign:"center",
+            lineHeight:1.8, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>
+            {localNombre} vs {visitanteNombre}
+          </p>
         </div>
-        <p style={{ fontSize:"6px", color:"rgba(255,255,255,0.65)", textAlign:"center", lineHeight:2 }}>
-          {localNombre} vs {visitanteNombre}
-        </p>
       </div>
 
-      {/* ═══ ZONA INFERIOR: preguntas ══════════════════════════════ */}
+      {/* ═══ ZONA INFERIOR: preguntas, con scroll propio ═══════ */}
       <div style={{
-        flex:1, width:"100%", maxWidth:"440px",
-        margin:"0 auto", padding:"8px 16px 24px",
+        flex:1, overflowY:"auto",
+        width:"100%", maxWidth:"440px", margin:"0 auto",
+        padding:"16px 16px 24px",
         display:"flex", flexDirection:"column", gap:"10px",
       }}>
 
-        {/* ── Pregunta ABIERTA (grande) ── */}
         {abierta && (
           <PreguntaGrande
             pregunta={abierta}
@@ -214,7 +219,6 @@ export default function EventoEnVivo() {
           />
         )}
 
-        {/* ── Preguntas cerradas (minimizadas, plegables) ── */}
         {cerradas.length > 0 && (
           <div>
             {abierta && (
@@ -237,7 +241,6 @@ export default function EventoEnVivo() {
           </div>
         )}
 
-        {/* Si no hay pregunta abierta y solo hay 1 cerrada, sugerir minimizar */}
         {!abierta && (
           <button
             onClick={() => setMinimizado(true)}
@@ -344,7 +347,6 @@ function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
       background:"rgba(255,255,255,0.03)",
       border:`1px solid ${acerte ? "rgba(82,183,136,0.4)" : "rgba(255,255,255,0.1)"}`,
     }}>
-      {/* Cabecera siempre visible */}
       <button
         onClick={onToggle}
         style={{
@@ -357,7 +359,6 @@ function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
           PREGUNTA #{pregunta.numero}
         </span>
 
-        {/* Puntos ganados, siempre visibles aunque esté plegada */}
         {miRespuesta ? (
           <span style={{
             fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
@@ -378,7 +379,6 @@ function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
         )}
       </button>
 
-      {/* Contenido expandido */}
       {expandida && (
         <div style={{ padding:"0 10px 10px" }}>
           <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
