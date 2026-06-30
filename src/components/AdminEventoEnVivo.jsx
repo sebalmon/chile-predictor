@@ -69,8 +69,9 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   }, []);
 
   const preguntas = evento?.preguntas || [];
-  // AHORA: puede haber varias abiertas a la vez
-  const abiertas  = preguntas.filter(p => p.estado === "abierta");
+  // AHORA: puede haber varias abiertas a la vez.
+  // Se invierte el orden: la más reciente aparece primero/arriba.
+  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
 
   // ── Guardar configuración (NO toca el array de preguntas) ───

@@ -47,8 +47,9 @@ export default function EventoEnVivo() {
   }, []);
 
   const preguntas = evento?.preguntas || [];
-  // Pueden convivir varias preguntas abiertas a la vez
-  const abiertas  = preguntas.filter(p => p.estado === "abierta");
+  // Pueden convivir varias preguntas abiertas a la vez.
+  // Se invierte el orden: la pregunta más reciente aparece arriba.
+  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
 
   // Cuando aparece una pregunta nueva abierta, des-minimizar
