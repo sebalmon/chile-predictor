@@ -1,9 +1,10 @@
-// src/components/Dashboard.jsx  — v9 (Tres imágenes promocionales + menú responsive)
+// src/components/Dashboard.jsx  — v10 (Modal promocional de una sola imagen)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v9:
-//   • Añadida tercera imagen (A_Nuevospun.jpg) en la secuencia.
-//   • Menú inferior con scroll horizontal en móviles.
-//   • Muestra ADMIN solo si es el email autorizado.
+// CAMBIOS v10:
+//   • Modal promocional ahora muestra SOLO una imagen (A_PAISES_MARRUECOS.jpg).
+//   • Eliminada la secuencia de 3 imágenes.
+//   • Al hacer clic en CERRAR o fuera, el modal se oculta.
+//   • Sigue mostrándose solo en la fecha configurada (FECHA_PROMO).
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -132,7 +133,7 @@ const PANTALLAS = {
 };
 
 // ── FECHA DE PROMOCIÓN ──────────────────────────────────────
-const FECHA_PROMO = "2026-06-30"; // Cambiar manualmente cada día
+const FECHA_PROMO = "2026-07-01"; // Cambiar manualmente cada día
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
@@ -142,24 +143,20 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // ── Modal promocional secuencial (3 imágenes) ─────────────
-  const [pasoPromo, setPasoPromo] = useState(0); // 0,1,2 -> imágenes, 3 = oculto
+  // ── Modal promocional (SOLO UNA IMAGEN) ──────────────────
+  const [mostrarPromo, setMostrarPromo] = useState(false);
 
   useEffect(() => {
     const hoy = new Date().toISOString().slice(0,10);
     if (hoy === FECHA_PROMO) {
-      setPasoPromo(0);
+      setMostrarPromo(true);
     } else {
-      setPasoPromo(3);
+      setMostrarPromo(false);
     }
   }, []);
 
-  const avanzarPromo = () => {
-    setPasoPromo(p => p + 1);
-  };
-
   const cerrarPromo = () => {
-    setPasoPromo(3);
+    setMostrarPromo(false);
   };
 
   const [esAdmin, setEsAdmin] = useState(false);
@@ -196,10 +193,10 @@ function DashboardInterno() {
     setPantalla(p);
   };
 
-  // ── Contenido con el modal promocional secuencial ──────────
+  // ── Contenido con el modal promocional (una imagen) ──────
   const contenidoConPromo = (
     <>
-      {pasoPromo < 3 && (
+      {mostrarPromo && (
         <div
           style={{
             position: "fixed",
@@ -213,7 +210,7 @@ function DashboardInterno() {
             padding: "20px",
             cursor: "pointer",
           }}
-          onClick={pasoPromo === 2 ? cerrarPromo : avanzarPromo}
+          onClick={cerrarPromo} // Cierra al tocar el fondo
         >
           <div
             style={{
@@ -223,115 +220,39 @@ function DashboardInterno() {
               overflowY: "auto",
               cursor: "default",
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()} // Evita cerrar al hacer clic dentro
           >
-            {pasoPromo === 0 && (
-              <>
-                <img
-                  src="/A_PAISES_MARRUECOS.jpg"
-                  alt="Partido en vivo Países Bajos vs Marruecos"
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: "8px",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
-                    imageRendering: "pixelated",
-                    border: "3px solid var(--amarillo)",
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                    e.target.nextSibling.style.display = "block";
-                  }}
-                />
-                <div style={{ display: "none", color: "var(--rojo-chile)", textAlign: "center", padding: "20px" }}>
-                  Imagen no disponible
-                </div>
-                <button
-                  className="btn-pixel btn-amarillo"
-                  style={{
-                    fontSize: "8px",
-                    padding: "10px",
-                    marginTop: "16px",
-                    width: "100%",
-                  }}
-                  onClick={avanzarPromo}
-                >
-                  CONTINUAR →
-                </button>
-              </>
-            )}
-
-            {pasoPromo === 1 && (
-              <>
-                <img
-                  src="/A_LAMINITAS.jpg"
-                  alt="Nuevo formato de láminas"
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: "8px",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
-                    imageRendering: "pixelated",
-                    border: "3px solid var(--verde-claro)",
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                    e.target.nextSibling.style.display = "block";
-                  }}
-                />
-                <div style={{ display: "none", color: "var(--rojo-chile)", textAlign: "center", padding: "20px" }}>
-                  Imagen no disponible
-                </div>
-                <button
-                  className="btn-pixel btn-amarillo"
-                  style={{
-                    fontSize: "8px",
-                    padding: "10px",
-                    marginTop: "16px",
-                    width: "100%",
-                  }}
-                  onClick={avanzarPromo}
-                >
-                  CONTINUAR →
-                </button>
-              </>
-            )}
-
-            {pasoPromo === 2 && (
-              <>
-                <img
-                  src="/A_Nuevospun.jpg"
-                  alt="Nuevos puntajes y fase de dieciseisavos"
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: "8px",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
-                    imageRendering: "pixelated",
-                    border: "3px solid var(--rojo-chile)",
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                    e.target.nextSibling.style.display = "block";
-                  }}
-                />
-                <div style={{ display: "none", color: "var(--rojo-chile)", textAlign: "center", padding: "20px" }}>
-                  Imagen no disponible
-                </div>
-                <button
-                  className="btn-pixel btn-amarillo"
-                  style={{
-                    fontSize: "8px",
-                    padding: "10px",
-                    marginTop: "16px",
-                    width: "100%",
-                  }}
-                  onClick={cerrarPromo}
-                >
-                  ✕ CERRAR
-                </button>
-              </>
-            )}
+            <img
+              src="/A_PAISES_MARRUECOS.jpg"
+              alt="Afiche promocional"
+              style={{
+                width: "100%",
+                height: "auto",
+                borderRadius: "8px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
+                imageRendering: "pixelated",
+                border: "3px solid var(--amarillo)",
+              }}
+              onError={(e) => {
+                e.target.style.display = "none";
+                e.target.nextSibling.style.display = "block";
+              }}
+            />
+            <div style={{ display: "none", color: "var(--rojo-chile)", textAlign: "center", padding: "20px" }}>
+              Imagen no disponible
+            </div>
+            <button
+              className="btn-pixel btn-amarillo"
+              style={{
+                fontSize: "8px",
+                padding: "10px",
+                marginTop: "16px",
+                width: "100%",
+              }}
+              onClick={cerrarPromo}
+            >
+              ✕ CERRAR
+            </button>
           </div>
         </div>
       )}
