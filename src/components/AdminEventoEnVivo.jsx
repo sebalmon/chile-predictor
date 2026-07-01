@@ -90,7 +90,26 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       onMensaje("ok", `✅ Evento configurado: ${banderaL} ${nombreL} vs ${nombreV} ${banderaV}`);
     } catch (e) { onMensaje("error", e.message); }
   };
-
+// ── NUEVO: empezar un evento en vivo desde cero ───────────────
+  const nuevoEvento = async () => {
+    if (!nombreL.trim() || !nombreV.trim()) {
+      onMensaje("error", "Escribe el nombre de ambos equipos."); return;
+    }
+    const confirmar = window.confirm(
+      "Esto borrará las preguntas del evento anterior y empezará la numeración desde #1. ¿Continuar?"
+    );
+    if (!confirmar) return;
+    try {
+      await setDoc(REF_EVENTO(), {
+        activo: true,
+        equipoLocal:     { nombre: nombreL.trim(), bandera: banderaL },
+        equipoVisitante: { nombre: nombreV.trim(), bandera: banderaV },
+        imagenFondo:     imagen.trim() || null,
+        preguntas:       [],
+      });
+      onMensaje("ok", `🆕 Nuevo evento iniciado: ${banderaL} ${nombreL} vs ${nombreV} ${banderaV}`);
+    } catch (e) { onMensaje("error", e.message); }
+  };
   const desactivar = async () => {
     try {
       await updateDoc(REF_EVENTO(), { activo: false });
@@ -279,10 +298,14 @@ export default function AdminEventoEnVivo({ onMensaje }) {
             background:"var(--blanco)", color:"var(--negro)",
             outline:"none", marginBottom:"10px" }} />
 
-        <div style={{ display:"flex", gap:"8px" }}>
-          <button className="btn-pixel btn-rojo" style={{ flex:2, fontSize:"7px" }}
+        <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
+          <button className="btn-pixel btn-rojo" style={{ flex:"1 1 100%", fontSize:"7px" }}
+            onClick={nuevoEvento}>
+            🆕 NUEVO EVENTO (reinicia preguntas)
+          </button>
+          <button className="btn-pixel btn-gris" style={{ flex:2, fontSize:"7px" }}
             onClick={guardarConfig}>
-            🔴 {estaActivo ? "ACTUALIZAR EVENTO" : "ACTIVAR EVENTO"}
+            ✏️ ACTUALIZAR DATOS (mantiene preguntas)
           </button>
           {estaActivo && (
             <button className="btn-pixel btn-gris" style={{ flex:1, fontSize:"6px" }}

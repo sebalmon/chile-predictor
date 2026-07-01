@@ -113,9 +113,11 @@ public/inicio3b.png
 public/inicio4.jpg
 public/pvivo_0.jpg
 public/pvivo_1.jpg
+public/pvivo_2.jpg
 public/sounds/ale.mp3
 public/sounds/brasil.mp3
 public/sounds/japo.mp3
+public/sounds/mex.mp3
 public/watermarked_img_13728874305587068978.png
 README.md
 src/App.css
@@ -123,10 +125,12 @@ src/App.jsx
 src/assets/hero.png
 src/assets/react.svg
 src/assets/vite.svg
+src/components/AdminEventoEnVivo.jsx
 src/components/AdminPanel.jsx
 src/components/AdminSuperDestacado.jsx
 src/components/AvisoAdmin.jsx
 src/components/Dashboard.jsx
+src/components/EventoEnVivo.jsx
 src/components/FraseCinema.jsx
 src/components/HistorialPredicciones.jsx
 src/components/Login.jsx
@@ -1479,6 +1483,315 @@ export default function AvisoAdmin() {
 }
 </file>
 
+<file path="src/components/ModalPerfilCompleto.jsx">
+// src/components/ModalPerfilCompleto.jsx  — v7 (Patch 2)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v7 (punto 12):
+//   • Muestra nombreReal del usuario pero NO el email (privacidad).
+//   • Muestra cantidad de cartas correctamente desde usuarios.cartas (mapa).
+//   • Integra HistorialPredicciones en una pestaña.
+// ─────────────────────────────────────────────────────────────
+import React, { useState } from "react";
+import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
+import HistorialPredicciones from "./HistorialPredicciones";
+
+function AvatarAnimado({ avatarId, size = 72 }) {
+  const [frame, setFrame] = React.useState(1);
+  const av = AVATARES.find(a => a.id === avatarId);
+  React.useEffect(() => {
+    const iv = setInterval(() => setFrame(f => f===3?1:f+1), 200);
+    return () => clearInterval(iv);
+  }, []);
+  if (!av) return (
+    <div style={{ width:size,height:size,background:"#333",border:"2px solid #555",
+      display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.5 }}>?</div>
+  );
+  return (
+    <img src={avatarFrame(av.slug,frame)} alt={av.nombre}
+      style={{ width:size,height:size,imageRendering:"pixelated",
+        border:"3px solid var(--negro)",boxShadow:"2px 2px 0 var(--negro)",objectFit:"cover" }}
+      onError={e => { e.target.style.display="none"; if (e.target.parentElement) e.target.parentElement.innerHTML="?"; }}
+    />
+  );
+}
+
+export default function ModalPerfilCompleto({ usuario, onCerrar }) {
+  const [tab, setTab] = useState("perfil");
+  if (!usuario) return null;
+
+  // Cartas: el mapa usuarios.cartas tiene { cartaId: cantidad }
+  const cartasMap = usuario.cartas || {};
+  const cartasInfo = CARTAS.filter(c => (cartasMap[c.id] || 0) > 0);
+  const totalCartas = cartasInfo.reduce((s,c) => s + (cartasMap[c.id]||0), 0);
+
+  return (
+    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:1000,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",overflowY:"auto" }}
+      onClick={onCerrar}>
+      <div style={{ background:"var(--negro)",border:"4px solid var(--verde-claro)",
+        boxShadow:"6px 6px 0 var(--verde-oscuro)",padding:0,maxWidth:"500px",width:"100%",
+        maxHeight:"90vh",overflowY:"auto",display:"flex",flexDirection:"column" }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ padding:"20px",textAlign:"center",borderBottom:"2px solid var(--verde-campo)" }}>
+          {usuario.avatarId
+            ? <AvatarAnimado avatarId={usuario.avatarId} size={80} />
+            : <span style={{ fontSize:"70px" }}>?</span>
+          }
+          <p style={{ fontSize:"12px",color:"var(--amarillo)",marginTop:"10px",marginBottom:"6px" }}>
+            {usuario.nickname}
+          </p>
+          {/* Punto 12: nombre real, SIN email */}
+          {usuario.nombreReal && (
+            <p style={{ fontSize:"7px",color:"var(--gris-claro)",marginBottom:"4px" }}>
+              👤 {usuario.nombreReal}
+            </p>
+          )}
+          <div style={{ display:"flex",justifyContent:"center",gap:"20px",marginTop:"10px" }}>
+            <div style={{ textAlign:"center" }}>
+              <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>PUNTOS TOTALES</p>
+              <span className="puntos-badge" style={{ fontSize:"14px" }}>{usuario.puntosTotal??0}</span>
+            </div>
+            <div style={{ textAlign:"center" }}>
+              <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>CARTAS</p>
+              <span className="puntos-badge" style={{ fontSize:"14px" }}>{totalCartas}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display:"flex",borderBottom:"2px solid var(--verde-campo)" }}>
+          {[{id:"perfil",label:"👤 PERFIL"},{id:"historial",label:"🔮 PRONÓSTICOS"}].map(t => (
+            <button key={t.id}
+              style={{ flex:1,fontFamily:"'Press Start 2P',monospace",fontSize:"6px",padding:"8px",
+                background:tab===t.id?"var(--verde-campo)":"var(--negro)",
+                color:tab===t.id?"var(--negro)":"var(--gris-claro)",
+                border:"none",cursor:"pointer" }}
+              onClick={() => setTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* Contenido */}
+        <div style={{ flex:1,overflowY:"auto" }}>
+          {tab === "historial" && <HistorialPredicciones userId={usuario.uid} />}
+          {tab === "perfil" && (
+            <div style={{ padding:"16px" }}>
+              {cartasInfo.length === 0 ? (
+                <p style={{ fontSize:"6px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
+                  No tiene cartas aún.
+                </p>
+              ) : (
+                <>
+                  <p style={{ fontSize:"7px",color:"var(--verde-claro)",marginBottom:"10px",textAlign:"center" }}>
+                    🃏 CARTAS ({cartasInfo.length} tipos · {totalCartas} total)
+                  </p>
+                  <div style={{ display:"flex",flexWrap:"wrap",gap:"8px",justifyContent:"center" }}>
+                    {cartasInfo.map(c => (
+                      <div key={c.id} style={{ textAlign:"center",width:"70px" }}>
+                        <img src={`/cartas/${c.slug}.jpg`} alt={c.nombre}
+                          style={{ width:"50px",height:"50px",imageRendering:"pixelated",
+                            border:"2px solid var(--amarillo)" }}
+                          onError={e => { e.target.style.display="none"; e.target.parentElement.innerHTML="<span>🃏</span>"; }}
+                        />
+                        <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginTop:"3px" }}>
+                          ×{c.multiplicador}
+                        </p>
+                        <p style={{ fontSize:"5px",color:"var(--amarillo)" }}>
+                          x{cartasMap[c.id]}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding:"12px",borderTop:"2px solid var(--verde-campo)" }}>
+          <button className="btn-pixel btn-gris w-full" style={{ fontSize:"7px" }} onClick={onCerrar}>
+            CERRAR ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/ModalPerfilResumido.jsx">
+// src/components/ModalPerfilResumido.jsx (versión completa)
+import React from "react";
+import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
+import { cartaImg } from "../utils/sobre";
+
+function AvatarAnimado({ avatarId, size = 56 }) {
+  const [frame, setFrame] = React.useState(1);
+  const av = AVATARES.find((a) => a.id === avatarId);
+
+  React.useEffect(() => {
+    const iv = setInterval(() => {
+      setFrame((f) => (f === 3 ? 1 : f + 1));
+    }, 200);
+    return () => clearInterval(iv);
+  }, []);
+
+  if (!av) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          background: "#333",
+          border: "2px solid #555",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: size * 0.5,
+        }}
+      >
+        ?
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={avatarFrame(av.slug, frame)}
+      alt={av.nombre}
+      style={{
+        width: size,
+        height: size,
+        imageRendering: "pixelated",
+        border: "3px solid var(--negro)",
+        boxShadow: "2px 2px 0 var(--negro)",
+        objectFit: "cover",
+      }}
+      onError={(e) => {
+        e.target.style.display = "none";
+        if (e.target.parentElement) e.target.parentElement.innerHTML = "?";
+      }}
+    />
+  );
+}
+
+export default function ModalPerfilResumido({ jugador, onCerrar }) {
+  if (!jugador) return null;
+
+  // Obtener las cartas desbloqueadas
+  const cartasDesbloqueadas = jugador.cartasDesbloqueadas || [];
+  const cartasInfo = CARTAS.filter(c => cartasDesbloqueadas.includes(c.id));
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.95)",
+        zIndex: 600,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+        overflowY: "auto",
+      }}
+      onClick={onCerrar}
+    >
+      <div
+        style={{
+          background: "var(--negro)",
+          border: "4px solid var(--verde-claro)",
+          boxShadow: "6px 6px 0 var(--verde-oscuro)",
+          padding: "24px 20px",
+          maxWidth: "380px",
+          width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+          alignItems: "center",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Avatar */}
+        {jugador.avatarId ? (
+          <AvatarAnimado avatarId={jugador.avatarId} size={80} />
+        ) : (
+          <span style={{ fontSize: "60px" }}>?</span>
+        )}
+
+        {/* Apodo */}
+        <p style={{ fontSize: "12px", color: "var(--amarillo)", textAlign: "center" }}>
+          {jugador.nickname}
+        </p>
+
+        {/* Nombre real */}
+        {jugador.nombreReal && (
+          <p style={{ fontSize: "8px", color: "var(--gris-claro)", textAlign: "center" }}>
+            {jugador.nombreReal}
+          </p>
+        )}
+
+        {/* Email */}
+        {jugador.email && (
+          <p style={{ fontSize: "7px", color: "var(--gris)", textAlign: "center" }}>
+            {jugador.email}
+          </p>
+        )}
+
+        {/* Puntos totales */}
+        <div style={{ textAlign: "center", marginTop: "4px" }}>
+          <p style={{ fontSize: "7px", color: "var(--verde-claro)" }}>PUNTOS TOTALES</p>
+          <span className="puntos-badge" style={{ fontSize: "14px" }}>
+            {jugador.puntosTotal ?? 0}
+          </span>
+        </div>
+
+        {/* Cartas coleccionables */}
+        {cartasInfo.length > 0 && (
+          <div style={{ width: "100%", marginTop: "8px" }}>
+            <p style={{ fontSize: "7px", color: "var(--amarillo)", textAlign: "center", marginBottom: "8px" }}>
+              🃏 CARTAS ({cartasInfo.length})
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px" }}>
+              {cartasInfo.map(carta => (
+                <div key={carta.id} style={{ textAlign: "center", width: "60px" }}>
+                  <img
+                    src={cartaImg(carta.slug)}
+                    alt={carta.nombre}
+                    style={{ width: "50px", height: "50px", imageRendering: "pixelated", border: "2px solid var(--negro)" }}
+                    onError={(e) => { e.target.style.display = "none"; }}
+                  />
+                  <p style={{ fontSize: "5px", color: "var(--gris-claro)", marginTop: "4px" }}>
+                    {carta.nombre}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {cartasInfo.length === 0 && (
+          <p style={{ fontSize: "6px", color: "var(--gris)", textAlign: "center" }}>
+            Aún no tiene cartas coleccionables
+          </p>
+        )}
+
+        <button
+          className="btn-pixel btn-gris"
+          style={{ fontSize: "8px", marginTop: "8px" }}
+          onClick={onCerrar}
+        >
+          CERRAR ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="src/components/NotificacionesModal.jsx">
 // src/components/NotificacionesModal.jsx  — v5 (Fase 2)
 // ─────────────────────────────────────────────────────────────
@@ -2458,143 +2771,6 @@ test("recompensasPendientes: completas no reclamadas", async () => {
 });
 </file>
 
-<file path="src/components/ModalPerfilCompleto.jsx">
-// src/components/ModalPerfilCompleto.jsx  — v7 (Patch 2)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v7 (punto 12):
-//   • Muestra nombreReal del usuario pero NO el email (privacidad).
-//   • Muestra cantidad de cartas correctamente desde usuarios.cartas (mapa).
-//   • Integra HistorialPredicciones en una pestaña.
-// ─────────────────────────────────────────────────────────────
-import React, { useState } from "react";
-import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
-import HistorialPredicciones from "./HistorialPredicciones";
-
-function AvatarAnimado({ avatarId, size = 72 }) {
-  const [frame, setFrame] = React.useState(1);
-  const av = AVATARES.find(a => a.id === avatarId);
-  React.useEffect(() => {
-    const iv = setInterval(() => setFrame(f => f===3?1:f+1), 200);
-    return () => clearInterval(iv);
-  }, []);
-  if (!av) return (
-    <div style={{ width:size,height:size,background:"#333",border:"2px solid #555",
-      display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.5 }}>?</div>
-  );
-  return (
-    <img src={avatarFrame(av.slug,frame)} alt={av.nombre}
-      style={{ width:size,height:size,imageRendering:"pixelated",
-        border:"3px solid var(--negro)",boxShadow:"2px 2px 0 var(--negro)",objectFit:"cover" }}
-      onError={e => { e.target.style.display="none"; if (e.target.parentElement) e.target.parentElement.innerHTML="?"; }}
-    />
-  );
-}
-
-export default function ModalPerfilCompleto({ usuario, onCerrar }) {
-  const [tab, setTab] = useState("perfil");
-  if (!usuario) return null;
-
-  // Cartas: el mapa usuarios.cartas tiene { cartaId: cantidad }
-  const cartasMap = usuario.cartas || {};
-  const cartasInfo = CARTAS.filter(c => (cartasMap[c.id] || 0) > 0);
-  const totalCartas = cartasInfo.reduce((s,c) => s + (cartasMap[c.id]||0), 0);
-
-  return (
-    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:1000,
-      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",overflowY:"auto" }}
-      onClick={onCerrar}>
-      <div style={{ background:"var(--negro)",border:"4px solid var(--verde-claro)",
-        boxShadow:"6px 6px 0 var(--verde-oscuro)",padding:0,maxWidth:"500px",width:"100%",
-        maxHeight:"90vh",overflowY:"auto",display:"flex",flexDirection:"column" }}
-        onClick={e => e.stopPropagation()}>
-
-        {/* Header */}
-        <div style={{ padding:"20px",textAlign:"center",borderBottom:"2px solid var(--verde-campo)" }}>
-          {usuario.avatarId
-            ? <AvatarAnimado avatarId={usuario.avatarId} size={80} />
-            : <span style={{ fontSize:"70px" }}>?</span>
-          }
-          <p style={{ fontSize:"12px",color:"var(--amarillo)",marginTop:"10px",marginBottom:"6px" }}>
-            {usuario.nickname}
-          </p>
-          {/* Punto 12: nombre real, SIN email */}
-          {usuario.nombreReal && (
-            <p style={{ fontSize:"7px",color:"var(--gris-claro)",marginBottom:"4px" }}>
-              👤 {usuario.nombreReal}
-            </p>
-          )}
-          <div style={{ display:"flex",justifyContent:"center",gap:"20px",marginTop:"10px" }}>
-            <div style={{ textAlign:"center" }}>
-              <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>PUNTOS TOTALES</p>
-              <span className="puntos-badge" style={{ fontSize:"14px" }}>{usuario.puntosTotal??0}</span>
-            </div>
-            <div style={{ textAlign:"center" }}>
-              <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>CARTAS</p>
-              <span className="puntos-badge" style={{ fontSize:"14px" }}>{totalCartas}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div style={{ display:"flex",borderBottom:"2px solid var(--verde-campo)" }}>
-          {[{id:"perfil",label:"👤 PERFIL"},{id:"historial",label:"🔮 PRONÓSTICOS"}].map(t => (
-            <button key={t.id}
-              style={{ flex:1,fontFamily:"'Press Start 2P',monospace",fontSize:"6px",padding:"8px",
-                background:tab===t.id?"var(--verde-campo)":"var(--negro)",
-                color:tab===t.id?"var(--negro)":"var(--gris-claro)",
-                border:"none",cursor:"pointer" }}
-              onClick={() => setTab(t.id)}>{t.label}</button>
-          ))}
-        </div>
-
-        {/* Contenido */}
-        <div style={{ flex:1,overflowY:"auto" }}>
-          {tab === "historial" && <HistorialPredicciones userId={usuario.uid} />}
-          {tab === "perfil" && (
-            <div style={{ padding:"16px" }}>
-              {cartasInfo.length === 0 ? (
-                <p style={{ fontSize:"6px",color:"var(--gris-claro)",textAlign:"center",padding:"16px" }}>
-                  No tiene cartas aún.
-                </p>
-              ) : (
-                <>
-                  <p style={{ fontSize:"7px",color:"var(--verde-claro)",marginBottom:"10px",textAlign:"center" }}>
-                    🃏 CARTAS ({cartasInfo.length} tipos · {totalCartas} total)
-                  </p>
-                  <div style={{ display:"flex",flexWrap:"wrap",gap:"8px",justifyContent:"center" }}>
-                    {cartasInfo.map(c => (
-                      <div key={c.id} style={{ textAlign:"center",width:"70px" }}>
-                        <img src={`/cartas/${c.slug}.jpg`} alt={c.nombre}
-                          style={{ width:"50px",height:"50px",imageRendering:"pixelated",
-                            border:"2px solid var(--amarillo)" }}
-                          onError={e => { e.target.style.display="none"; e.target.parentElement.innerHTML="<span>🃏</span>"; }}
-                        />
-                        <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginTop:"3px" }}>
-                          ×{c.multiplicador}
-                        </p>
-                        <p style={{ fontSize:"5px",color:"var(--amarillo)" }}>
-                          x{cartasMap[c.id]}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div style={{ padding:"12px",borderTop:"2px solid var(--verde-campo)" }}>
-          <button className="btn-pixel btn-gris w-full" style={{ fontSize:"7px" }} onClick={onCerrar}>
-            CERRAR ✕
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="src/components/ModalPrediccionesAmigos.jsx">
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
@@ -2756,6 +2932,198 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
+</file>
+
+<file path="src/data/sampleData.js">
+// src/data/sampleData.js  — v3
+// ─────────────────────────────────────────────────────────────
+
+export const PARTIDOS_EJEMPLO = [
+  {
+    id: "p1",
+    fecha: "2026-06-11",
+    horaInicio: "12:00",
+    local:     { nombre: "Chile",    bandera: "🇨🇱" },
+    visitante: { nombre: "España",   bandera: "🇪🇸" },
+    fase: "grupos",
+    estaDestacado: true,
+    resultado: null,
+  },
+  {
+    id: "p2",
+    fecha: "2026-06-11",
+    horaInicio: "15:00",
+    local:     { nombre: "Brasil",   bandera: "🇧🇷" },
+    visitante: { nombre: "Argentina",bandera: "🇦🇷" },
+    fase: "grupos",
+    estaDestacado: false,
+    resultado: null,
+  },
+  {
+    id: "p3",
+    fecha: "2026-06-11",
+    horaInicio: "18:00",
+    local:     { nombre: "Francia",  bandera: "🇫🇷" },
+    visitante: { nombre: "Alemania", bandera: "🇩🇪" },
+    fase: "grupos",
+    estaDestacado: false,
+    resultado: null,
+  },
+];
+
+export const PREGUNTAS_EJEMPLO = [
+  {
+    id: "q1",
+    fecha: "2026-06-11",
+    texto: "¿Cuántos goles se marcarán en el partido Chile vs España?",
+    opciones: ["0-1 goles", "2-3 goles", "4-5 goles", "6 o más"],
+    respuestaCorrecta: null,
+  },
+];
+
+// ── FRASES DEL DÍA ─────────────────────────────────────────────
+// Una por cada día del mundial (o más); se rotan cíclicamente.
+export const FRASES_DEL_DIA = [
+  "El lunes\nquieres cambiarlos a todos,\nel viernes piensas\nque puedes recuperar a cinco o seis,\ny el domingo juegan los mismos\nonce cabrones de siempre.\n\nJ.B Toshack",
+  "La prensa es muy mentirosa.\nDicen que me he acostado con 200 mujeres, pero solo fueron 100.\n\n George Best",
+  "El fútbol es un deporte que inventaron los ingleses,\njuegan once contra once, y siempre gana Alemania.\n\nGary Lineker",
+  "Dios estaba de nuestro lado,\npero el árbitro era francés.\n\nHristo Stoichkov",
+  "Un partido de fútbol sin goles,\nes como un domingo sin sol.\n\n- Di Stefano",
+  "El fútbol es la única religión\nque no tiene ateos.\n\nEduardo Galeano",
+  "No hay nada más peligroso\nque no arriesgarse.\n\nPep Guardiola",
+  "Dios es redondo.\n\nJuan Villoro",
+  "Como presidente del club tengo la obligación\nde respaldar al técnico del equipo\nhasta cinco minutos antes de echarlo.\n\nAlfredo Davicce, presidente del Inter",
+  "Nosotros no compramos superestrellas.\nNosotros las hacemos.\n\nArsène Wenger",
+  "Siempre es difícil perder\npara quien no está acostumbrado.\n\nMourinho",
+  "En el fútbol opino lo mismo\nque Ivan Lendl respecto al tenis:\nsi quieres tener un amigo,\ncómprate un perro.\n\nMarco van Basten",
+  "Si yo hubiese nacido feo,\nno habríais oído hablar de Pelé.\n\nGeorge Best",
+  "¿Usted ya se puso de acuerdo con los rivales\npara dejarnos hacer todo eso?\n\nGarrincha",
+  "Ver fútbol es como ver sexo.\nEstá bien, pero es mejor practicarlo.\n\nAlex James",
+  "Algunas personas creen que el fútbol\nes una cuestión de vida o muerte.\nMe decepciona esa actitud. Es más importante que eso.\n\nBill Shanky",
+  "Tenemos la mejor hinchada del mundo,\npero nunca he visto a un hincha marcar un gol.\n\nJock Stein",
+  "A mí siempre me pareció más interesante\n marcar un autogol que un gol.\nUn gol, salvo si uno se llama Pelé, es algo eminentemente vulgar y muy descortés con el arquero contrario\nmientras que un autogol es un gesto de independencia.\n\nRoberto Bolaño",
+  "El fútbol es un milagro que le permitió a Europa\nodiarse sin destruirse.\n\nPaul Auster",
+  "Gasté mucho dinero en coches,\nalcohol y mujeres.\nEl resto lo he malgastado.\n\nGeorge Best",
+  "El fútbol es como el ajedrez\npero sin dados.\n\nLukas Podolski",
+  "Recibí un golpe en mi tobillo izquierdo.\nPero algo me dijo que era mi derecho.\n\nLee Hendrie",
+  "Voy a correr como un negro\npara vivir como un blanco.\n\nSamuel Eto`o",
+  "Bueno, del país no puedo contarles nada…\nsolo puedo adelantarle que se trata\nde un equipo brasileño…\n\nMurci Rojas",
+  "…y bueno,\nsin duda es difícil jugar\na 3.000 kilómetros de altura\n\nManuel López",
+  "Esta ciudad tiene dos grandes equipos:\nel Liverpool y los suplentes del Liverpool.\n\nBill Shankly",
+  "Yo crecí en un barrio\nprivado de Buenos Aires…\nPrivado de agua, de luz y de teléfono.\n\nMaradona",
+  "No me importaría perder todos los partidos,\nsiempre y cuando ganemos la Liga.\n\nMark Viduka",
+  "Cuando un equipo anda bien,\nno anda mal y viceversa.\n\nMariano Puyol",
+  "Primero que nada un saludo\n a todos los señores televisores.\n\nJuan Carlos Letelier",
+  "A veces, en el fútbol,\ntienes que marcar goles.\n\nThierry Henry",
+  "El que inventó el color de camisetas es un fenómeno,\nLos del mismo color se la pasan entre ellos\ny patean al arco donde está el tipo\nque no almorzó con nosotros.\n\nBilardo",
+  "No hay nada entre medio.\nO eres bueno, o eres malo.\nNosotros estuvimos entre medio.\n\nGary Lineker",
+  "En 1969 dejé las mujeres y el alcohol.\nFueron los peores 20 minutos de mi vida.”\n\nGeorge Best",
+  "¿Cuántos pulmones tengo?\nBueno… Uno, como toda la gente, ¿no?\n\nHéctor Puebla",
+  "El fútbol es la cosa más importante\nde las cosas menos importantes.\n\nJorge Valdano",
+  "Ganar no es lo importante,\nsiempre y cuando ganes.\n\nVinnie Jones",
+  "En un partido de fútbol\ntodo se complica por la presencia\ndel equipo contrario.\n\nJean Paul Sartre",
+  "El Golde Maradona con la mano es,\npor ahora, la única prueba fiable\nde la existencia de Dios.\n\nMario Benedetti",
+  "El fútbol\nes la recuperación semanal de la infancia.\n\nJavier Marías",
+  "La cancha es el único lugar\ndonde los pobres pueden cobrar revancha\n\nJuan Villoro",
+];
+
+// ── AVATARES — 12 personajes con imágenes animadas ────────────
+// Las imágenes se guardan en /public/avatares/
+// Nombre de archivo: {slug}-1.png, {slug}-2.png, {slug}-3.png
+export const AVATARES = [
+  { id: "av1",  slug: "chancho-lorenzo",        nombre: "Chancho Lorenzo"         },
+  { id: "av2",  slug: "azkargorta",             nombre: "Azkargorta"              },
+  { id: "av3",  slug: "chinquihuin",            nombre: "Chinquihuin"             },
+  { id: "av4",  slug: "julio-martinez",         nombre: "Julio Martínez"          },
+  { id: "av5",  slug: "caszely",               nombre: "Caszely"                 },
+  { id: "av6",  slug: "dr-orozco",             nombre: "Dr Orozco"               },
+  { id: "av7",  slug: "peter-veneno",          nombre: "Peter Veneno"            },
+  { id: "av8",  slug: "bielsa",               nombre: "Bielsa"                  },
+  { id: "av9",  slug: "carcuro",              nombre: "Carcuro"                 },
+  { id: "av10", slug: "el-sapo",              nombre: "El Sapo"                 },
+  { id: "av11", slug: "el-hombre-del-maletin", nombre: "El Hombre del Maletín"   },
+  { id: "av12", slug: "ff17",                 nombre: "FF17"                    },
+];
+
+// Helper: retorna la URL del fotograma N (1, 2 o 3) de un avatar
+export function avatarFrame(slug, frame) {
+  return `/avatares/${slug}-${frame}.png`;
+}
+
+// ── CARTAS COLECCIONABLES ──────────────────────────────────────
+// Imágenes en /public/cartas/{slug}.png
+// multiplicador: 4 | 3 | 2
+export const CARTAS = [
+  // x4 — Legendarias
+  { id: "cx4-1", slug: "vargas-elimina-espana",   nombre: "Vargas elimina a España",      multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-2", slug: "penal-gato-silva",         nombre: "El Penal del Gato Silva",       multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-3", slug: "maniobra-heimlich",         nombre: "La Maniobra de Heimlich",       multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-4", slug: "el-perro-ron",             nombre: "El Perro Ron",                  multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-5", slug: "el-maracanazo",            nombre: "El Maracanazo",                 multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-6", slug: "el-dedo-de-jarita",        nombre: "El dedo de Jarita",             multiplicador: 4, rareza: "legendaria" },
+  // x3 — Raras
+  { id: "cx3-1", slug: "historico-orellana",       nombre: "El histórico de Orellana",      multiplicador: 3, rareza: "rara" },
+  { id: "cx3-2", slug: "matador-en-wembley",       nombre: "El Matador en Wembley",          multiplicador: 3, rareza: "rara" },
+  { id: "cx3-3", slug: "mi-familia-esta-bien",      nombre: "Mi familia está bien",           multiplicador: 3, rareza: "rara" },
+  { id: "cx3-4", slug: "ahi-quedo-brasil",         nombre: "Ahí Quedó Brasil",              multiplicador: 3, rareza: "rara" },
+  { id: "cx3-5", slug: "el-palo-de-pinilla",       nombre: "El Palo de Pinilla",             multiplicador: 3, rareza: "rara" },
+  { id: "cx3-6", slug: "pero-con-respeto",         nombre: "Pero con Respeto",              multiplicador: 3, rareza: "rara" },
+  // x2 — Comunes
+  { id: "cx2-1", slug: "las-luces-rojas",          nombre: "Las Luces Rojas",               multiplicador: 2, rareza: "comun" },
+  { id: "cx2-2", slug: "vargas-ataja-chilavert",   nombre: "Vargas ataja a Chilavert",      multiplicador: 2, rareza: "comun" },
+  { id: "cx2-3", slug: "que-sucede",               nombre: "¿Qué sucede?",                  multiplicador: 2, rareza: "comun" },
+  { id: "cx2-4", slug: "el-dublinazo",             nombre: "El dublinazo",                  multiplicador: 2, rareza: "comun" },
+  { id: "cx2-5", slug: "lesion-a-francescoli",     nombre: "Lesión a Francescoli",          multiplicador: 2, rareza: "comun" },
+  { id: "cx2-6", slug: "el-bautizazo",             nombre: "El Bautizazo",                  multiplicador: 2, rareza: "comun" },
+];
+
+// Helpers de cartas
+export function getCarta(cartaId) {
+  return CARTAS.find((c) => c.id === cartaId) || null;
+}
+
+export function cartasPorMultiplicador(multi) {
+  return CARTAS.filter((c) => c.multiplicador === multi);
+}
+
+export function cartaAleatoriaPorMultiplicador(multi) {
+  const pool = cartasPorMultiplicador(multi);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── FASES ──────────────────────────────────────────────────────
+export const FASE_LABELS = {
+  grupos:        "Fase de Grupos",
+  dieciseisavos: "Dieciseisavos de Final",
+  octavos:       "Octavos de Final",
+  cuartos:       "Cuartos de Final",
+  semifinal:     "Semifinal",
+  tercer_lugar:  "Tercer y Cuarto Lugar",
+  final:         "FINAL",
+};
+
+export const FASES_ELIMINATORIAS = [
+  "dieciseisavos", "octavos", "cuartos",
+  "semifinal", "tercer_lugar", "final",
+];
+
+// ── BANCO DE PREGUNTAS (estructura para el admin) ──────────────
+// El admin elige una de estas para el día.
+// Las opciones reales las pondrás tú; por ahora el array tiene
+// la estructura correcta para 104 preguntas.
+export const BANCO_PREGUNTAS = [
+  {
+    id: "bq1",
+    texto: "Cuántos goles se marcan hoy",
+    opciones: ["ente 0 y 1", "2", "mas de 3","100"],
+  },
+  {
+    id: "bq2",
+    texto: "¿Quién será el jugador del partido en el Chile vs España?",
+    opciones: ["Vargas", "Alexis", "Pulgar", "Otro"],
+  },
+  // → Agrega las 104 preguntas aquí con el mismo formato.
+];
 </file>
 
 <file path="src/utils/scoring.js">
@@ -3477,178 +3845,6 @@ export default function AdminSuperDestacado({ onMensaje }) {
 }
 </file>
 
-<file path="src/components/ModalPerfilResumido.jsx">
-// src/components/ModalPerfilResumido.jsx (versión completa)
-import React from "react";
-import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
-import { cartaImg } from "../utils/sobre";
-
-function AvatarAnimado({ avatarId, size = 56 }) {
-  const [frame, setFrame] = React.useState(1);
-  const av = AVATARES.find((a) => a.id === avatarId);
-
-  React.useEffect(() => {
-    const iv = setInterval(() => {
-      setFrame((f) => (f === 3 ? 1 : f + 1));
-    }, 200);
-    return () => clearInterval(iv);
-  }, []);
-
-  if (!av) {
-    return (
-      <div
-        style={{
-          width: size,
-          height: size,
-          background: "#333",
-          border: "2px solid #555",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: size * 0.5,
-        }}
-      >
-        ?
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={avatarFrame(av.slug, frame)}
-      alt={av.nombre}
-      style={{
-        width: size,
-        height: size,
-        imageRendering: "pixelated",
-        border: "3px solid var(--negro)",
-        boxShadow: "2px 2px 0 var(--negro)",
-        objectFit: "cover",
-      }}
-      onError={(e) => {
-        e.target.style.display = "none";
-        if (e.target.parentElement) e.target.parentElement.innerHTML = "?";
-      }}
-    />
-  );
-}
-
-export default function ModalPerfilResumido({ jugador, onCerrar }) {
-  if (!jugador) return null;
-
-  // Obtener las cartas desbloqueadas
-  const cartasDesbloqueadas = jugador.cartasDesbloqueadas || [];
-  const cartasInfo = CARTAS.filter(c => cartasDesbloqueadas.includes(c.id));
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.95)",
-        zIndex: 600,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-        overflowY: "auto",
-      }}
-      onClick={onCerrar}
-    >
-      <div
-        style={{
-          background: "var(--negro)",
-          border: "4px solid var(--verde-claro)",
-          boxShadow: "6px 6px 0 var(--verde-oscuro)",
-          padding: "24px 20px",
-          maxWidth: "380px",
-          width: "100%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "14px",
-          alignItems: "center",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Avatar */}
-        {jugador.avatarId ? (
-          <AvatarAnimado avatarId={jugador.avatarId} size={80} />
-        ) : (
-          <span style={{ fontSize: "60px" }}>?</span>
-        )}
-
-        {/* Apodo */}
-        <p style={{ fontSize: "12px", color: "var(--amarillo)", textAlign: "center" }}>
-          {jugador.nickname}
-        </p>
-
-        {/* Nombre real */}
-        {jugador.nombreReal && (
-          <p style={{ fontSize: "8px", color: "var(--gris-claro)", textAlign: "center" }}>
-            {jugador.nombreReal}
-          </p>
-        )}
-
-        {/* Email */}
-        {jugador.email && (
-          <p style={{ fontSize: "7px", color: "var(--gris)", textAlign: "center" }}>
-            {jugador.email}
-          </p>
-        )}
-
-        {/* Puntos totales */}
-        <div style={{ textAlign: "center", marginTop: "4px" }}>
-          <p style={{ fontSize: "7px", color: "var(--verde-claro)" }}>PUNTOS TOTALES</p>
-          <span className="puntos-badge" style={{ fontSize: "14px" }}>
-            {jugador.puntosTotal ?? 0}
-          </span>
-        </div>
-
-        {/* Cartas coleccionables */}
-        {cartasInfo.length > 0 && (
-          <div style={{ width: "100%", marginTop: "8px" }}>
-            <p style={{ fontSize: "7px", color: "var(--amarillo)", textAlign: "center", marginBottom: "8px" }}>
-              🃏 CARTAS ({cartasInfo.length})
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px" }}>
-              {cartasInfo.map(carta => (
-                <div key={carta.id} style={{ textAlign: "center", width: "60px" }}>
-                  <img
-                    src={cartaImg(carta.slug)}
-                    alt={carta.nombre}
-                    style={{ width: "50px", height: "50px", imageRendering: "pixelated", border: "2px solid var(--negro)" }}
-                    onError={(e) => { e.target.style.display = "none"; }}
-                  />
-                  <p style={{ fontSize: "5px", color: "var(--gris-claro)", marginTop: "4px" }}>
-                    {carta.nombre}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {cartasInfo.length === 0 && (
-          <p style={{ fontSize: "6px", color: "var(--gris)", textAlign: "center" }}>
-            Aún no tiene cartas coleccionables
-          </p>
-        )}
-
-        <button
-          className="btn-pixel btn-gris"
-          style={{ fontSize: "8px", marginTop: "8px" }}
-          onClick={onCerrar}
-        >
-          CERRAR ✕
-        </button>
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="src/components/NotificacionCartas.jsx">
 // src/components/NotificacionCartas.jsx  — v3 (Bugfix 1)
 // ─────────────────────────────────────────────────────────────
@@ -3832,6 +4028,663 @@ function CartasGrid({ cartas }) {
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/OnboardingModal.jsx">
+// src/components/OnboardingModal.jsx  — v7 (Patch 4)
+// ─────────────────────────────────────────────────────────────
+// TUTORIAL ACTUALIZADO:
+//   Paso 0: Bienvenida
+//   Paso 1: Cómo predecir (fase eliminatoria / muere-muere)
+//   Paso 2: Sistema de puntos muere-muere (ya no hay grupos)
+//   Paso 3: Podio y ranking diario
+//   Paso 4: Cartas multiplicadoras
+//   Paso 5: Láminas coleccionables
+// ─────────────────────────────────────────────────────────────
+import React, { useEffect, useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+
+const LOCAL_KEY = "cp8b_onboarding_visto_v7";
+
+function FilaPts({ pts, desc, color = "var(--amarillo)" }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+      padding:"5px 8px", border:"1px solid var(--verde-campo)",
+      fontSize:"6px", background:"rgba(0,0,0,0.3)" }}>
+      <span style={{ color:"var(--gris-claro)", lineHeight:1.8, flex:1 }}>{desc}</span>
+      <span style={{ color, fontWeight:"bold", marginLeft:"8px",
+        background:`rgba(${color==="var(--amarillo)"?"244,208,63":"82,183,136"},0.1)`,
+        padding:"1px 6px", border:`1px solid ${color}`, whiteSpace:"nowrap" }}>{pts}</span>
+    </div>
+  );
+}
+
+export default function OnboardingModal({ isOpen, onClose }) {
+  const { firebaseUser, userProfile, refreshProfile } = useAuth();
+  const [visible, setVisible] = useState(false);
+  const [paso,    setPaso]    = useState(0);
+
+  const esControlado  = isOpen !== undefined;
+  const mostrarModal  = esControlado ? isOpen : visible;
+
+  useEffect(() => {
+    if (esControlado) { if (isOpen) setPaso(0); return; }
+    const yaVioLocal     = localStorage.getItem(LOCAL_KEY);
+    const yaVioFirestore = userProfile?.onboardingVisto;
+    if (!yaVioLocal && !yaVioFirestore) {
+      const t = setTimeout(() => { setPaso(0); setVisible(true); }, 600);
+      return () => clearTimeout(t);
+    }
+  }, [userProfile, isOpen, esControlado]);
+
+  const handleCerrar = async () => {
+    if (esControlado) { if (onClose) onClose(); return; }
+    setVisible(false);
+    localStorage.setItem(LOCAL_KEY, "1");
+    if (firebaseUser) {
+      try {
+        await updateDoc(doc(db,"usuarios",firebaseUser.uid), { onboardingVisto:true });
+      } catch(_) {}
+    }
+  };
+
+  if (!mostrarModal) return null;
+
+  const pasos = [
+    // ── 0. Bienvenida ─────────────────────────────────────
+    {
+      icono: "⚽",
+      titulo: "¡BIENVENIDO!",
+      color: "var(--verde-claro)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2 }}>
+            <span style={{ color:"var(--amarillo)" }}>International Superstar Polla</span> es
+            una competencia de pronósticos del{" "}
+            <span style={{ color:"var(--verde-claro)" }}>Mundial 2026</span>.
+            Pronostica partidos, acumula puntos y sube al ranking.
+          </p>
+          <div style={{ marginTop:"12px", padding:"10px",
+            border:"2px solid var(--verde-campo)", background:"rgba(82,183,136,0.08)" }}>
+            <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>🗂 PESTAÑAS:</p>
+            <div style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2.2 }}>
+              <p>🏠 <span style={{ color:"var(--blanco)" }}>INICIO</span> — Podio, mensajes y tabla de puntos</p>
+              <p>⚽ <span style={{ color:"var(--blanco)" }}>PARTIDOS</span> — Pronósticos del día y pregunta</p>
+              <p>📊 <span style={{ color:"var(--blanco)" }}>RANKING</span> — Tabla completa de posiciones</p>
+              <p>🖼️ <span style={{ color:"var(--blanco)" }}>LÁMINAS</span> — Colección y sobre diario</p>
+              <p>👤 <span style={{ color:"var(--blanco)" }}>PERFIL</span> — Cartas y estadísticas</p>
+            </div>
+          </div>
+        </>
+      ),
+    },
+
+    // ── 1. Cómo predecir ──────────────────────────────────
+    {
+      icono: "💀",
+      titulo: "CÓMO PREDECIR",
+      color: "var(--rojo-chile)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2, marginBottom:"10px" }}>
+            Estamos en <span style={{ color:"var(--rojo-chile)" }}>fase eliminatoria</span>.
+            Cada partido puede decidirse en 90 minutos, alargue o penales.
+            Elige cómo crees que se define cada partido.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
+              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>⚽ 90 MIN</p>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+                Predice quién gana y por cuánto (1 gol o 2+).
+              </p>
+            </div>
+            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
+              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>⏱ ALARGUE</p>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+                Si empatan en 90 min y va a alargue. Predice quién gana en el alargue y diferencia.
+              </p>
+            </div>
+            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
+              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>🎯 PENALES</p>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+                Si empatan en alargue y va a penales. Predice quién gana y la diferencia exacta de la tanda.
+              </p>
+            </div>
+          </div>
+          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
+            ⚠ Tienes hasta el inicio del partido para guardar tu pronóstico.
+          </p>
+        </>
+      ),
+    },
+
+    // ── 2. Sistema de puntos ──────────────────────────────
+    {
+      icono: "🔢",
+      titulo: "SISTEMA DE PUNTOS FASE MUERE MUERE",
+      color: "var(--rojo-chile)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2, marginBottom:"8px", fontSize:"6px" }}>
+            Todos los puntos <span style={{ color:"var(--amarillo)" }}>aumentaron</span> en
+            fase eliminatoria. Cuanto más exacto tu pronóstico, más puntos.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:"3px" }}>
+            <FilaPts pts="+4"  desc="Acertar ganador en 90 min" color="var(--rojo-chile)" />
+            <FilaPts pts="+6"  desc="Ganador + diferencia (90 min)" color="var(--rojo-chile)" />
+            <FilaPts pts="+6"  desc="Acertar que va a Alargue" color="var(--rojo-chile)" />
+            <FilaPts pts="+12" desc="Alargue + diferencia exacta" color="var(--rojo-chile)" />
+            <FilaPts pts="+6"  desc="Acertar que va a Penales" color="var(--rojo-chile)" />
+            <FilaPts pts="+10" desc="Penales + quién gana la tanda" color="var(--rojo-chile)" />
+            <FilaPts pts="+14" desc="Penales + diferencia exacta" color="var(--rojo-chile)" />
+            <FilaPts pts="+2"  desc="Pregunta del día correcta" />
+            <FilaPts pts="+2"  desc="Ganador del día (bonus diario)" color="var(--verde-claro)" />
+          </div>
+        </>
+      ),
+    },
+
+    // ── 3. Podio y ranking ────────────────────────────────
+    {
+      icono: "🏆",
+      titulo: "PODIO Y RANKING",
+      color: "var(--amarillo)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2 }}>
+            Cada día hay un <span style={{ color:"var(--amarillo)" }}>ganador del día</span>:
+            quien acumule más puntos en esa jornada recibe{" "}
+            <span style={{ color:"var(--verde-claro)" }}>+2 pts bonus</span> y una{" "}
+            <span style={{ color:"var(--amarillo)" }}>carta ×4</span>.
+          </p>
+          <div style={{ marginTop:"10px", padding:"10px",
+            border:"2px solid var(--amarillo)", background:"rgba(244,208,63,0.06)",
+            display:"flex", flexDirection:"column", gap:"6px" }}>
+            <p style={{ fontSize:"6px", color:"var(--amarillo)", lineHeight:2 }}>
+              🥇 1° del día → carta <strong>×4</strong> + <strong>+2 pts</strong>
+            </p>
+            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
+              🥈 2° del día → carta <strong>×3</strong>
+            </p>
+            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
+              🥉 3° del día → carta <strong>×2</strong>
+            </p>
+          </div>
+          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
+            En el RANKING puedes ver las flechas ▲▼ que indican cuántos puestos
+            subiste o bajaste respecto al día anterior.
+          </p>
+        </>
+      ),
+    },
+
+    // ── 4. Cartas multiplicadoras ─────────────────────────
+    {
+      icono: "🃏",
+      titulo: "CARTAS MULTIPLICADORAS",
+      color: "var(--verde-claro)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2, marginBottom:"10px" }}>
+            Las cartas <span style={{ color:"var(--amarillo)" }}>multiplican tus puntos</span> en
+            un partido. Úsalas estratégicamente en los partidos donde más confías.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"10px" }}>
+            {[
+              { mult:"×2", desc:"Duplica los puntos del partido", color:"#4ade80" },
+              { mult:"×3", desc:"Triplica los puntos del partido", color:"var(--amarillo)" },
+              { mult:"×4", desc:"Cuadruplica los puntos del partido", color:"var(--rojo-chile)" },
+            ].map((c,i) => (
+              <div key={i} style={{ display:"flex", justifyContent:"space-between",
+                alignItems:"center", padding:"6px 8px",
+                border:`1px solid ${c.color}`, background:"rgba(0,0,0,0.3)" }}>
+                <span style={{ fontSize:"6px", color:"var(--gris-claro)" }}>{c.desc}</span>
+                <span style={{ fontSize:"12px", fontWeight:"bold", color:c.color }}>{c.mult}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+            💡 La carta se consume al procesar el resultado, aunque no hayas acertado.
+          </p>
+        </>
+      ),
+    },
+
+    // ── 5. Láminas ────────────────────────────────────────
+    {
+      icono: "🖼️",
+      titulo: "LÁMINAS COLECCIONABLES",
+      color: "var(--amarillo)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2 }}>
+            Cada día recibes un{" "}
+            <span style={{ color:"var(--amarillo)" }}>sobre de láminas</span> en la
+            pestaña 🖼️ LÁMINAS. Ábrelo y da vuelta cada lámina para revelarla.
+          </p>
+          <div style={{ marginTop:"10px", display:"flex", flexDirection:"column", gap:"8px" }}>
+            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
+              📦 <strong style={{ color:"var(--blanco)" }}>SOBRE DIARIO:</strong>{" "}
+              4 láminas por día. Mejor ranking → mejores cartas extra.
+            </p>
+            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
+              📚 <strong style={{ color:"var(--blanco)" }}>COLECCIÓN:</strong>{" "}
+              Las láminas se organizan por categoría. Completa una categoría entera
+              y reclama <span style={{ color:"var(--amarillo)" }}>2 cartas multiplicadoras</span> de regalo.
+            </p>
+          </div>
+        </>
+      ),
+    },
+  ];
+
+  const esUltimo   = paso === pasos.length - 1;
+  const pasActual  = pasos[paso];
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)",
+      zIndex:900, display:"flex", alignItems:"center", justifyContent:"center",
+      padding:"20px", overflowY:"auto" }}>
+      <div style={{ background:"var(--negro)", border:`4px solid ${pasActual.color}`,
+        boxShadow:`6px 6px 0 ${pasActual.color}44`,
+        padding:"24px 20px 20px", maxWidth:"400px", width:"100%",
+        display:"flex", flexDirection:"column", gap:"16px",
+        maxHeight:"88vh", overflowY:"auto" }}>
+
+        {/* Puntos de progreso */}
+        <div style={{ display:"flex", justifyContent:"center", gap:"6px" }}>
+          {pasos.map((_,i) => (
+            <div key={i} style={{
+              width: i===paso ? "16px" : "8px", height:"8px",
+              background: i<=paso ? pasActual.color : "var(--gris)",
+              border:`1px solid ${i<=paso?pasActual.color:"var(--gris)"}`,
+              transition:"width 0.2s",
+            }} />
+          ))}
+        </div>
+
+        {/* Icono + título */}
+        <div style={{ textAlign:"center" }}>
+          <span style={{ fontSize:"32px" }}>{pasActual.icono}</span>
+          <h2 style={{ color:pasActual.color, marginTop:"8px", fontSize:"10px" }}>
+            {pasActual.titulo}
+          </h2>
+        </div>
+
+        {/* Contenido */}
+        <div style={{ fontSize:"7px", color:"var(--blanco)", lineHeight:2, flex:1 }}>
+          {pasActual.contenido}
+        </div>
+
+        {/* Navegación */}
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+          {!esUltimo ? (
+            <button className="btn-pixel btn-amarillo w-full" style={{ fontSize:"8px" }}
+              onClick={() => setPaso(p=>p+1)}>
+              SIGUIENTE →
+            </button>
+          ) : (
+            <button className="btn-pixel btn-amarillo w-full" style={{ fontSize:"8px" }}
+              onClick={handleCerrar}>
+              {esControlado ? "✕ CERRAR" : "✅ ¡ENTENDIDO! JUGAR"}
+            </button>
+          )}
+          {paso > 0 && (
+            <button onClick={() => setPaso(p=>p-1)}
+              style={{ background:"none", border:"none", color:"var(--gris)",
+                fontSize:"6px", fontFamily:"'Press Start 2P',monospace",
+                cursor:"pointer", textAlign:"center" }}>
+              ← anterior
+            </button>
+          )}
+          {!esUltimo && (
+            <button onClick={handleCerrar}
+              style={{ background:"none", border:"none", color:"var(--gris)",
+                fontSize:"6px", fontFamily:"'Press Start 2P',monospace",
+                cursor:"pointer", textAlign:"center" }}>
+              {esControlado ? "Cerrar ✕" : "Saltar intro →"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/Perfil.jsx">
+// src/components/Perfil.jsx  — v5 (Fase 2)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v5:
+//   • Sección "🔮 HISTORIAL DE PRONÓSTICOS" con HistorialPredicciones.
+//   • Mantiene todo lo demás: cartas, puntosAyer, historial de días.
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect } from "react";
+import {
+  doc, updateDoc, getDocs, collection, query,
+  where, orderBy,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { CARTAS } from "../data/sampleData";
+import { ayerStr } from "../utils/helpers";
+import HistorialPredicciones from "./HistorialPredicciones";
+
+// ── Lightbox de carta ─────────────────────────────────────────
+function LightboxCarta({ carta, onCerrar }) {
+  if (!carta) return null;
+  const RAREZA_COLOR = {
+    comun: "var(--verde-claro)", rara: "var(--amarillo)", legendaria: "var(--rojo-chile)",
+  };
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.95)", zIndex: 900,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "20px",
+    }} onClick={onCerrar}>
+      <div style={{ maxWidth: "340px", width: "100%", textAlign: "center" }}
+        onClick={(e) => e.stopPropagation()}>
+        <img
+          src={`/cartas/${carta.slug}.jpg`}
+          alt={carta.nombre}
+          style={{
+            width: "100%", maxWidth: "280px",
+            imageRendering: "pixelated",
+            border: `4px solid ${RAREZA_COLOR[carta.rareza] || "#fff"}`,
+            boxShadow: `0 0 30px ${RAREZA_COLOR[carta.rareza] || "#fff"}44`,
+            marginBottom: "16px",
+          }}
+          onError={(e) => { e.target.style.display = "none"; }}
+        />
+        <p style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "9px",
+          color: RAREZA_COLOR[carta.rareza] || "#fff", marginBottom: "8px" }}>
+          {carta.nombre}
+        </p>
+        <p style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "7px",
+          color: "var(--gris-claro)", marginBottom: "16px" }}>
+          Multiplicador: ×{carta.multiplicador}
+        </p>
+        <button className="btn-pixel btn-gris" onClick={onCerrar} style={{ fontSize: "7px" }}>
+          CERRAR ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+export default function Perfil({ onVolver }) {
+  const { firebaseUser, userProfile, refreshProfile } = useAuth();
+  const [editando,  setEditando]  = useState(false);
+  const [nuevoNick, setNuevoNick] = useState(userProfile?.nickname || "");
+  const [error,     setError]     = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [exito,     setExito]     = useState("");
+  const [cartaLightbox, setCartaLightbox] = useState(null);
+
+  // Historial de días (puntosDelDia)
+  const [puntosAyer,    setPuntosAyer]    = useState(null);
+  const [historialDias, setHistorialDias] = useState([]);
+  const [cargandoHist,  setCargandoHist]  = useState(true);
+
+  // Sección historial pronósticos
+  const [mostrarHistPreds, setMostrarHistPreds] = useState(false);
+
+  const ayer = ayerStr();
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    cargarHistorialDias();
+  }, [firebaseUser]);
+
+  const cargarHistorialDias = async () => {
+    setCargandoHist(true);
+    try {
+      const q = query(
+        collection(db, "puntosDelDia"),
+        where("uid", "==", firebaseUser.uid),
+        orderBy("fecha", "desc")
+      );
+      const snap = await getDocs(q);
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setHistorialDias(items);
+      const ayerItem = items.find((i) => i.fecha === ayer);
+      if (ayerItem) setPuntosAyer(ayerItem);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCargandoHist(false);
+    }
+  };
+
+  const handleGuardarNick = async () => {
+    if (nuevoNick === userProfile?.nickname) { setEditando(false); return; }
+    if (nuevoNick.length < 3)  { setError("Mínimo 3 caracteres"); return; }
+    if (nuevoNick.length > 16) { setError("Máximo 16 caracteres"); return; }
+    setGuardando(true); setError("");
+    try {
+      const norm = nuevoNick.toLowerCase();
+      const q    = query(collection(db, "usuarios"), where("nicknameLower", "==", norm));
+      const snap = await getDocs(q);
+      if (!snap.empty && snap.docs[0].id !== firebaseUser.uid) {
+        setError("Ese nickname ya está en uso."); setGuardando(false); return;
+      }
+      await updateDoc(doc(db, "usuarios", firebaseUser.uid), {
+        nickname: nuevoNick, nicknameLower: norm,
+      });
+      await refreshProfile();
+      setEditando(false);
+      setExito("¡Nickname actualizado!");
+      setTimeout(() => setExito(""), 3000);
+    } catch (e) {
+      setError("Error al guardar.");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: "16px 16px 80px" }}>
+      {cartaLightbox && (
+        <LightboxCarta carta={cartaLightbox} onCerrar={() => setCartaLightbox(null)} />
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+        <button className="btn-pixel btn-gris" onClick={onVolver}
+          style={{ padding: "8px 12px", fontSize: "8px" }}>
+          ← VOLVER
+        </button>
+        <h2 className="text-amarillo">👤 MI PERFIL</h2>
+      </div>
+
+      {/* Header */}
+      <div className="perfil-header mb-16">
+        <img
+          src={`/avatares/${userProfile?.avatarSlug || "default"}-1.png`}
+          alt="avatar"
+          className="perfil-avatar-grande"
+          style={{ width: "80px", height: "80px", imageRendering: "pixelated",
+            border: "2px solid var(--verde-claro)", padding: "4px" }}
+          onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
+        />
+        <div style={{ textAlign: "center" }}>
+          {!editando ? (
+            <div>
+              <p style={{ fontSize: "12px", color: "var(--amarillo)", marginBottom: "6px" }}>
+                {userProfile?.nickname}
+              </p>
+              <p style={{ fontSize: "7px", color: "var(--gris-claro)", marginBottom: "10px" }}>
+                {userProfile?.nombreReal}
+              </p>
+              <button className="btn-pixel btn-verde"
+                style={{ fontSize: "7px", padding: "6px 12px" }}
+                onClick={() => { setEditando(true); setNuevoNick(userProfile?.nickname); }}>
+                ✏ CAMBIAR NICKNAME
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+              <input className="input-pixel" style={{ textAlign: "center" }}
+                value={nuevoNick} maxLength={16}
+                onChange={(e) => setNuevoNick(e.target.value)} />
+              {error && <p className="text-rojo" style={{ fontSize: "7px" }}>{error}</p>}
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button className="btn-pixel btn-verde" style={{ fontSize: "7px", padding: "6px 12px" }}
+                  onClick={handleGuardarNick} disabled={guardando}>
+                  {guardando ? "..." : "✅ OK"}
+                </button>
+                <button className="btn-pixel btn-gris" style={{ fontSize: "7px", padding: "6px 12px" }}
+                  onClick={() => { setEditando(false); setError(""); }}>
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+          {exito && <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginTop: "6px" }}>{exito}</p>}
+        </div>
+
+        <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>PUNTOS TOTAL</p>
+            <span className="puntos-badge" style={{ fontSize: "12px" }}>
+              {userProfile?.puntosTotal ?? 0}
+            </span>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>CARTAS</p>
+            <span className="puntos-badge" style={{ fontSize: "12px" }}>
+              {Object.values(userProfile?.cartas || {}).reduce((s, c) => s + c, 0)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* HISTORIAL DE PRONÓSTICOS (nuevo v5) */}
+      <div className="seccion-titulo">🔮 HISTORIAL DE PRONÓSTICOS</div>
+      <div className="caja-pixel mb-16" style={{ padding: 0, overflow: "hidden" }}>
+        <button
+          className="btn-pixel btn-gris w-full"
+          style={{ fontSize: "7px", borderRadius: 0, border: "none",
+            borderBottom: mostrarHistPreds ? "2px solid var(--verde-campo)" : "none" }}
+          onClick={() => setMostrarHistPreds((v) => !v)}
+        >
+          {mostrarHistPreds ? "▲ OCULTAR" : "▼ VER MIS PRONÓSTICOS PASADOS"}
+        </button>
+        {mostrarHistPreds && (
+          <HistorialPredicciones userId={firebaseUser?.uid} />
+        )}
+      </div>
+
+      {/* PUNTOS DE AYER */}
+      <div className="seccion-titulo">📅 PUNTOS DE AYER</div>
+      <div className="caja-pixel mb-16">
+        {cargandoHist ? (
+          <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>Cargando...</p>
+        ) : puntosAyer ? (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={{ fontSize: "7px", color: "var(--blanco)", marginBottom: "4px" }}>
+                {puntosAyer.fecha}
+              </p>
+              {puntosAyer.esGanador && (
+                <p style={{ fontSize: "6px", color: "var(--amarillo)" }}>
+                  👑 GANADOR DEL DÍA +2 bonus
+                </p>
+              )}
+            </div>
+            <span className="puntos-badge" style={{ fontSize: "14px" }}>
+              {puntosAyer.puntos} pts
+            </span>
+          </div>
+        ) : (
+          <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>Sin actividad ayer.</p>
+        )}
+      </div>
+
+      {/* HISTORIAL DE DÍAS */}
+      <div className="seccion-titulo">📈 HISTORIAL DESDE DÍA 1</div>
+      <div className="caja-pixel mb-16" style={{ padding: "8px" }}>
+        {cargandoHist ? (
+          <p style={{ fontSize: "7px", color: "var(--gris-claro)", padding: "8px" }}>Cargando...</p>
+        ) : historialDias.length === 0 ? (
+          <p style={{ fontSize: "7px", color: "var(--gris-claro)", padding: "8px" }}>
+            Sin historial todavía.
+          </p>
+        ) : (
+          <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+            {historialDias.map((h, i) => (
+              <div key={i} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "6px 8px", borderBottom: "1px solid var(--verde-campo)",
+              }}>
+                <div>
+                  <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>{h.fecha}</p>
+                  {h.esGanador && (
+                    <p style={{ fontSize: "5px", color: "var(--amarillo)" }}>👑 Ganador del día</p>
+                  )}
+                </div>
+                <span className="puntos-badge" style={{ fontSize: "8px" }}>{h.puntos}pts</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* CARTAS COLECCIONABLES */}
+      <div className="seccion-titulo">🃏 CARTAS COLECCIONABLES</div>
+      <div className="cartas-grid">
+        {CARTAS.map((carta) => {
+          const cantidad = userProfile?.cartas?.[carta.id] || 0;
+          const desbloq  = cantidad > 0;
+          const RAREZA_COLOR = {
+            comun: "var(--verde-claro)", rara: "var(--amarillo)", legendaria: "var(--rojo-chile)",
+          };
+          return (
+            <div
+              key={carta.id}
+              className={`carta ${desbloq ? "carta-desbloqueada" : "carta-bloqueada"}`}
+              style={desbloq ? { cursor: "pointer", borderColor: RAREZA_COLOR[carta.rareza] || "var(--negro)" } : {}}
+              onClick={() => desbloq && setCartaLightbox(carta)}
+            >
+              {desbloq ? (
+                <>
+                  <img
+                    src={`/cartas/${carta.slug}.jpg`}
+                    alt={carta.nombre}
+                    style={{ width: "60px", height: "60px", objectFit: "cover",
+                      imageRendering: "pixelated", border: "2px solid var(--negro)" }}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.parentElement.innerHTML += `<span style="font-size:28px">🃏</span>`;
+                    }}
+                  />
+                  <p className="carta-nombre">{carta.nombre}</p>
+                  <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "7px",
+                    color: RAREZA_COLOR[carta.rareza] || "var(--verde-claro)" }}>
+                    ×{carta.multiplicador}
+                  </span>
+                  <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "6px",
+                    color: "var(--gris-claro)", marginLeft: "4px" }}>
+                    (x{cantidad})
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: "28px" }}>🔒</span>
+                  <p className="carta-nombre">{carta.nombre}</p>
+                  <p className="carta-condicion">Gana el podio del día</p>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -4912,334 +5765,465 @@ h3 { font-size: 10px; }
 }
 </file>
 
-<file path="src/components/Perfil.jsx">
-// src/components/Perfil.jsx  — v5 (Fase 2)
+<file path="src/components/AdminEventoEnVivo.jsx">
+// src/components/AdminEventoEnVivo.jsx  — v3
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v5:
-//   • Sección "🔮 HISTORIAL DE PRONÓSTICOS" con HistorialPredicciones.
-//   • Mantiene todo lo demás: cartas, puntosAyer, historial de días.
+// CAMBIOS v3:
+//   • Ya NO se bloquea crear una pregunta nueva si hay otra
+//     abierta — pueden convivir varias preguntas "abiertas" a
+//     la vez dentro del mismo evento.
+//   • Cada pregunta abierta tiene su PROPIA tarjeta con su propio
+//     selector de respuesta correcta y su propio botón de cierre.
+//     Se cierran de forma independiente, una por una.
+//   • respSels ahora es un mapa { preguntaId: opcionElegida }
+//     para no mezclar las selecciones entre preguntas distintas.
 // ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  doc, updateDoc, getDocs, collection, query,
-  where, orderBy,
+  doc, onSnapshot, setDoc, updateDoc,
+  collection, getDocs, query, where, writeBatch, increment,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-import { CARTAS } from "../data/sampleData";
-import { ayerStr } from "../utils/helpers";
-import HistorialPredicciones from "./HistorialPredicciones";
 
-// ── Lightbox de carta ─────────────────────────────────────────
-function LightboxCarta({ carta, onCerrar }) {
-  if (!carta) return null;
-  const RAREZA_COLOR = {
-    comun: "var(--verde-claro)", rara: "var(--amarillo)", legendaria: "var(--rojo-chile)",
-  };
-  return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.95)", zIndex: 900,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "20px",
-    }} onClick={onCerrar}>
-      <div style={{ maxWidth: "340px", width: "100%", textAlign: "center" }}
-        onClick={(e) => e.stopPropagation()}>
-        <img
-          src={`/cartas/${carta.slug}.jpg`}
-          alt={carta.nombre}
-          style={{
-            width: "100%", maxWidth: "280px",
-            imageRendering: "pixelated",
-            border: `4px solid ${RAREZA_COLOR[carta.rareza] || "#fff"}`,
-            boxShadow: `0 0 30px ${RAREZA_COLOR[carta.rareza] || "#fff"}44`,
-            marginBottom: "16px",
-          }}
-          onError={(e) => { e.target.style.display = "none"; }}
-        />
-        <p style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "9px",
-          color: RAREZA_COLOR[carta.rareza] || "#fff", marginBottom: "8px" }}>
-          {carta.nombre}
-        </p>
-        <p style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "7px",
-          color: "var(--gris-claro)", marginBottom: "16px" }}>
-          Multiplicador: ×{carta.multiplicador}
-        </p>
-        <button className="btn-pixel btn-gris" onClick={onCerrar} style={{ fontSize: "7px" }}>
-          CERRAR ✕
-        </button>
-      </div>
-    </div>
-  );
-}
+const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
+const REF_RESPS  = () => collection(db, "eventoEnVivo", "actual", "respuestas");
 
-// ── Componente principal ──────────────────────────────────────
-export default function Perfil({ onVolver }) {
-  const { firebaseUser, userProfile, refreshProfile } = useAuth();
-  const [editando,  setEditando]  = useState(false);
-  const [nuevoNick, setNuevoNick] = useState(userProfile?.nickname || "");
-  const [error,     setError]     = useState("");
-  const [guardando, setGuardando] = useState(false);
-  const [exito,     setExito]     = useState("");
-  const [cartaLightbox, setCartaLightbox] = useState(null);
+const BANDERAS = [
+  "🇦🇷","🇧🇷","🇨🇱","🇺🇾","🇩🇪","🇫🇷","🇪🇸","🇵🇹","🇮🇹",
+  "🇬🇧","🇳🇱","🇧🇪","🇨🇷","🇲🇽","🇨🇴","🇵🇪","🇵🇾","🇪🇨",
+  "🇺🇸","🇯🇵","🇰🇷","🇲🇦","🇸🇳","🇬🇭","🇨🇲","🇨🇭","🇦🇹",
+  "🇵🇱","🇭🇷","🇸🇪","🇩🇰","🇳🇴","🇦🇺","🇳🇿","🇸🇦","🇮🇷",
+];
 
-  // Historial de días (puntosDelDia)
-  const [puntosAyer,    setPuntosAyer]    = useState(null);
-  const [historialDias, setHistorialDias] = useState([]);
-  const [cargandoHist,  setCargandoHist]  = useState(true);
+export default function AdminEventoEnVivo({ onMensaje }) {
+  const [evento,   setEvento]   = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const unsubRef = useRef(null);
 
-  // Sección historial pronósticos
-  const [mostrarHistPreds, setMostrarHistPreds] = useState(false);
+  // Form configuración
+  const [nombreL,  setNombreL]  = useState("");
+  const [banderaL, setBanderaL] = useState("🏳️");
+  const [nombreV,  setNombreV]  = useState("");
+  const [banderaV, setBanderaV] = useState("🏳️");
+  const [imagen,   setImagen]   = useState("");
+  const [selBand,  setSelBand]  = useState(null);
 
-  const ayer = ayerStr();
+  // Form nueva pregunta
+  const [textoPrg, setTextoPrg] = useState("");
+  const [opciones, setOpciones] = useState(["",""]);
+  const [puntos,   setPuntos]   = useState(3);
+  const [creando,  setCreando]  = useState(false);
+
+  // Cierre — ahora un mapa por pregunta
+  const [respSels,  setRespSels]  = useState({}); // { preguntaId: opcion }
+  const [cerrando,  setCerrando]  = useState(null); // preguntaId siendo cerrada
 
   useEffect(() => {
-    if (!firebaseUser) return;
-    cargarHistorialDias();
-  }, [firebaseUser]);
-
-  const cargarHistorialDias = async () => {
-    setCargandoHist(true);
-    try {
-      const q = query(
-        collection(db, "puntosDelDia"),
-        where("uid", "==", firebaseUser.uid),
-        orderBy("fecha", "desc")
-      );
-      const snap = await getDocs(q);
-      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setHistorialDias(items);
-      const ayerItem = items.find((i) => i.fecha === ayer);
-      if (ayerItem) setPuntosAyer(ayerItem);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setCargandoHist(false);
-    }
-  };
-
-  const handleGuardarNick = async () => {
-    if (nuevoNick === userProfile?.nickname) { setEditando(false); return; }
-    if (nuevoNick.length < 3)  { setError("Mínimo 3 caracteres"); return; }
-    if (nuevoNick.length > 16) { setError("Máximo 16 caracteres"); return; }
-    setGuardando(true); setError("");
-    try {
-      const norm = nuevoNick.toLowerCase();
-      const q    = query(collection(db, "usuarios"), where("nicknameLower", "==", norm));
-      const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].id !== firebaseUser.uid) {
-        setError("Ese nickname ya está en uso."); setGuardando(false); return;
+    unsubRef.current = onSnapshot(REF_EVENTO(), snap => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setEvento(d);
+        setNombreL(d.equipoLocal?.nombre   || "");
+        setBanderaL(d.equipoLocal?.bandera || "🏳️");
+        setNombreV(d.equipoVisitante?.nombre   || "");
+        setBanderaV(d.equipoVisitante?.bandera || "🏳️");
+        setImagen(d.imagenFondo || "");
+      } else {
+        setEvento(null);
       }
-      await updateDoc(doc(db, "usuarios", firebaseUser.uid), {
-        nickname: nuevoNick, nicknameLower: norm,
-      });
-      await refreshProfile();
-      setEditando(false);
-      setExito("¡Nickname actualizado!");
-      setTimeout(() => setExito(""), 3000);
-    } catch (e) {
-      setError("Error al guardar.");
-    } finally {
-      setGuardando(false);
+      setCargando(false);
+    }, () => setCargando(false));
+    return () => { if (unsubRef.current) unsubRef.current(); };
+  }, []);
+
+  const preguntas = evento?.preguntas || [];
+  // AHORA: puede haber varias abiertas a la vez.
+  // Se invierte el orden: la más reciente aparece primero/arriba.
+  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
+  const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
+
+  // ── Guardar configuración (NO toca el array de preguntas) ───
+  const guardarConfig = async () => {
+    if (!nombreL.trim() || !nombreV.trim()) {
+      onMensaje("error", "Escribe el nombre de ambos equipos."); return;
     }
+    try {
+      await setDoc(REF_EVENTO(), {
+        activo: true,
+        equipoLocal:     { nombre: nombreL.trim(), bandera: banderaL },
+        equipoVisitante: { nombre: nombreV.trim(), bandera: banderaV },
+        imagenFondo:     imagen.trim() || null,
+        preguntas:       evento?.preguntas || [],
+      });
+      onMensaje("ok", `✅ Evento configurado: ${banderaL} ${nombreL} vs ${nombreV} ${banderaV}`);
+    } catch (e) { onMensaje("error", e.message); }
   };
+
+  const desactivar = async () => {
+    try {
+      await updateDoc(REF_EVENTO(), { activo: false });
+      onMensaje("ok", "Evento desactivado.");
+    } catch (e) { onMensaje("error", e.message); }
+  };
+
+  // ── Publicar nueva pregunta (push al array) ─────────────────
+  // YA NO bloquea si hay otra(s) abierta(s) — pueden convivir.
+  const publicarPregunta = async () => {
+    const optsValidas = opciones.filter(o => o.trim());
+    if (!textoPrg.trim()) { onMensaje("error", "Escribe la pregunta."); return; }
+    if (optsValidas.length < 2) { onMensaje("error", "Agrega al menos 2 opciones."); return; }
+
+    setCreando(true);
+    try {
+      const numeroSiguiente = preguntas.length + 1;
+      const pregNueva = {
+        id:                `pev_${Date.now()}`,
+        numero:            numeroSiguiente,
+        texto:             textoPrg.trim(),
+        opciones:          optsValidas,
+        estado:            "abierta",
+        respuestaCorrecta: null,
+        puntosEnVivo:      Number(puntos),
+        creadaEn:          new Date().toISOString(),
+      };
+      await updateDoc(REF_EVENTO(), {
+        preguntas: [...preguntas, pregNueva],
+      });
+      onMensaje("ok", `🔴 Pregunta #${numeroSiguiente} publicada (+${puntos} pts)`);
+      setTextoPrg(""); setOpciones(["",""]); setPuntos(3);
+    } catch (e) { onMensaje("error", e.message); }
+    finally { setCreando(false); }
+  };
+
+  // ── Cerrar UNA pregunta específica y dar sus puntos ─────────
+  const cerrarPregunta = async (pregunta) => {
+    const respCorrecta = respSels[pregunta.id];
+    if (!respCorrecta) { onMensaje("error", "Selecciona la respuesta correcta."); return; }
+    setCerrando(pregunta.id);
+    try {
+      const pts = pregunta.puntosEnVivo || 3;
+
+      // 1. Actualizar SOLO esta pregunta dentro del array
+      const nuevasPreguntas = preguntas.map(p =>
+        p.id === pregunta.id
+          ? { ...p, estado: "cerrada", respuestaCorrecta: respCorrecta }
+          : p
+      );
+      await updateDoc(REF_EVENTO(), { preguntas: nuevasPreguntas });
+
+      // 2. Leer respuestas SOLO de esta pregunta y dar puntos
+      const snapR = await getDocs(query(
+        REF_RESPS(), where("preguntaId", "==", pregunta.id)
+      ));
+      const batch = writeBatch(db);
+      let acertaron = 0;
+      snapR.docs.forEach(d => {
+        if (d.data().respuesta === respCorrecta) {
+          batch.update(doc(db, "usuarios", d.data().uid), {
+            puntosTotal: increment(pts),
+          });
+          acertaron++;
+        }
+      });
+      await batch.commit();
+
+      onMensaje("ok",
+        `✅ Pregunta #${pregunta.numero} cerrada. ${acertaron} de ${snapR.size} acertaron → +${pts} pts c/u.`
+      );
+      // Limpiar la selección de esta pregunta
+      setRespSels(prev => { const n = { ...prev }; delete n[pregunta.id]; return n; });
+    } catch (e) { onMensaje("error", e.message); }
+    finally { setCerrando(null); }
+  };
+
+  if (cargando) return (
+    <p style={{ fontSize:"6px", color:"var(--gris-claro)", padding:"16px" }}>⚙ Cargando...</p>
+  );
+
+  const estaActivo = evento?.activo === true;
 
   return (
-    <div style={{ padding: "16px 16px 80px" }}>
-      {cartaLightbox && (
-        <LightboxCarta carta={cartaLightbox} onCerrar={() => setCartaLightbox(null)} />
-      )}
+    <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-        <button className="btn-pixel btn-gris" onClick={onVolver}
-          style={{ padding: "8px 12px", fontSize: "8px" }}>
-          ← VOLVER
-        </button>
-        <h2 className="text-amarillo">👤 MI PERFIL</h2>
-      </div>
+      {/* ═══ SECCIÓN 1: CONFIGURAR ══════════════════════════════ */}
+      <div style={{ border:"2px solid var(--amarillo)", padding:"12px" }}>
+        <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"12px" }}>
+          ⚙ CONFIGURAR EVENTO EN VIVO
+        </p>
 
-      {/* Header */}
-      <div className="perfil-header mb-16">
-        <img
-          src={`/avatares/${userProfile?.avatarSlug || "default"}-1.png`}
-          alt="avatar"
-          className="perfil-avatar-grande"
-          style={{ width: "80px", height: "80px", imageRendering: "pixelated",
-            border: "2px solid var(--verde-claro)", padding: "4px" }}
-          onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML += "<span>?</span>"; }}
-        />
-        <div style={{ textAlign: "center" }}>
-          {!editando ? (
-            <div>
-              <p style={{ fontSize: "12px", color: "var(--amarillo)", marginBottom: "6px" }}>
-                {userProfile?.nickname}
-              </p>
-              <p style={{ fontSize: "7px", color: "var(--gris-claro)", marginBottom: "10px" }}>
-                {userProfile?.nombreReal}
-              </p>
-              <button className="btn-pixel btn-verde"
-                style={{ fontSize: "7px", padding: "6px 12px" }}
-                onClick={() => { setEditando(true); setNuevoNick(userProfile?.nickname); }}>
-                ✏ CAMBIAR NICKNAME
+        {estaActivo && (
+          <div style={{ padding:"8px", marginBottom:"12px",
+            background:"rgba(214,40,40,0.1)", border:"2px solid var(--rojo-chile)" }}>
+            <p style={{ fontSize:"6px", color:"var(--rojo-chile)", lineHeight:2 }}>
+              🔴 EVENTO ACTIVO: {evento.equipoLocal?.bandera} {evento.equipoLocal?.nombre}{" "}
+              vs {evento.equipoVisitante?.nombre} {evento.equipoVisitante?.bandera}
+            </p>
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"4px" }}>
+              {preguntas.length} pregunta(s) en total
+              {abiertas.length > 0 && (
+                <span style={{ color:"var(--rojo-chile)" }}>
+                  {" "}· {abiertas.length} abierta(s) ahora mismo
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+
+        <div style={{ display:"flex", gap:"10px", marginBottom:"10px" }}>
+          <div style={{ flex:1 }}>
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
+              EQUIPO LOCAL
+            </p>
+            <div style={{ display:"flex", gap:"4px", marginBottom:"4px" }}>
+              <span style={{ fontSize:"20px", lineHeight:"32px" }}>{banderaL}</span>
+              <button onClick={() => setSelBand(selBand==="L" ? null : "L")}
+                style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                  padding:"3px 6px", cursor:"pointer",
+                  border:`1px solid ${selBand==="L"?"var(--amarillo)":"var(--gris)"}`,
+                  background: selBand==="L"?"rgba(244,208,63,0.15)":"transparent",
+                  color:"var(--gris-claro)" }}>
+                CAMBIAR
               </button>
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-              <input className="input-pixel" style={{ textAlign: "center" }}
-                value={nuevoNick} maxLength={16}
-                onChange={(e) => setNuevoNick(e.target.value)} />
-              {error && <p className="text-rojo" style={{ fontSize: "7px" }}>{error}</p>}
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button className="btn-pixel btn-verde" style={{ fontSize: "7px", padding: "6px 12px" }}
-                  onClick={handleGuardarNick} disabled={guardando}>
-                  {guardando ? "..." : "✅ OK"}
+            <input value={nombreL} onChange={e => setNombreL(e.target.value)}
+              placeholder="Marruecos"
+              style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                width:"100%", padding:"5px 7px", border:"2px solid var(--negro)",
+                background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
+          </div>
+          <div style={{ flex:1 }}>
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
+              EQUIPO VISITANTE
+            </p>
+            <div style={{ display:"flex", gap:"4px", marginBottom:"4px" }}>
+              <span style={{ fontSize:"20px", lineHeight:"32px" }}>{banderaV}</span>
+              <button onClick={() => setSelBand(selBand==="V" ? null : "V")}
+                style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                  padding:"3px 6px", cursor:"pointer",
+                  border:`1px solid ${selBand==="V"?"var(--amarillo)":"var(--gris)"}`,
+                  background: selBand==="V"?"rgba(244,208,63,0.15)":"transparent",
+                  color:"var(--gris-claro)" }}>
+                CAMBIAR
+              </button>
+            </div>
+            <input value={nombreV} onChange={e => setNombreV(e.target.value)}
+              placeholder="Países Bajos"
+              style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                width:"100%", padding:"5px 7px", border:"2px solid var(--negro)",
+                background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
+          </div>
+        </div>
+
+        {selBand && (
+          <div style={{ marginBottom:"10px", padding:"8px",
+            border:"1px solid var(--amarillo)", background:"rgba(0,0,0,0.3)" }}>
+            <p style={{ fontSize:"5px", color:"var(--amarillo)", marginBottom:"6px" }}>
+              SELECCIONA BANDERA {selBand==="L" ? "LOCAL" : "VISITANTE"}:
+            </p>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:"4px" }}>
+              {BANDERAS.map(b => (
+                <button key={b} onClick={() => {
+                    if (selBand==="L") setBanderaL(b); else setBanderaV(b);
+                    setSelBand(null);
+                  }}
+                  style={{ fontSize:"18px", padding:"3px", cursor:"pointer",
+                    border:"1px solid transparent", background:"transparent" }}
+                  onMouseEnter={e => e.target.style.background="rgba(255,255,255,0.1)"}
+                  onMouseLeave={e => e.target.style.background="transparent"}>
+                  {b}
                 </button>
-                <button className="btn-pixel btn-gris" style={{ fontSize: "7px", padding: "6px 12px" }}
-                  onClick={() => { setEditando(false); setError(""); }}>
-                  ✕
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
+          IMAGEN DE FONDO (archivo en /public/ — ej: A_PAISES_MARRUECOS.jpg)
+        </p>
+        <input value={imagen} onChange={e => setImagen(e.target.value)}
+          placeholder="A_PAISES_MARRUECOS.jpg"
+          style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            width:"100%", padding:"5px 7px", border:"2px solid var(--negro)",
+            background:"var(--blanco)", color:"var(--negro)",
+            outline:"none", marginBottom:"10px" }} />
+
+        <div style={{ display:"flex", gap:"8px" }}>
+          <button className="btn-pixel btn-rojo" style={{ flex:2, fontSize:"7px" }}
+            onClick={guardarConfig}>
+            🔴 {estaActivo ? "ACTUALIZAR EVENTO" : "ACTIVAR EVENTO"}
+          </button>
+          {estaActivo && (
+            <button className="btn-pixel btn-gris" style={{ flex:1, fontSize:"6px" }}
+              onClick={desactivar}>
+              DESACTIVAR
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ═══ SECCIÓN 2: PREGUNTAS ══════════════════════════════ */}
+      {estaActivo && (
+        <div style={{ border:"2px solid var(--rojo-chile)", padding:"12px" }}>
+          <p style={{ fontSize:"7px", color:"var(--rojo-chile)", marginBottom:"12px" }}>
+            ❓ PREGUNTAS EN VIVO ({preguntas.length} en total)
+          </p>
+
+          {/* Todas las preguntas ABIERTAS, apiladas, cada una con su propio cierre */}
+          {abiertas.length > 0 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:"10px", marginBottom:"14px" }}>
+              {abiertas.map(preg => (
+                <div key={preg.id} style={{ padding:"12px",
+                  background:"rgba(214,40,40,0.06)", border:"2px solid var(--rojo-chile)",
+                  boxShadow:"0 0 16px rgba(214,40,40,0.2)" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"10px" }}>
+                    <span style={{ fontSize:"6px", color:"var(--rojo-chile)" }}>
+                      🔴 PREGUNTA #{preg.numero} — ABIERTA
+                    </span>
+                    <span style={{ fontSize:"5px", color:"var(--amarillo)",
+                      border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
+                      +{preg.puntosEnVivo} PTS
+                    </span>
+                  </div>
+                  <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
+                    {preg.texto}
+                  </p>
+                  <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
+                    MARCA LA RESPUESTA CORRECTA:
+                  </p>
+                  <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"12px" }}>
+                    {(preg.opciones||[]).map((op,i) => (
+                      <button key={i} onClick={() =>
+                          setRespSels(prev => ({ ...prev, [preg.id]: op }))}
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                          padding:"8px 10px", cursor:"pointer", textAlign:"left",
+                          border:`2px solid ${respSels[preg.id]===op?"var(--verde-claro)":"var(--gris)"}`,
+                          background:respSels[preg.id]===op?"rgba(82,183,136,0.15)":"transparent",
+                          color:"var(--blanco)" }}>
+                        {respSels[preg.id]===op ? "✅ " : ""}{op}
+                      </button>
+                    ))}
+                  </div>
+                  <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
+                    onClick={() => cerrarPregunta(preg)}
+                    disabled={!respSels[preg.id] || cerrando===preg.id}>
+                    {cerrando===preg.id
+                      ? "⚙ PROCESANDO..."
+                      : `🔒 CERRAR PREGUNTA #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Form nueva pregunta — SIEMPRE disponible, pueden convivir */}
+          <div style={{ padding:"12px", border:"2px solid rgba(255,255,255,0.1)",
+            background:"rgba(0,0,0,0.2)", marginBottom:"14px" }}>
+            <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"12px" }}>
+              + PREGUNTA #{preguntas.length + 1}
+              {abiertas.length > 0 && (
+                <span style={{ fontSize:"5px", color:"var(--gris-claro)", marginLeft:"8px" }}>
+                  (puede convivir con las {abiertas.length} ya abiertas)
+                </span>
+              )}
+            </p>
+
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
+              PREGUNTA:
+            </p>
+            <textarea value={textoPrg} onChange={e => setTextoPrg(e.target.value)}
+              rows={2} placeholder="Ej: ¿Habrá gol antes del minuto 60?"
+              style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                width:"100%", padding:"8px", border:"3px solid var(--negro)",
+                background:"var(--blanco)", color:"var(--negro)",
+                outline:"none", resize:"none", lineHeight:2, marginBottom:"10px" }} />
+
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
+              OPCIONES:
+            </p>
+            <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"10px" }}>
+              {opciones.map((op,i) => (
+                <div key={i} style={{ display:"flex", gap:"5px" }}>
+                  <input value={op}
+                    onChange={e => setOpciones(prev =>
+                      prev.map((o,idx) => idx===i ? e.target.value : o))}
+                    placeholder={`Opción ${i+1}`}
+                    style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                      flex:1, padding:"5px 8px", border:"2px solid var(--negro)",
+                      background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
+                  {opciones.length > 2 && (
+                    <button onClick={() => setOpciones(prev => prev.filter((_,idx) => idx!==i))}
+                      style={{ background:"var(--rojo-chile)", color:"var(--blanco)",
+                        border:"none", cursor:"pointer", padding:"4px 8px",
+                        fontFamily:"'Press Start 2P',monospace", fontSize:"8px" }}>
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {opciones.length < 5 && (
+              <button className="btn-pixel btn-gris w-full"
+                style={{ fontSize:"5px", marginBottom:"10px" }}
+                onClick={() => setOpciones(prev => [...prev,""])}>
+                + AGREGAR OPCIÓN
+              </button>
+            )}
+
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
+              PUNTAJE:
+            </p>
+            <div style={{ display:"flex", alignItems:"center", gap:"5px",
+              marginBottom:"12px", flexWrap:"wrap" }}>
+              {[1,2,3,5,7,10].map(n => (
+                <button key={n} onClick={() => setPuntos(n)}
+                  style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                    width:"33px", height:"33px", cursor:"pointer",
+                    border:`2px solid ${puntos===n?"var(--amarillo)":"var(--gris)"}`,
+                    background:puntos===n?"rgba(244,208,63,0.2)":"transparent",
+                    color:puntos===n?"var(--amarillo)":"var(--gris-claro)" }}>
+                  +{n}
                 </button>
+              ))}
+              <input type="number" min="1" max="99" value={puntos}
+                onChange={e => setPuntos(Math.max(1,Math.min(99,Number(e.target.value)||1)))}
+                style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                  width:"44px", height:"33px", textAlign:"center",
+                  border:"2px solid var(--amarillo)",
+                  background:"var(--negro)", color:"var(--amarillo)", outline:"none" }} />
+            </div>
+
+            <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
+              onClick={publicarPregunta} disabled={creando}>
+              {creando ? "⚙ PUBLICANDO..." : `🔴 PUBLICAR PREGUNTA #${preguntas.length+1} (+${puntos} pts)`}
+            </button>
+          </div>
+
+          {/* Historial de preguntas cerradas */}
+          {cerradas.length > 0 && (
+            <div>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)",
+                marginBottom:"6px", letterSpacing:"1px" }}>
+                HISTORIAL ({cerradas.length})
+              </p>
+              <div style={{ display:"flex", flexDirection:"column", gap:"4px" }}>
+                {cerradas.map(pq => (
+                  <div key={pq.id} style={{ padding:"8px 10px",
+                    border:"1px solid rgba(82,183,136,0.2)",
+                    background:"rgba(0,0,0,0.2)", fontSize:"6px", lineHeight:2 }}>
+                    <p style={{ color:"var(--amarillo)" }}>PREGUNTA #{pq.numero}</p>
+                    <p style={{ color:"var(--blanco)" }}>{pq.texto}</p>
+                    <p>✅ <span style={{ color:"var(--verde-claro)" }}>{pq.respuestaCorrecta}</span>
+                      <span style={{ color:"var(--amarillo)", marginLeft:"8px" }}>
+                        +{pq.puntosEnVivo} pts
+                      </span>
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
-          {exito && <p style={{ fontSize: "7px", color: "var(--verde-claro)", marginTop: "6px" }}>{exito}</p>}
         </div>
-
-        <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>PUNTOS TOTAL</p>
-            <span className="puntos-badge" style={{ fontSize: "12px" }}>
-              {userProfile?.puntosTotal ?? 0}
-            </span>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>CARTAS</p>
-            <span className="puntos-badge" style={{ fontSize: "12px" }}>
-              {Object.values(userProfile?.cartas || {}).reduce((s, c) => s + c, 0)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* HISTORIAL DE PRONÓSTICOS (nuevo v5) */}
-      <div className="seccion-titulo">🔮 HISTORIAL DE PRONÓSTICOS</div>
-      <div className="caja-pixel mb-16" style={{ padding: 0, overflow: "hidden" }}>
-        <button
-          className="btn-pixel btn-gris w-full"
-          style={{ fontSize: "7px", borderRadius: 0, border: "none",
-            borderBottom: mostrarHistPreds ? "2px solid var(--verde-campo)" : "none" }}
-          onClick={() => setMostrarHistPreds((v) => !v)}
-        >
-          {mostrarHistPreds ? "▲ OCULTAR" : "▼ VER MIS PRONÓSTICOS PASADOS"}
-        </button>
-        {mostrarHistPreds && (
-          <HistorialPredicciones userId={firebaseUser?.uid} />
-        )}
-      </div>
-
-      {/* PUNTOS DE AYER */}
-      <div className="seccion-titulo">📅 PUNTOS DE AYER</div>
-      <div className="caja-pixel mb-16">
-        {cargandoHist ? (
-          <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>Cargando...</p>
-        ) : puntosAyer ? (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <p style={{ fontSize: "7px", color: "var(--blanco)", marginBottom: "4px" }}>
-                {puntosAyer.fecha}
-              </p>
-              {puntosAyer.esGanador && (
-                <p style={{ fontSize: "6px", color: "var(--amarillo)" }}>
-                  👑 GANADOR DEL DÍA +2 bonus
-                </p>
-              )}
-            </div>
-            <span className="puntos-badge" style={{ fontSize: "14px" }}>
-              {puntosAyer.puntos} pts
-            </span>
-          </div>
-        ) : (
-          <p style={{ fontSize: "7px", color: "var(--gris-claro)" }}>Sin actividad ayer.</p>
-        )}
-      </div>
-
-      {/* HISTORIAL DE DÍAS */}
-      <div className="seccion-titulo">📈 HISTORIAL DESDE DÍA 1</div>
-      <div className="caja-pixel mb-16" style={{ padding: "8px" }}>
-        {cargandoHist ? (
-          <p style={{ fontSize: "7px", color: "var(--gris-claro)", padding: "8px" }}>Cargando...</p>
-        ) : historialDias.length === 0 ? (
-          <p style={{ fontSize: "7px", color: "var(--gris-claro)", padding: "8px" }}>
-            Sin historial todavía.
-          </p>
-        ) : (
-          <div style={{ maxHeight: "200px", overflowY: "auto" }}>
-            {historialDias.map((h, i) => (
-              <div key={i} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "6px 8px", borderBottom: "1px solid var(--verde-campo)",
-              }}>
-                <div>
-                  <p style={{ fontSize: "6px", color: "var(--gris-claro)" }}>{h.fecha}</p>
-                  {h.esGanador && (
-                    <p style={{ fontSize: "5px", color: "var(--amarillo)" }}>👑 Ganador del día</p>
-                  )}
-                </div>
-                <span className="puntos-badge" style={{ fontSize: "8px" }}>{h.puntos}pts</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* CARTAS COLECCIONABLES */}
-      <div className="seccion-titulo">🃏 CARTAS COLECCIONABLES</div>
-      <div className="cartas-grid">
-        {CARTAS.map((carta) => {
-          const cantidad = userProfile?.cartas?.[carta.id] || 0;
-          const desbloq  = cantidad > 0;
-          const RAREZA_COLOR = {
-            comun: "var(--verde-claro)", rara: "var(--amarillo)", legendaria: "var(--rojo-chile)",
-          };
-          return (
-            <div
-              key={carta.id}
-              className={`carta ${desbloq ? "carta-desbloqueada" : "carta-bloqueada"}`}
-              style={desbloq ? { cursor: "pointer", borderColor: RAREZA_COLOR[carta.rareza] || "var(--negro)" } : {}}
-              onClick={() => desbloq && setCartaLightbox(carta)}
-            >
-              {desbloq ? (
-                <>
-                  <img
-                    src={`/cartas/${carta.slug}.jpg`}
-                    alt={carta.nombre}
-                    style={{ width: "60px", height: "60px", objectFit: "cover",
-                      imageRendering: "pixelated", border: "2px solid var(--negro)" }}
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      e.target.parentElement.innerHTML += `<span style="font-size:28px">🃏</span>`;
-                    }}
-                  />
-                  <p className="carta-nombre">{carta.nombre}</p>
-                  <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "7px",
-                    color: RAREZA_COLOR[carta.rareza] || "var(--verde-claro)" }}>
-                    ×{carta.multiplicador}
-                  </span>
-                  <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: "6px",
-                    color: "var(--gris-claro)", marginLeft: "4px" }}>
-                    (x{cantidad})
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: "28px" }}>🔒</span>
-                  <p className="carta-nombre">{carta.nombre}</p>
-                  <p className="carta-condicion">Gana el podio del día</p>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      )}
     </div>
   );
 }
@@ -5940,624 +6924,415 @@ export default function PodioF1({ datos }) {
 }
 </file>
 
-<file path="src/data/sampleData.js">
-// src/data/sampleData.js  — v3
+<file path="src/components/EventoEnVivo.jsx">
+// src/components/EventoEnVivo.jsx  — v4
 // ─────────────────────────────────────────────────────────────
-
-export const PARTIDOS_EJEMPLO = [
-  {
-    id: "p1",
-    fecha: "2026-06-11",
-    horaInicio: "12:00",
-    local:     { nombre: "Chile",    bandera: "🇨🇱" },
-    visitante: { nombre: "España",   bandera: "🇪🇸" },
-    fase: "grupos",
-    estaDestacado: true,
-    resultado: null,
-  },
-  {
-    id: "p2",
-    fecha: "2026-06-11",
-    horaInicio: "15:00",
-    local:     { nombre: "Brasil",   bandera: "🇧🇷" },
-    visitante: { nombre: "Argentina",bandera: "🇦🇷" },
-    fase: "grupos",
-    estaDestacado: false,
-    resultado: null,
-  },
-  {
-    id: "p3",
-    fecha: "2026-06-11",
-    horaInicio: "18:00",
-    local:     { nombre: "Francia",  bandera: "🇫🇷" },
-    visitante: { nombre: "Alemania", bandera: "🇩🇪" },
-    fase: "grupos",
-    estaDestacado: false,
-    resultado: null,
-  },
-];
-
-export const PREGUNTAS_EJEMPLO = [
-  {
-    id: "q1",
-    fecha: "2026-06-11",
-    texto: "¿Cuántos goles se marcarán en el partido Chile vs España?",
-    opciones: ["0-1 goles", "2-3 goles", "4-5 goles", "6 o más"],
-    respuestaCorrecta: null,
-  },
-];
-
-// ── FRASES DEL DÍA ─────────────────────────────────────────────
-// Una por cada día del mundial (o más); se rotan cíclicamente.
-export const FRASES_DEL_DIA = [
-  "El lunes\nquieres cambiarlos a todos,\nel viernes piensas\nque puedes recuperar a cinco o seis,\ny el domingo juegan los mismos\nonce cabrones de siempre.\n\nJ.B Toshack",
-  "La prensa es muy mentirosa.\nDicen que me he acostado con 200 mujeres, pero solo fueron 100.\n\n George Best",
-  "El fútbol es un deporte que inventaron los ingleses,\njuegan once contra once, y siempre gana Alemania.\n\nGary Lineker",
-  "Dios estaba de nuestro lado,\npero el árbitro era francés.\n\nHristo Stoichkov",
-  "Un partido de fútbol sin goles,\nes como un domingo sin sol.\n\n- Di Stefano",
-  "El fútbol es la única religión\nque no tiene ateos.\n\nEduardo Galeano",
-  "No hay nada más peligroso\nque no arriesgarse.\n\nPep Guardiola",
-  "Dios es redondo.\n\nJuan Villoro",
-  "Como presidente del club tengo la obligación\nde respaldar al técnico del equipo\nhasta cinco minutos antes de echarlo.\n\nAlfredo Davicce, presidente del Inter",
-  "Nosotros no compramos superestrellas.\nNosotros las hacemos.\n\nArsène Wenger",
-  "Siempre es difícil perder\npara quien no está acostumbrado.\n\nMourinho",
-  "En el fútbol opino lo mismo\nque Ivan Lendl respecto al tenis:\nsi quieres tener un amigo,\ncómprate un perro.\n\nMarco van Basten",
-  "Si yo hubiese nacido feo,\nno habríais oído hablar de Pelé.\n\nGeorge Best",
-  "¿Usted ya se puso de acuerdo con los rivales\npara dejarnos hacer todo eso?\n\nGarrincha",
-  "Ver fútbol es como ver sexo.\nEstá bien, pero es mejor practicarlo.\n\nAlex James",
-  "Algunas personas creen que el fútbol\nes una cuestión de vida o muerte.\nMe decepciona esa actitud. Es más importante que eso.\n\nBill Shanky",
-  "Tenemos la mejor hinchada del mundo,\npero nunca he visto a un hincha marcar un gol.\n\nJock Stein",
-  "A mí siempre me pareció más interesante\n marcar un autogol que un gol.\nUn gol, salvo si uno se llama Pelé, es algo eminentemente vulgar y muy descortés con el arquero contrario\nmientras que un autogol es un gesto de independencia.\n\nRoberto Bolaño",
-  "El fútbol es un milagro que le permitió a Europa\nodiarse sin destruirse.\n\nPaul Auster",
-  "Gasté mucho dinero en coches,\nalcohol y mujeres.\nEl resto lo he malgastado.\n\nGeorge Best",
-  "El fútbol es como el ajedrez\npero sin dados.\n\nLukas Podolski",
-  "Recibí un golpe en mi tobillo izquierdo.\nPero algo me dijo que era mi derecho.\n\nLee Hendrie",
-  "Voy a correr como un negro\npara vivir como un blanco.\n\nSamuel Eto`o",
-  "Bueno, del país no puedo contarles nada…\nsolo puedo adelantarle que se trata\nde un equipo brasileño…\n\nMurci Rojas",
-  "…y bueno,\nsin duda es difícil jugar\na 3.000 kilómetros de altura\n\nManuel López",
-  "Esta ciudad tiene dos grandes equipos:\nel Liverpool y los suplentes del Liverpool.\n\nBill Shankly",
-  "Yo crecí en un barrio\nprivado de Buenos Aires…\nPrivado de agua, de luz y de teléfono.\n\nMaradona",
-  "No me importaría perder todos los partidos,\nsiempre y cuando ganemos la Liga.\n\nMark Viduka",
-  "Cuando un equipo anda bien,\nno anda mal y viceversa.\n\nMariano Puyol",
-  "Primero que nada un saludo\n a todos los señores televisores.\n\nJuan Carlos Letelier",
-  "A veces, en el fútbol,\ntienes que marcar goles.\n\nThierry Henry",
-  "El que inventó el color de camisetas es un fenómeno,\nLos del mismo color se la pasan entre ellos\ny patean al arco donde está el tipo\nque no almorzó con nosotros.\n\nBilardo",
-  "No hay nada entre medio.\nO eres bueno, o eres malo.\nNosotros estuvimos entre medio.\n\nGary Lineker",
-  "En 1969 dejé las mujeres y el alcohol.\nFueron los peores 20 minutos de mi vida.”\n\nGeorge Best",
-  "¿Cuántos pulmones tengo?\nBueno… Uno, como toda la gente, ¿no?\n\nHéctor Puebla",
-  "El fútbol es la cosa más importante\nde las cosas menos importantes.\n\nJorge Valdano",
-  "Ganar no es lo importante,\nsiempre y cuando ganes.\n\nVinnie Jones",
-  "En un partido de fútbol\ntodo se complica por la presencia\ndel equipo contrario.\n\nJean Paul Sartre",
-  "El Golde Maradona con la mano es,\npor ahora, la única prueba fiable\nde la existencia de Dios.\n\nMario Benedetti",
-  "El fútbol\nes la recuperación semanal de la infancia.\n\nJavier Marías",
-  "La cancha es el único lugar\ndonde los pobres pueden cobrar revancha\n\nJuan Villoro",
-];
-
-// ── AVATARES — 12 personajes con imágenes animadas ────────────
-// Las imágenes se guardan en /public/avatares/
-// Nombre de archivo: {slug}-1.png, {slug}-2.png, {slug}-3.png
-export const AVATARES = [
-  { id: "av1",  slug: "chancho-lorenzo",        nombre: "Chancho Lorenzo"         },
-  { id: "av2",  slug: "azkargorta",             nombre: "Azkargorta"              },
-  { id: "av3",  slug: "chinquihuin",            nombre: "Chinquihuin"             },
-  { id: "av4",  slug: "julio-martinez",         nombre: "Julio Martínez"          },
-  { id: "av5",  slug: "caszely",               nombre: "Caszely"                 },
-  { id: "av6",  slug: "dr-orozco",             nombre: "Dr Orozco"               },
-  { id: "av7",  slug: "peter-veneno",          nombre: "Peter Veneno"            },
-  { id: "av8",  slug: "bielsa",               nombre: "Bielsa"                  },
-  { id: "av9",  slug: "carcuro",              nombre: "Carcuro"                 },
-  { id: "av10", slug: "el-sapo",              nombre: "El Sapo"                 },
-  { id: "av11", slug: "el-hombre-del-maletin", nombre: "El Hombre del Maletín"   },
-  { id: "av12", slug: "ff17",                 nombre: "FF17"                    },
-];
-
-// Helper: retorna la URL del fotograma N (1, 2 o 3) de un avatar
-export function avatarFrame(slug, frame) {
-  return `/avatares/${slug}-${frame}.png`;
-}
-
-// ── CARTAS COLECCIONABLES ──────────────────────────────────────
-// Imágenes en /public/cartas/{slug}.png
-// multiplicador: 4 | 3 | 2
-export const CARTAS = [
-  // x4 — Legendarias
-  { id: "cx4-1", slug: "vargas-elimina-espana",   nombre: "Vargas elimina a España",      multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-2", slug: "penal-gato-silva",         nombre: "El Penal del Gato Silva",       multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-3", slug: "maniobra-heimlich",         nombre: "La Maniobra de Heimlich",       multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-4", slug: "el-perro-ron",             nombre: "El Perro Ron",                  multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-5", slug: "el-maracanazo",            nombre: "El Maracanazo",                 multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-6", slug: "el-dedo-de-jarita",        nombre: "El dedo de Jarita",             multiplicador: 4, rareza: "legendaria" },
-  // x3 — Raras
-  { id: "cx3-1", slug: "historico-orellana",       nombre: "El histórico de Orellana",      multiplicador: 3, rareza: "rara" },
-  { id: "cx3-2", slug: "matador-en-wembley",       nombre: "El Matador en Wembley",          multiplicador: 3, rareza: "rara" },
-  { id: "cx3-3", slug: "mi-familia-esta-bien",      nombre: "Mi familia está bien",           multiplicador: 3, rareza: "rara" },
-  { id: "cx3-4", slug: "ahi-quedo-brasil",         nombre: "Ahí Quedó Brasil",              multiplicador: 3, rareza: "rara" },
-  { id: "cx3-5", slug: "el-palo-de-pinilla",       nombre: "El Palo de Pinilla",             multiplicador: 3, rareza: "rara" },
-  { id: "cx3-6", slug: "pero-con-respeto",         nombre: "Pero con Respeto",              multiplicador: 3, rareza: "rara" },
-  // x2 — Comunes
-  { id: "cx2-1", slug: "las-luces-rojas",          nombre: "Las Luces Rojas",               multiplicador: 2, rareza: "comun" },
-  { id: "cx2-2", slug: "vargas-ataja-chilavert",   nombre: "Vargas ataja a Chilavert",      multiplicador: 2, rareza: "comun" },
-  { id: "cx2-3", slug: "que-sucede",               nombre: "¿Qué sucede?",                  multiplicador: 2, rareza: "comun" },
-  { id: "cx2-4", slug: "el-dublinazo",             nombre: "El dublinazo",                  multiplicador: 2, rareza: "comun" },
-  { id: "cx2-5", slug: "lesion-a-francescoli",     nombre: "Lesión a Francescoli",          multiplicador: 2, rareza: "comun" },
-  { id: "cx2-6", slug: "el-bautizazo",             nombre: "El Bautizazo",                  multiplicador: 2, rareza: "comun" },
-];
-
-// Helpers de cartas
-export function getCarta(cartaId) {
-  return CARTAS.find((c) => c.id === cartaId) || null;
-}
-
-export function cartasPorMultiplicador(multi) {
-  return CARTAS.filter((c) => c.multiplicador === multi);
-}
-
-export function cartaAleatoriaPorMultiplicador(multi) {
-  const pool = cartasPorMultiplicador(multi);
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-// ── FASES ──────────────────────────────────────────────────────
-export const FASE_LABELS = {
-  grupos:        "Fase de Grupos",
-  dieciseisavos: "Dieciseisavos de Final",
-  octavos:       "Octavos de Final",
-  cuartos:       "Cuartos de Final",
-  semifinal:     "Semifinal",
-  tercer_lugar:  "Tercer y Cuarto Lugar",
-  final:         "FINAL",
-};
-
-export const FASES_ELIMINATORIAS = [
-  "dieciseisavos", "octavos", "cuartos",
-  "semifinal", "tercer_lugar", "final",
-];
-
-// ── BANCO DE PREGUNTAS (estructura para el admin) ──────────────
-// El admin elige una de estas para el día.
-// Las opciones reales las pondrás tú; por ahora el array tiene
-// la estructura correcta para 104 preguntas.
-export const BANCO_PREGUNTAS = [
-  {
-    id: "bq1",
-    texto: "Cuántos goles se marcan hoy",
-    opciones: ["ente 0 y 1", "2", "mas de 3","100"],
-  },
-  {
-    id: "bq2",
-    texto: "¿Quién será el jugador del partido en el Chile vs España?",
-    opciones: ["Vargas", "Alexis", "Pulgar", "Otro"],
-  },
-  // → Agrega las 104 preguntas aquí con el mismo formato.
-];
-</file>
-
-<file path="firestore.rules">
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // ── Helpers ────────────────────────────────────────────────
-    function esAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    // ── usuarios ───────────────────────────────────────────────
-    match /usuarios/{uid} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if request.auth != null;
-      
-      match /notificaciones/{notifId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
-      }
-    }
-
-    // ── predicciones ───────────────────────────────────────────
-    match /predicciones/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── respuestas ─────────────────────────────────────────────
-    match /respuestas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── partidos ───────────────────────────────────────────────
-    match /partidos/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── preguntas ──────────────────────────────────────────────
-    match /preguntas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── puntosDelDia ───────────────────────────────────────────
-    match /puntosDelDia/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // ── cartasDelUsuario ───────────────────────────────────────
-    match /cartasDelUsuario/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // ── config ──────────────────────────────────────────────────
-    match /config/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── mensajesDia ────────────────────────────────────────────
-    match /mensajesDia/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
-    }
-
-    // ── Reacciones en mensajes ────────────────────────────────
-    match /mensajesDia/{docId}/reacciones/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-
-    // ── admins ──────────────────────────────────────────────────
-    match /admins/{uid} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-
-    // ── sobresDelDia ───────────────────────────────────────────
-    match /sobresDelDia/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── NUEVO: preguntasEnVivo (Super Destacado) ───────────────
-    // El admin crea preguntas; los usuarios las leen y responden.
-    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
-      allow read: if request.auth != null;
-      // Cada usuario solo puede crear/leer su propia respuesta
-      allow create: if request.auth != null;
-      allow update: if false; // No se puede cambiar una respuesta ya enviada
-      allow delete: if false;
-    }
-
-  }
-}
-</file>
-
-<file path="src/components/OnboardingModal.jsx">
-// src/components/OnboardingModal.jsx  — v7 (Patch 4)
+// CAMBIOS v4:
+//   • La imagen ahora ocupa 42% de la altura de pantalla (40vh-45vh)
+//     en vez de un alto fijo pequeño — se ve grande y completa.
+//   • Banderas y nombres se superponen SOBRE la imagen (parte
+//     inferior, con degradado para legibilidad), no debajo de ella
+//     compitiendo por espacio.
+//   • Todo el contenido de preguntas va en una zona inferior con
+//     scroll propio, dejando la imagen siempre visible y fija.
 // ─────────────────────────────────────────────────────────────
-// TUTORIAL ACTUALIZADO:
-//   Paso 0: Bienvenida
-//   Paso 1: Cómo predecir (fase eliminatoria / muere-muere)
-//   Paso 2: Sistema de puntos muere-muere (ya no hay grupos)
-//   Paso 3: Podio y ranking diario
-//   Paso 4: Cartas multiplicadoras
-//   Paso 5: Láminas coleccionables
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import {
+  doc, onSnapshot, setDoc, serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 
-const LOCAL_KEY = "cp8b_onboarding_visto_v7";
+const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
 
-function FilaPts({ pts, desc, color = "var(--amarillo)" }) {
+export default function EventoEnVivo() {
+  const { firebaseUser } = useAuth();
+  const [evento,        setEvento]        = useState(null);
+  const [misRespuestas, setMisRespuestas] = useState({});
+  const [enviando,      setEnviando]      = useState(null);
+  const [minimizado,    setMinimizado]    = useState(false);
+  const [imgError,      setImgError]      = useState(false);
+  const [expandidaId,   setExpandidaId]   = useState(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(REF_EVENTO(), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setEvento(data);
+        const preguntas = data.preguntas || [];
+        const resp = {};
+        preguntas.forEach(p => {
+          const guardada = localStorage.getItem(`cp8b_ev_resp_${p.id}`);
+          if (guardada) resp[p.id] = guardada;
+        });
+        setMisRespuestas(resp);
+      } else {
+        setEvento(null);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const preguntas = evento?.preguntas || [];
+  // Pueden convivir varias preguntas abiertas a la vez.
+  // Se invierte el orden: la pregunta más reciente aparece arriba.
+  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
+  const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
+
+  // Cuando aparece una pregunta nueva abierta, des-minimizar
+  const idsAbiertas = abiertas.map(p => p.id).join(",");
+  useEffect(() => {
+    if (abiertas.length > 0) setMinimizado(false);
+  }, [idsAbiertas]);
+
+  const responder = async (pregunta, opcion) => {
+    if (!firebaseUser || misRespuestas[pregunta.id] || enviando) return;
+    setEnviando(pregunta.id);
+    try {
+      await setDoc(
+        doc(db, "eventoEnVivo", "actual", "respuestas", `${firebaseUser.uid}_${pregunta.id}`),
+        {
+          uid:        firebaseUser.uid,
+          respuesta:  opcion,
+          preguntaId: pregunta.id,
+          timestamp:  serverTimestamp(),
+        }
+      );
+      setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
+      localStorage.setItem(`cp8b_ev_resp_${pregunta.id}`, opcion);
+    } catch (e) { console.error(e); }
+    finally { setEnviando(null); }
+  };
+
+  if (!evento?.activo) return null;
+  if (preguntas.length === 0) return null;
+
+  const localBandera     = evento.equipoLocal?.bandera     || "🏳️";
+  const visitanteBandera = evento.equipoVisitante?.bandera || "🏳️";
+  const localNombre      = evento.equipoLocal?.nombre      || "Local";
+  const visitanteNombre  = evento.equipoVisitante?.nombre  || "Visitante";
+  const imagenFondo      = evento.imagenFondo;
+
+  // ── BURBUJA MINIMIZADA ──────────────────────────────────────
+  if (minimizado) {
+    return (
+      <button
+        onClick={() => setMinimizado(false)}
+        style={{
+          position:"fixed", bottom:"90px", right:"16px", zIndex:650,
+          width:"56px", height:"56px", borderRadius:"50%",
+          background:"var(--rojo-chile)",
+          border:"3px solid var(--blanco)",
+          boxShadow:"0 0 16px rgba(214,40,40,0.7)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontSize:"24px", cursor:"pointer",
+          animation:"latido 1.4s ease-in-out infinite",
+        }}
+        title="Reabrir evento en vivo"
+      >
+        🔴
+        <style>{`@keyframes latido{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
+      </button>
+    );
+  }
+
+  // ── MODAL FULLSCREEN ─────────────────────────────────────────
   return (
-    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-      padding:"5px 8px", border:"1px solid var(--verde-campo)",
-      fontSize:"6px", background:"rgba(0,0,0,0.3)" }}>
-      <span style={{ color:"var(--gris-claro)", lineHeight:1.8, flex:1 }}>{desc}</span>
-      <span style={{ color, fontWeight:"bold", marginLeft:"8px",
-        background:`rgba(${color==="var(--amarillo)"?"244,208,63":"82,183,136"},0.1)`,
-        padding:"1px 6px", border:`1px solid ${color}`, whiteSpace:"nowrap" }}>{pts}</span>
+    <div style={{
+      position:"fixed", inset:0, zIndex:700,
+      display:"flex", flexDirection:"column",
+      fontFamily:"'Press Start 2P', monospace",
+      background:"#0a0510",
+    }}>
+      {/* ═══ IMAGEN PROTAGONISTA (fija, 42% de la pantalla) ═══ */}
+      <div style={{
+        position:"relative", width:"100%", height:"42vh",
+        minHeight:"260px", flexShrink:0, overflow:"hidden",
+      }}>
+        {imagenFondo && !imgError ? (
+          <img
+            src={`/${imagenFondo}`}
+            alt="Imagen del partido"
+            style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div style={{
+            width:"100%", height:"100%",
+            background:"radial-gradient(ellipse at center, #2a0050 0%, #0a0510 100%)",
+          }} />
+        )}
+
+        {/* Degradado solo en la franja inferior, para legibilidad de banderas */}
+        <div style={{
+          position:"absolute", left:0, right:0, bottom:0, height:"50%",
+          background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
+        }} />
+
+        {/* Botón minimizar */}
+        <button
+          onClick={() => setMinimizado(true)}
+          style={{
+            position:"absolute", top:"14px", right:"14px", zIndex:2,
+            width:"34px", height:"34px",
+            background:"rgba(0,0,0,0.55)",
+            border:"2px solid rgba(255,255,255,0.35)",
+            color:"var(--blanco)", fontSize:"15px",
+            cursor:"pointer", display:"flex",
+            alignItems:"center", justifyContent:"center",
+          }}
+          title="Minimizar"
+        >
+          ✕
+        </button>
+
+        {/* Aviso si imagen no carga */}
+        {imagenFondo && imgError && (
+          <div style={{
+            position:"absolute", top:"14px", left:"14px", zIndex:2,
+            fontSize:"5px", color:"var(--amarillo)",
+            background:"rgba(0,0,0,0.6)", padding:"4px 8px",
+            border:"1px solid var(--amarillo)", maxWidth:"180px", lineHeight:2,
+          }}>
+            ⚠ No se encontró /{imagenFondo}
+          </div>
+        )}
+
+        {/* Banderas y nombres SUPERPUESTOS sobre la franja inferior */}
+        <div style={{
+          position:"absolute", left:0, right:0, bottom:0, zIndex:1,
+          padding:"0 16px 14px",
+          display:"flex", flexDirection:"column", alignItems:"center",
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
+            <span style={{ fontSize:"40px", lineHeight:1,
+              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
+              {localBandera}
+            </span>
+            <div style={{ textAlign:"center" }}>
+              {abiertas.length > 0 && (
+                <span style={{
+                  background:"var(--rojo-chile)", color:"var(--blanco)",
+                  padding:"2px 8px", fontSize:"5px",
+                  animation:"parpadeo 1s ease-in-out infinite",
+                  display:"inline-block",
+                }}>
+                  🔴 EN VIVO
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize:"40px", lineHeight:1,
+              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
+              {visitanteBandera}
+            </span>
+          </div>
+          <p style={{ fontSize:"6px", color:"var(--blanco)", textAlign:"center",
+            lineHeight:1.8, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>
+            {localNombre} vs {visitanteNombre}
+          </p>
+        </div>
+      </div>
+
+      {/* ═══ ZONA INFERIOR: preguntas, con scroll propio ═══════ */}
+      <div style={{
+        flex:1, overflowY:"auto",
+        width:"100%", maxWidth:"440px", margin:"0 auto",
+        padding:"16px 16px 24px",
+        display:"flex", flexDirection:"column", gap:"10px",
+      }}>
+
+        {abiertas.length > 0 && (
+          <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
+            {abiertas.map(preg => (
+              <PreguntaGrande
+                key={preg.id}
+                pregunta={preg}
+                miRespuesta={misRespuestas[preg.id]}
+                enviando={enviando === preg.id}
+                onResponder={(op) => responder(preg, op)}
+              />
+            ))}
+          </div>
+        )}
+
+        {cerradas.length > 0 && (
+          <div>
+            {abiertas.length > 0 && (
+              <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
+                margin:"8px 0 6px", letterSpacing:"1px" }}>
+                PREGUNTAS ANTERIORES
+              </p>
+            )}
+            <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+              {cerradas.map(pq => (
+                <PreguntaMinimizada
+                  key={pq.id}
+                  pregunta={pq}
+                  miRespuesta={misRespuestas[pq.id]}
+                  expandida={expandidaId === pq.id}
+                  onToggle={() => setExpandidaId(prev => prev===pq.id ? null : pq.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {abiertas.length === 0 && (
+          <button
+            onClick={() => setMinimizado(true)}
+            className="btn-pixel btn-gris w-full"
+            style={{ fontSize:"6px", marginTop:"8px" }}>
+            MINIMIZAR EVENTO
+          </button>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes parpadeo { 0%,100%{opacity:1} 50%{opacity:0.55} }
+      `}</style>
     </div>
   );
 }
 
-export default function OnboardingModal({ isOpen, onClose }) {
-  const { firebaseUser, userProfile, refreshProfile } = useAuth();
-  const [visible, setVisible] = useState(false);
-  const [paso,    setPaso]    = useState(0);
-
-  const esControlado  = isOpen !== undefined;
-  const mostrarModal  = esControlado ? isOpen : visible;
-
-  useEffect(() => {
-    if (esControlado) { if (isOpen) setPaso(0); return; }
-    const yaVioLocal     = localStorage.getItem(LOCAL_KEY);
-    const yaVioFirestore = userProfile?.onboardingVisto;
-    if (!yaVioLocal && !yaVioFirestore) {
-      const t = setTimeout(() => { setPaso(0); setVisible(true); }, 600);
-      return () => clearTimeout(t);
-    }
-  }, [userProfile, isOpen, esControlado]);
-
-  const handleCerrar = async () => {
-    if (esControlado) { if (onClose) onClose(); return; }
-    setVisible(false);
-    localStorage.setItem(LOCAL_KEY, "1");
-    if (firebaseUser) {
-      try {
-        await updateDoc(doc(db,"usuarios",firebaseUser.uid), { onboardingVisto:true });
-      } catch(_) {}
-    }
-  };
-
-  if (!mostrarModal) return null;
-
-  const pasos = [
-    // ── 0. Bienvenida ─────────────────────────────────────
-    {
-      icono: "⚽",
-      titulo: "¡BIENVENIDO!",
-      color: "var(--verde-claro)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2 }}>
-            <span style={{ color:"var(--amarillo)" }}>International Superstar Polla</span> es
-            una competencia de pronósticos del{" "}
-            <span style={{ color:"var(--verde-claro)" }}>Mundial 2026</span>.
-            Pronostica partidos, acumula puntos y sube al ranking.
-          </p>
-          <div style={{ marginTop:"12px", padding:"10px",
-            border:"2px solid var(--verde-campo)", background:"rgba(82,183,136,0.08)" }}>
-            <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>🗂 PESTAÑAS:</p>
-            <div style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2.2 }}>
-              <p>🏠 <span style={{ color:"var(--blanco)" }}>INICIO</span> — Podio, mensajes y tabla de puntos</p>
-              <p>⚽ <span style={{ color:"var(--blanco)" }}>PARTIDOS</span> — Pronósticos del día y pregunta</p>
-              <p>📊 <span style={{ color:"var(--blanco)" }}>RANKING</span> — Tabla completa de posiciones</p>
-              <p>🖼️ <span style={{ color:"var(--blanco)" }}>LÁMINAS</span> — Colección y sobre diario</p>
-              <p>👤 <span style={{ color:"var(--blanco)" }}>PERFIL</span> — Cartas y estadísticas</p>
-            </div>
-          </div>
-        </>
-      ),
-    },
-
-    // ── 1. Cómo predecir ──────────────────────────────────
-    {
-      icono: "💀",
-      titulo: "CÓMO PREDECIR",
-      color: "var(--rojo-chile)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2, marginBottom:"10px" }}>
-            Estamos en <span style={{ color:"var(--rojo-chile)" }}>fase eliminatoria</span>.
-            Cada partido puede decidirse en 90 minutos, alargue o penales.
-            Elige cómo crees que se define cada partido.
-          </p>
-          <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
-            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
-              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>⚽ 90 MIN</p>
-              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-                Predice quién gana y por cuánto (1 gol o 2+).
-              </p>
-            </div>
-            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
-              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>⏱ ALARGUE</p>
-              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-                Si empatan en 90 min y va a alargue. Predice quién gana en el alargue y diferencia.
-              </p>
-            </div>
-            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
-              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>🎯 PENALES</p>
-              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-                Si empatan en alargue y va a penales. Predice quién gana y la diferencia exacta de la tanda.
-              </p>
-            </div>
-          </div>
-          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
-            ⚠ Tienes hasta el inicio del partido para guardar tu pronóstico.
-          </p>
-        </>
-      ),
-    },
-
-    // ── 2. Sistema de puntos ──────────────────────────────
-    {
-      icono: "🔢",
-      titulo: "SISTEMA DE PUNTOS FASE MUERE MUERE",
-      color: "var(--rojo-chile)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2, marginBottom:"8px", fontSize:"6px" }}>
-            Todos los puntos <span style={{ color:"var(--amarillo)" }}>aumentaron</span> en
-            fase eliminatoria. Cuanto más exacto tu pronóstico, más puntos.
-          </p>
-          <div style={{ display:"flex", flexDirection:"column", gap:"3px" }}>
-            <FilaPts pts="+4"  desc="Acertar ganador en 90 min" color="var(--rojo-chile)" />
-            <FilaPts pts="+6"  desc="Ganador + diferencia (90 min)" color="var(--rojo-chile)" />
-            <FilaPts pts="+6"  desc="Acertar que va a Alargue" color="var(--rojo-chile)" />
-            <FilaPts pts="+12" desc="Alargue + diferencia exacta" color="var(--rojo-chile)" />
-            <FilaPts pts="+6"  desc="Acertar que va a Penales" color="var(--rojo-chile)" />
-            <FilaPts pts="+10" desc="Penales + quién gana la tanda" color="var(--rojo-chile)" />
-            <FilaPts pts="+14" desc="Penales + diferencia exacta" color="var(--rojo-chile)" />
-            <FilaPts pts="+2"  desc="Pregunta del día correcta" />
-            <FilaPts pts="+2"  desc="Ganador del día (bonus diario)" color="var(--verde-claro)" />
-          </div>
-        </>
-      ),
-    },
-
-    // ── 3. Podio y ranking ────────────────────────────────
-    {
-      icono: "🏆",
-      titulo: "PODIO Y RANKING",
-      color: "var(--amarillo)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2 }}>
-            Cada día hay un <span style={{ color:"var(--amarillo)" }}>ganador del día</span>:
-            quien acumule más puntos en esa jornada recibe{" "}
-            <span style={{ color:"var(--verde-claro)" }}>+2 pts bonus</span> y una{" "}
-            <span style={{ color:"var(--amarillo)" }}>carta ×4</span>.
-          </p>
-          <div style={{ marginTop:"10px", padding:"10px",
-            border:"2px solid var(--amarillo)", background:"rgba(244,208,63,0.06)",
-            display:"flex", flexDirection:"column", gap:"6px" }}>
-            <p style={{ fontSize:"6px", color:"var(--amarillo)", lineHeight:2 }}>
-              🥇 1° del día → carta <strong>×4</strong> + <strong>+2 pts</strong>
-            </p>
-            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
-              🥈 2° del día → carta <strong>×3</strong>
-            </p>
-            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
-              🥉 3° del día → carta <strong>×2</strong>
-            </p>
-          </div>
-          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
-            En el RANKING puedes ver las flechas ▲▼ que indican cuántos puestos
-            subiste o bajaste respecto al día anterior.
-          </p>
-        </>
-      ),
-    },
-
-    // ── 4. Cartas multiplicadoras ─────────────────────────
-    {
-      icono: "🃏",
-      titulo: "CARTAS MULTIPLICADORAS",
-      color: "var(--verde-claro)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2, marginBottom:"10px" }}>
-            Las cartas <span style={{ color:"var(--amarillo)" }}>multiplican tus puntos</span> en
-            un partido. Úsalas estratégicamente en los partidos donde más confías.
-          </p>
-          <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"10px" }}>
-            {[
-              { mult:"×2", desc:"Duplica los puntos del partido", color:"#4ade80" },
-              { mult:"×3", desc:"Triplica los puntos del partido", color:"var(--amarillo)" },
-              { mult:"×4", desc:"Cuadruplica los puntos del partido", color:"var(--rojo-chile)" },
-            ].map((c,i) => (
-              <div key={i} style={{ display:"flex", justifyContent:"space-between",
-                alignItems:"center", padding:"6px 8px",
-                border:`1px solid ${c.color}`, background:"rgba(0,0,0,0.3)" }}>
-                <span style={{ fontSize:"6px", color:"var(--gris-claro)" }}>{c.desc}</span>
-                <span style={{ fontSize:"12px", fontWeight:"bold", color:c.color }}>{c.mult}</span>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-            💡 La carta se consume al procesar el resultado, aunque no hayas acertado.
-          </p>
-        </>
-      ),
-    },
-
-    // ── 5. Láminas ────────────────────────────────────────
-    {
-      icono: "🖼️",
-      titulo: "LÁMINAS COLECCIONABLES",
-      color: "var(--amarillo)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2 }}>
-            Cada día recibes un{" "}
-            <span style={{ color:"var(--amarillo)" }}>sobre de láminas</span> en la
-            pestaña 🖼️ LÁMINAS. Ábrelo y da vuelta cada lámina para revelarla.
-          </p>
-          <div style={{ marginTop:"10px", display:"flex", flexDirection:"column", gap:"8px" }}>
-            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
-              📦 <strong style={{ color:"var(--blanco)" }}>SOBRE DIARIO:</strong>{" "}
-              4 láminas por día. Mejor ranking → mejores cartas extra.
-            </p>
-            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
-              📚 <strong style={{ color:"var(--blanco)" }}>COLECCIÓN:</strong>{" "}
-              Las láminas se organizan por categoría. Completa una categoría entera
-              y reclama <span style={{ color:"var(--amarillo)" }}>2 cartas multiplicadoras</span> de regalo.
-            </p>
-          </div>
-        </>
-      ),
-    },
-  ];
-
-  const esUltimo   = paso === pasos.length - 1;
-  const pasActual  = pasos[paso];
-
+// ── Pregunta abierta (vista grande) ──────────────────────────
+function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
+  const pts = pregunta.puntosEnVivo || 3;
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)",
-      zIndex:900, display:"flex", alignItems:"center", justifyContent:"center",
-      padding:"20px", overflowY:"auto" }}>
-      <div style={{ background:"var(--negro)", border:`4px solid ${pasActual.color}`,
-        boxShadow:`6px 6px 0 ${pasActual.color}44`,
-        padding:"24px 20px 20px", maxWidth:"400px", width:"100%",
-        display:"flex", flexDirection:"column", gap:"16px",
-        maxHeight:"88vh", overflowY:"auto" }}>
+    <div>
+      <div style={{ textAlign:"center", marginBottom:"10px" }}>
+        <span style={{
+          fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color:"var(--rojo-chile)", background:"rgba(214,40,40,0.15)",
+          border:"1px solid var(--rojo-chile)", padding:"3px 10px",
+        }}>
+          PREGUNTA #{pregunta.numero}
+        </span>
+      </div>
 
-        {/* Puntos de progreso */}
-        <div style={{ display:"flex", justifyContent:"center", gap:"6px" }}>
-          {pasos.map((_,i) => (
-            <div key={i} style={{
-              width: i===paso ? "16px" : "8px", height:"8px",
-              background: i<=paso ? pasActual.color : "var(--gris)",
-              border:`1px solid ${i<=paso?pasActual.color:"var(--gris)"}`,
-              transition:"width 0.2s",
-            }} />
+      <div style={{ textAlign:"center", marginBottom:"10px" }}>
+        <span style={{
+          background:"rgba(244,208,63,0.15)", border:"2px solid var(--amarillo)",
+          color:"var(--amarillo)", fontSize:"7px", padding:"4px 14px",
+          boxShadow:"0 0 14px rgba(244,208,63,0.35)",
+        }}>
+          ¡RESPONDE Y GANA +{pts} PTS!
+        </span>
+      </div>
+
+      <div style={{
+        background:"rgba(255,255,255,0.04)", border:"2px solid rgba(255,255,255,0.12)",
+        padding:"14px 12px", marginBottom:"12px",
+      }}>
+        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+          color:"var(--blanco)", lineHeight:2, textAlign:"center" }}>
+          {pregunta.texto}
+        </p>
+      </div>
+
+      {!miRespuesta ? (
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+          {(pregunta.opciones||[]).map((op,i) => (
+            <button key={i} onClick={() => onResponder(op)} disabled={enviando}
+              style={{
+                fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                padding:"10px 12px", background:"rgba(255,255,255,0.05)",
+                border:"2px solid rgba(255,255,255,0.2)",
+                color:"var(--blanco)", cursor:"pointer", textAlign:"left",
+                transition:"all 0.15s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = "var(--amarillo)";
+                e.currentTarget.style.background  = "rgba(244,208,63,0.12)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)";
+                e.currentTarget.style.background  = "rgba(255,255,255,0.05)";
+              }}>
+              {op}
+            </button>
           ))}
         </div>
-
-        {/* Icono + título */}
-        <div style={{ textAlign:"center" }}>
-          <span style={{ fontSize:"32px" }}>{pasActual.icono}</span>
-          <h2 style={{ color:pasActual.color, marginTop:"8px", fontSize:"10px" }}>
-            {pasActual.titulo}
-          </h2>
+      ) : (
+        <div style={{
+          background:"rgba(82,183,136,0.1)", border:"2px solid var(--verde-claro)",
+          padding:"14px", textAlign:"center",
+        }}>
+          <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
+            ✅ Tu respuesta:
+          </p>
+          <p style={{ fontSize:"9px", color:"var(--amarillo)", marginTop:"4px", lineHeight:2 }}>
+            {miRespuesta}
+          </p>
+          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"6px", lineHeight:2 }}>
+            Esperando que el admin cierre la pregunta...
+          </p>
         </div>
+      )}
+    </div>
+  );
+}
 
-        {/* Contenido */}
-        <div style={{ fontSize:"7px", color:"var(--blanco)", lineHeight:2, flex:1 }}>
-          {pasActual.contenido}
-        </div>
+// ── Pregunta cerrada (vista minimizada/plegable) ─────────────
+function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
+  const correcta = pregunta.respuestaCorrecta;
+  const acerte   = miRespuesta && miRespuesta === correcta;
+  const pts      = pregunta.puntosEnVivo || 3;
 
-        {/* Navegación */}
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {!esUltimo ? (
-            <button className="btn-pixel btn-amarillo w-full" style={{ fontSize:"8px" }}
-              onClick={() => setPaso(p=>p+1)}>
-              SIGUIENTE →
-            </button>
-          ) : (
-            <button className="btn-pixel btn-amarillo w-full" style={{ fontSize:"8px" }}
-              onClick={handleCerrar}>
-              {esControlado ? "✕ CERRAR" : "✅ ¡ENTENDIDO! JUGAR"}
-            </button>
-          )}
-          {paso > 0 && (
-            <button onClick={() => setPaso(p=>p-1)}
-              style={{ background:"none", border:"none", color:"var(--gris)",
-                fontSize:"6px", fontFamily:"'Press Start 2P',monospace",
-                cursor:"pointer", textAlign:"center" }}>
-              ← anterior
-            </button>
-          )}
-          {!esUltimo && (
-            <button onClick={handleCerrar}
-              style={{ background:"none", border:"none", color:"var(--gris)",
-                fontSize:"6px", fontFamily:"'Press Start 2P',monospace",
-                cursor:"pointer", textAlign:"center" }}>
-              {esControlado ? "Cerrar ✕" : "Saltar intro →"}
-            </button>
+  return (
+    <div style={{
+      background:"rgba(255,255,255,0.03)",
+      border:`1px solid ${acerte ? "rgba(82,183,136,0.4)" : "rgba(255,255,255,0.1)"}`,
+    }}>
+      <button
+        onClick={onToggle}
+        style={{
+          width:"100%", display:"flex", justifyContent:"space-between",
+          alignItems:"center", padding:"8px 10px",
+          background:"transparent", border:"none", cursor:"pointer",
+        }}>
+        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+          color:"rgba(255,255,255,0.6)", textAlign:"left" }}>
+          PREGUNTA #{pregunta.numero}
+        </span>
+
+        {miRespuesta ? (
+          <span style={{
+            fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color: acerte ? "var(--verde-claro)" : "var(--rojo-chile)",
+            display:"flex", alignItems:"center", gap:"4px",
+          }}>
+            {acerte ? `🎉 +${pts} PTS` : "❌ NO ACERTASTE"}
+            <span style={{ color:"rgba(255,255,255,0.4)", fontSize:"8px" }}>
+              {expandida ? "▲" : "▼"}
+            </span>
+          </span>
+        ) : (
+          <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+            color:"rgba(255,255,255,0.35)", display:"flex", alignItems:"center", gap:"4px" }}>
+            SIN RESPONDER
+            <span style={{ fontSize:"8px" }}>{expandida ? "▲" : "▼"}</span>
+          </span>
+        )}
+      </button>
+
+      {expandida && (
+        <div style={{ padding:"0 10px 10px" }}>
+          <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color:"var(--blanco)", lineHeight:2, marginBottom:"8px" }}>
+            {pregunta.texto}
+          </p>
+          <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color:"var(--amarillo)", marginBottom:"4px" }}>
+            ✅ Correcta: <strong>{correcta}</strong>
+          </p>
+          {miRespuesta && (
+            <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+              color: acerte ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
+              Tu respuesta: {miRespuesta}
+            </p>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -7514,6 +8289,126 @@ export default function VozHinchada() {
 }
 </file>
 
+<file path="firestore.rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ── Helpers ────────────────────────────────────────────────
+    function esAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ── usuarios ───────────────────────────────────────────────
+    match /usuarios/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null;
+      
+      match /notificaciones/{notifId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // ── predicciones ───────────────────────────────────────────
+    match /predicciones/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── respuestas ─────────────────────────────────────────────
+    match /respuestas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── partidos ───────────────────────────────────────────────
+    match /partidos/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── preguntas ──────────────────────────────────────────────
+    match /preguntas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── puntosDelDia ───────────────────────────────────────────
+    match /puntosDelDia/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── cartasDelUsuario ───────────────────────────────────────
+    match /cartasDelUsuario/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── config ──────────────────────────────────────────────────
+    match /config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── mensajesDia ────────────────────────────────────────────
+    match /mensajesDia/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // ── Reacciones en mensajes ────────────────────────────────
+    match /mensajesDia/{docId}/reacciones/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── admins ──────────────────────────────────────────────────
+    match /admins/{uid} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── sobresDelDia ───────────────────────────────────────────
+    match /sobresDelDia/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── preguntasEnVivo (legacy, atado a partidos) ─────────────
+    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── eventoEnVivo (independiente, array de preguntas) ───────
+    match /eventoEnVivo/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Respuestas: clave compuesta {uid}_{preguntaId}
+    // Permite que cada usuario responda varias preguntas del
+    // mismo evento sin sobrescribir respuestas anteriores.
+    match /eventoEnVivo/{docId}/respuestas/{respId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+  }
+}
+</file>
+
 <file path="src/components/PartidoCard.jsx">
 // src/components/PartidoCard.jsx  — v6 (Fase 3)
 // ─────────────────────────────────────────────────────────────
@@ -8406,6 +9301,342 @@ export default function TabPartidos({ onGuardado }) {
 }
 </file>
 
+<file path="src/components/Ranking.jsx">
+// src/components/Ranking.jsx  — v8 (Números de fondo en podio, corregido)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v8:
+//   • Número de fondo gigante (1,2,3) en primera celda para los primeros puestos,
+//     solo en la primera fila de cada grupo de empate.
+//   • Corregida estructura de tabla (celdas duplicadas, sintaxis).
+//   • Variable isTop para resaltar los tres primeros puestos.
+//   • Botón VOLVER corregido.
+//   • Fecha de última actualización mostrada correctamente.
+// ─────────────────────────────────────────────────────────────
+import React, { useEffect, useState, useMemo } from "react";
+import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { ayerStr } from "../utils/helpers";
+import { AVATARES, CARTAS } from "../data/sampleData";
+import HistorialPredicciones from "./HistorialPredicciones";
+
+// ── Colores de fondo por posición ────────────────────────────
+const FONDO_POS = {
+  1: { bg: "#FFD966", borde: "#D4A017", texto: "#000000" },   // amarillo sólido, texto negro
+  2: { bg: "#D3D3D3", borde: "#A9A9A9", texto: "#000000" },   // gris plata, texto negro
+  3: { bg: "#CD7F32", borde: "#8B5A2B", texto: "#000000" },   // bronce sólido, texto negro
+};
+
+function AvatarSmall({ avatarId, avatarSlug }) {
+  const src = avatarSlug
+    ? `/avatares/${avatarSlug}-1.png`
+    : `/avatares/${(AVATARES.find(a => a.id === avatarId)?.slug || "default")}-1.png`;
+  return (
+    <img src={src} alt=""
+      style={{ width:22, height:22, imageRendering:"pixelated", flexShrink:0 }}
+      onError={e => (e.target.style.display = "none")}
+    />
+  );
+}
+
+// ── Modal perfil + historial ──────────────────────────────────
+function ModalPerfilConHistorial({ jugador, onCerrar }) {
+  const [tab, setTab] = useState("historial");
+  if (!jugador) return null;
+  const cartasMap     = jugador.cartas || {};
+  const cartasDesbloq = CARTAS.filter(c => (cartasMap[c.id] || 0) > 0);
+
+  return (
+    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:600,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      padding:"20px",overflowY:"auto" }} onClick={onCerrar}>
+      <div style={{ background:"var(--negro)",border:"4px solid var(--verde-claro)",
+        boxShadow:"6px 6px 0 var(--verde-oscuro)",maxWidth:"400px",width:"100%",
+        maxHeight:"90vh",overflowY:"auto",display:"flex",flexDirection:"column" }}
+        onClick={e => e.stopPropagation()}>
+
+        <div style={{ padding:"16px",display:"flex",flexDirection:"column",alignItems:"center",gap:"8px" }}>
+          <img
+            src={`/avatares/${jugador.avatarSlug || "default"}-1.png`}
+            alt={jugador.nickname}
+            style={{ width:60,height:60,imageRendering:"pixelated",border:"3px solid var(--negro)" }}
+            onError={e => (e.target.style.display="none")}
+          />
+          <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{jugador.nickname}</p>
+          <span className="puntos-badge" style={{ fontSize:"11px" }}>{jugador.puntosTotal ?? 0} pts</span>
+        </div>
+
+        <div style={{ display:"flex",borderTop:"2px solid var(--verde-campo)",borderBottom:"2px solid var(--verde-campo)" }}>
+          {[{id:"historial",label:"🔮 PRONÓSTICOS"},{id:"perfil",label:"👤 INFO"}].map(t => (
+            <button key={t.id}
+              style={{ flex:1,fontFamily:"'Press Start 2P',monospace",fontSize:"5px",padding:"7px",
+                background:tab===t.id?"var(--verde-campo)":"var(--negro)",
+                color:tab===t.id?"var(--negro)":"var(--gris-claro)",
+                border:"none",cursor:"pointer" }}
+              onClick={() => setTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+
+        <div style={{ flex:1,overflowY:"auto" }}>
+          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} />}
+          {tab === "perfil" && (
+            <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
+              <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntosTotal ?? 0}</span></p>
+              <p>🃏 Cartas: <span style={{ color:"var(--amarillo)" }}>{cartasDesbloq.length}</span></p>
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding:"10px",borderTop:"2px solid var(--verde-campo)" }}>
+          <button className="btn-pixel btn-gris w-full" style={{ fontSize:"7px" }} onClick={onCerrar}>
+            CERRAR ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+export default function Ranking({ onVolver }) {
+  const { firebaseUser } = useAuth();
+  const [usuarios,    setUsuarios]    = useState([]);
+  const [rankingAyer, setRankingAyer] = useState({});
+  const [cargando,    setCargando]    = useState(true);
+  const [jugadorSel,  setJugadorSel]  = useState(null);
+  const [fechaActualizacion, setFechaActualizacion] = useState(null);
+
+  useEffect(() => { cargar(); }, []);
+
+  useEffect(() => {
+    const cargarFecha = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "ultimaActualizacion"));
+        if (snap.exists()) {
+          setFechaActualizacion(snap.data().fecha);
+        }
+      } catch (e) {
+        console.error("Error cargando fecha de actualización", e);
+      }
+    };
+    cargarFecha();
+  }, []);
+
+  const cargar = async () => {
+    setCargando(true);
+    try {
+      const snapU = await getDocs(query(collection(db,"usuarios"), orderBy("puntosTotal","desc")));
+      setUsuarios(snapU.docs.map(d => ({ id:d.id, ...d.data() })));
+
+      const ayer = ayerStr();
+      const snapAyer = await getDocs(query(collection(db,"puntosDelDia"), where("fecha","==",ayer)));
+      if (!snapAyer.empty) {
+        const ayerOrd = snapAyer.docs.map(d => d.data()).sort((a,b) => b.puntos - a.puntos);
+        const mapa = {}; let pos = 1;
+        for (let i = 0; i < ayerOrd.length; i++) {
+          if (i > 0 && ayerOrd[i].puntos < ayerOrd[i-1].puntos) pos = i + 1;
+          mapa[ayerOrd[i].uid] = pos;
+        }
+        setRankingAyer(mapa);
+      }
+    } catch(e) { console.error(e); }
+    finally { setCargando(false); }
+  };
+
+  // ── Dense rank con tracking del primer del grupo ──────────
+  // Memorizado: solo se recalcula cuando cambia la lista de usuarios.
+  const filasMeta = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < usuarios.length; i++) {
+      const u = usuarios[i];
+      const esPrimero = (i === 0) || (u.puntosTotal < usuarios[i-1].puntosTotal);
+      let posicion = i + 1;
+      if (i > 0 && u.puntosTotal === usuarios[i-1].puntosTotal) {
+        posicion = result[i-1].posicion;
+      } else {
+        posicion = i + 1;
+      }
+      result.push({ posicion, esPrimero });
+    }
+    return result;
+  }, [usuarios]);
+
+  const medallas = ["🥇","🥈","🥉"];
+
+  return (
+    <div style={{ padding:"16px 16px 80px" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
+        {onVolver && (
+          <button
+            className="btn-pixel btn-gris"
+            onClick={onVolver}
+            style={{ padding:"8px 12px", fontSize:"8px" }}
+          >
+            ← VOLVER
+          </button>
+        )}
+        <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
+      </div>
+      {fechaActualizacion && (
+        <p style={{
+          fontSize: "6px",
+          color: "var(--gris-claro)",
+          textAlign: "center",
+          marginTop: "4px",
+          marginBottom: "12px",
+          lineHeight: 1.5
+        }}>
+          🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
+        </p>
+      )}
+
+      {Object.keys(rankingAyer).length > 0 && (
+        <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"10px",lineHeight:2 }}>
+          ▲▼ junto a los puntos = cambio respecto al ranking de ayer
+        </p>
+      )}
+
+      {cargando ? (
+        <div className="text-center" style={{ padding:"40px",fontSize:"8px",color:"var(--verde-claro)" }}>
+          <span className="spinner">⚙</span><br/><br/>CARGANDO...
+        </div>
+      ) : (
+        <div className="caja-pixel" style={{ padding:0, overflow:"hidden" }}>
+          <table className="ranking-tabla" style={{ borderCollapse:"collapse", width:"100%" }}>
+            <thead>
+              <tr>
+                <th style={{ width:"28px", textAlign:"center" }}>#</th>
+                <th>JUGADOR</th>
+                <th style={{ textAlign:"right", paddingRight:"10px" }}>PUNTOS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuarios.map((u, i) => {
+                const { posicion, esPrimero } = filasMeta[i];
+                const estilo = FONDO_POS[posicion];
+                const posAyer   = rankingAyer[u.uid];
+                const diff = posAyer ? posAyer - posicion : 0;
+                const isTop = i < 3; // primeras tres filas (resalte visual)
+
+                return (
+                  <tr
+                    key={u.id}
+                    onClick={() => setJugadorSel(u)}
+                    style={{
+                      cursor: "pointer",
+                      background: estilo?.bg || (i % 2 === 0 ? "rgba(255,255,255,0.03)" : "transparent"),
+                      borderLeft: estilo ? `3px solid ${estilo.borde}` : "3px solid transparent",
+                      borderBottom: "1px solid rgba(82,183,136,0.15)",
+                    }}
+                  >
+                    {/* Columna # con número de fondo gigante */}
+                    <td
+                      style={{
+                        position: 'relative',
+                        textAlign: "center",
+                        padding: isTop ? "12px 4px" : "8px 4px",
+                        width: "28px",
+                        fontFamily: "'Press Start 2P', monospace",
+                        fontSize: isTop ? "10px" : "7px",
+                        color: estilo?.texto || "var(--gris-claro)"
+                      }}
+                    >
+                      {/* Número de fondo (solo para puestos 1,2,3 y primera fila del grupo) */}
+                      {posicion <= 3 && esPrimero && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '48px',
+                          fontWeight: 'bold',
+                          color: estilo?.texto === "#000000" ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.2)",
+                          pointerEvents: 'none',
+                          zIndex: 0,
+                          fontFamily: "'Press Start 2P', monospace",
+                        }}>
+                          {posicion}
+                        </div>
+                      )}
+                      <span style={{ position: 'relative', zIndex: 1 }}>
+                        {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
+                      </span>
+                    </td>
+
+                    {/* Columna jugador */}
+                    <td style={{ padding: isTop ? "12px 6px" : "8px 6px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap: isTop ? "10px" : "6px" }}>
+                        <AvatarSmall avatarId={u.avatarId} avatarSlug={u.avatarSlug} />
+                        <div style={{ fontSize: isTop ? "9px" : "7px", color:"var(--blanco)", lineHeight:1.6 }}>
+                          {u.nickname}
+                          {u.uid === firebaseUser?.uid && (
+                            <span style={{
+                              marginLeft:"6px",
+                              fontSize:"5px",
+                              background:"var(--verde-claro)",
+                              color:"var(--negro)",
+                              padding:"1px 4px",
+                              border:"1px solid var(--negro)"
+                            }}>TÚ</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Columna puntos + flecha */}
+                    <td style={{ textAlign:"right", padding: isTop ? "12px 10px" : "8px 10px" }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"6px" }}>
+                        {diff !== 0 && (
+                          <span style={{
+                            fontFamily:"'Press Start 2P',monospace",
+                            fontSize: isTop ? "10px" : "8px",
+                            color: diff > 0 ? "#4ade80" : "var(--rojo-chile)",
+                          }}>
+                            {diff > 0 ? `▲${diff}` : `▼${Math.abs(diff)}`}
+                          </span>
+                        )}
+                        <span style={{
+                          fontFamily:"'Press Start 2P',monospace",
+                          fontSize: isTop ? "12px" : "9px",
+                          display:"inline-block",
+                          background: "var(--negro)",
+                          color: "#f4d03f",
+                          border: "2px solid var(--amarillo)",
+                          padding: "2px 8px",
+                          boxShadow: "2px 2px 0 rgba(0,0,0,0.4)",
+                          minWidth: "32px",
+                          textAlign: "center",
+                        }}>
+                          {u.puntosTotal ?? 0}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {usuarios.length === 0 && (
+                <tr>
+                  <td colSpan={3} style={{ textAlign:"center",padding:"20px",
+                    fontSize:"7px",color:"var(--gris-claro)" }}>Aún no hay jugadores</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {jugadorSel && (
+        <ModalPerfilConHistorial jugador={jugadorSel} onCerrar={() => setJugadorSel(null)} />
+      )}
+    </div>
+  );
+}
+</file>
+
 <file path="src/components/AdminPanel.jsx">
 // src/components/AdminPanel.jsx  — v7 (Patch 1)
 // ─────────────────────────────────────────────────────────────
@@ -8431,6 +9662,7 @@ import {
 } from "../utils/helpers";
 import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
 import AdminSuperDestacado from "./AdminSuperDestacado";
+import AdminEventoEnVivo from "./AdminEventoEnVivo";
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
@@ -8504,7 +9736,7 @@ function AdminPanelInterno({ onVolver }) {
 
   const TABS = [
     { id:"partidos",  label:"⚽ PARTIDOS" },
-    { id:"superdes",  label:"🔴 EN VIVO" },
+    { id:"envivo",    label:"🔴 EN VIVO" },
     { id:"preguntas", label:"❓ PREGUNTAS" },
     { id:"cartas",    label:"🃏 CARTAS Y BONUS" },
     { id:"aviso",     label:"📢 AVISO" },
@@ -8549,7 +9781,7 @@ function AdminPanelInterno({ onVolver }) {
       ) : (
         <>
           {tab==="partidos"  && <TabPartidosAdmin partidos={partidos} onActualizar={cargarDatos} onMensaje={msg} />}
-          {tab==="superdes"  && <AdminSuperDestacado partidos={partidos} onMensaje={msg} />}
+          {tab==="envivo"    && <AdminEventoEnVivo onMensaje={msg} />}
           {tab==="preguntas" && <TabPreguntasAdmin preguntas={preguntas} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="cartas"    && <TabCartasBonus preguntas={preguntas} onMensaje={msg} />}
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
@@ -9282,342 +10514,6 @@ function TabSonido({ onMensaje }) {
             a la pestaña PARTIDOS. El usuario puede silenciarlo con el botón 🔊/🔇 de la topbar.
           </p>
         </div>
-      )}
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/Ranking.jsx">
-// src/components/Ranking.jsx  — v8 (Números de fondo en podio, corregido)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v8:
-//   • Número de fondo gigante (1,2,3) en primera celda para los primeros puestos,
-//     solo en la primera fila de cada grupo de empate.
-//   • Corregida estructura de tabla (celdas duplicadas, sintaxis).
-//   • Variable isTop para resaltar los tres primeros puestos.
-//   • Botón VOLVER corregido.
-//   • Fecha de última actualización mostrada correctamente.
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState, useMemo } from "react";
-import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-import { ayerStr } from "../utils/helpers";
-import { AVATARES, CARTAS } from "../data/sampleData";
-import HistorialPredicciones from "./HistorialPredicciones";
-
-// ── Colores de fondo por posición ────────────────────────────
-const FONDO_POS = {
-  1: { bg: "#FFD966", borde: "#D4A017", texto: "#000000" },   // amarillo sólido, texto negro
-  2: { bg: "#D3D3D3", borde: "#A9A9A9", texto: "#000000" },   // gris plata, texto negro
-  3: { bg: "#CD7F32", borde: "#8B5A2B", texto: "#000000" },   // bronce sólido, texto negro
-};
-
-function AvatarSmall({ avatarId, avatarSlug }) {
-  const src = avatarSlug
-    ? `/avatares/${avatarSlug}-1.png`
-    : `/avatares/${(AVATARES.find(a => a.id === avatarId)?.slug || "default")}-1.png`;
-  return (
-    <img src={src} alt=""
-      style={{ width:22, height:22, imageRendering:"pixelated", flexShrink:0 }}
-      onError={e => (e.target.style.display = "none")}
-    />
-  );
-}
-
-// ── Modal perfil + historial ──────────────────────────────────
-function ModalPerfilConHistorial({ jugador, onCerrar }) {
-  const [tab, setTab] = useState("historial");
-  if (!jugador) return null;
-  const cartasMap     = jugador.cartas || {};
-  const cartasDesbloq = CARTAS.filter(c => (cartasMap[c.id] || 0) > 0);
-
-  return (
-    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:600,
-      display:"flex",alignItems:"center",justifyContent:"center",
-      padding:"20px",overflowY:"auto" }} onClick={onCerrar}>
-      <div style={{ background:"var(--negro)",border:"4px solid var(--verde-claro)",
-        boxShadow:"6px 6px 0 var(--verde-oscuro)",maxWidth:"400px",width:"100%",
-        maxHeight:"90vh",overflowY:"auto",display:"flex",flexDirection:"column" }}
-        onClick={e => e.stopPropagation()}>
-
-        <div style={{ padding:"16px",display:"flex",flexDirection:"column",alignItems:"center",gap:"8px" }}>
-          <img
-            src={`/avatares/${jugador.avatarSlug || "default"}-1.png`}
-            alt={jugador.nickname}
-            style={{ width:60,height:60,imageRendering:"pixelated",border:"3px solid var(--negro)" }}
-            onError={e => (e.target.style.display="none")}
-          />
-          <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{jugador.nickname}</p>
-          <span className="puntos-badge" style={{ fontSize:"11px" }}>{jugador.puntosTotal ?? 0} pts</span>
-        </div>
-
-        <div style={{ display:"flex",borderTop:"2px solid var(--verde-campo)",borderBottom:"2px solid var(--verde-campo)" }}>
-          {[{id:"historial",label:"🔮 PRONÓSTICOS"},{id:"perfil",label:"👤 INFO"}].map(t => (
-            <button key={t.id}
-              style={{ flex:1,fontFamily:"'Press Start 2P',monospace",fontSize:"5px",padding:"7px",
-                background:tab===t.id?"var(--verde-campo)":"var(--negro)",
-                color:tab===t.id?"var(--negro)":"var(--gris-claro)",
-                border:"none",cursor:"pointer" }}
-              onClick={() => setTab(t.id)}>{t.label}</button>
-          ))}
-        </div>
-
-        <div style={{ flex:1,overflowY:"auto" }}>
-          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} />}
-          {tab === "perfil" && (
-            <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
-              <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntosTotal ?? 0}</span></p>
-              <p>🃏 Cartas: <span style={{ color:"var(--amarillo)" }}>{cartasDesbloq.length}</span></p>
-            </div>
-          )}
-        </div>
-
-        <div style={{ padding:"10px",borderTop:"2px solid var(--verde-campo)" }}>
-          <button className="btn-pixel btn-gris w-full" style={{ fontSize:"7px" }} onClick={onCerrar}>
-            CERRAR ✕
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────
-export default function Ranking({ onVolver }) {
-  const { firebaseUser } = useAuth();
-  const [usuarios,    setUsuarios]    = useState([]);
-  const [rankingAyer, setRankingAyer] = useState({});
-  const [cargando,    setCargando]    = useState(true);
-  const [jugadorSel,  setJugadorSel]  = useState(null);
-  const [fechaActualizacion, setFechaActualizacion] = useState(null);
-
-  useEffect(() => { cargar(); }, []);
-
-  useEffect(() => {
-    const cargarFecha = async () => {
-      try {
-        const snap = await getDoc(doc(db, "config", "ultimaActualizacion"));
-        if (snap.exists()) {
-          setFechaActualizacion(snap.data().fecha);
-        }
-      } catch (e) {
-        console.error("Error cargando fecha de actualización", e);
-      }
-    };
-    cargarFecha();
-  }, []);
-
-  const cargar = async () => {
-    setCargando(true);
-    try {
-      const snapU = await getDocs(query(collection(db,"usuarios"), orderBy("puntosTotal","desc")));
-      setUsuarios(snapU.docs.map(d => ({ id:d.id, ...d.data() })));
-
-      const ayer = ayerStr();
-      const snapAyer = await getDocs(query(collection(db,"puntosDelDia"), where("fecha","==",ayer)));
-      if (!snapAyer.empty) {
-        const ayerOrd = snapAyer.docs.map(d => d.data()).sort((a,b) => b.puntos - a.puntos);
-        const mapa = {}; let pos = 1;
-        for (let i = 0; i < ayerOrd.length; i++) {
-          if (i > 0 && ayerOrd[i].puntos < ayerOrd[i-1].puntos) pos = i + 1;
-          mapa[ayerOrd[i].uid] = pos;
-        }
-        setRankingAyer(mapa);
-      }
-    } catch(e) { console.error(e); }
-    finally { setCargando(false); }
-  };
-
-  // ── Dense rank con tracking del primer del grupo ──────────
-  // Memorizado: solo se recalcula cuando cambia la lista de usuarios.
-  const filasMeta = useMemo(() => {
-    const result = [];
-    for (let i = 0; i < usuarios.length; i++) {
-      const u = usuarios[i];
-      const esPrimero = (i === 0) || (u.puntosTotal < usuarios[i-1].puntosTotal);
-      let posicion = i + 1;
-      if (i > 0 && u.puntosTotal === usuarios[i-1].puntosTotal) {
-        posicion = result[i-1].posicion;
-      } else {
-        posicion = i + 1;
-      }
-      result.push({ posicion, esPrimero });
-    }
-    return result;
-  }, [usuarios]);
-
-  const medallas = ["🥇","🥈","🥉"];
-
-  return (
-    <div style={{ padding:"16px 16px 80px" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
-        {onVolver && (
-          <button
-            className="btn-pixel btn-gris"
-            onClick={onVolver}
-            style={{ padding:"8px 12px", fontSize:"8px" }}
-          >
-            ← VOLVER
-          </button>
-        )}
-        <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
-      </div>
-      {fechaActualizacion && (
-        <p style={{
-          fontSize: "6px",
-          color: "var(--gris-claro)",
-          textAlign: "center",
-          marginTop: "4px",
-          marginBottom: "12px",
-          lineHeight: 1.5
-        }}>
-          🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
-        </p>
-      )}
-
-      {Object.keys(rankingAyer).length > 0 && (
-        <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"10px",lineHeight:2 }}>
-          ▲▼ junto a los puntos = cambio respecto al ranking de ayer
-        </p>
-      )}
-
-      {cargando ? (
-        <div className="text-center" style={{ padding:"40px",fontSize:"8px",color:"var(--verde-claro)" }}>
-          <span className="spinner">⚙</span><br/><br/>CARGANDO...
-        </div>
-      ) : (
-        <div className="caja-pixel" style={{ padding:0, overflow:"hidden" }}>
-          <table className="ranking-tabla" style={{ borderCollapse:"collapse", width:"100%" }}>
-            <thead>
-              <tr>
-                <th style={{ width:"28px", textAlign:"center" }}>#</th>
-                <th>JUGADOR</th>
-                <th style={{ textAlign:"right", paddingRight:"10px" }}>PUNTOS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map((u, i) => {
-                const { posicion, esPrimero } = filasMeta[i];
-                const estilo = FONDO_POS[posicion];
-                const posAyer   = rankingAyer[u.uid];
-                const diff = posAyer ? posAyer - posicion : 0;
-                const isTop = i < 3; // primeras tres filas (resalte visual)
-
-                return (
-                  <tr
-                    key={u.id}
-                    onClick={() => setJugadorSel(u)}
-                    style={{
-                      cursor: "pointer",
-                      background: estilo?.bg || (i % 2 === 0 ? "rgba(255,255,255,0.03)" : "transparent"),
-                      borderLeft: estilo ? `3px solid ${estilo.borde}` : "3px solid transparent",
-                      borderBottom: "1px solid rgba(82,183,136,0.15)",
-                    }}
-                  >
-                    {/* Columna # con número de fondo gigante */}
-                    <td
-                      style={{
-                        position: 'relative',
-                        textAlign: "center",
-                        padding: isTop ? "12px 4px" : "8px 4px",
-                        width: "28px",
-                        fontFamily: "'Press Start 2P', monospace",
-                        fontSize: isTop ? "10px" : "7px",
-                        color: estilo?.texto || "var(--gris-claro)"
-                      }}
-                    >
-                      {/* Número de fondo (solo para puestos 1,2,3 y primera fila del grupo) */}
-                      {posicion <= 3 && esPrimero && (
-                        <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '48px',
-                          fontWeight: 'bold',
-                          color: estilo?.texto === "#000000" ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.2)",
-                          pointerEvents: 'none',
-                          zIndex: 0,
-                          fontFamily: "'Press Start 2P', monospace",
-                        }}>
-                          {posicion}
-                        </div>
-                      )}
-                      <span style={{ position: 'relative', zIndex: 1 }}>
-                        {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
-                      </span>
-                    </td>
-
-                    {/* Columna jugador */}
-                    <td style={{ padding: isTop ? "12px 6px" : "8px 6px" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap: isTop ? "10px" : "6px" }}>
-                        <AvatarSmall avatarId={u.avatarId} avatarSlug={u.avatarSlug} />
-                        <div style={{ fontSize: isTop ? "9px" : "7px", color:"var(--blanco)", lineHeight:1.6 }}>
-                          {u.nickname}
-                          {u.uid === firebaseUser?.uid && (
-                            <span style={{
-                              marginLeft:"6px",
-                              fontSize:"5px",
-                              background:"var(--verde-claro)",
-                              color:"var(--negro)",
-                              padding:"1px 4px",
-                              border:"1px solid var(--negro)"
-                            }}>TÚ</span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Columna puntos + flecha */}
-                    <td style={{ textAlign:"right", padding: isTop ? "12px 10px" : "8px 10px" }}>
-                      <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"6px" }}>
-                        {diff !== 0 && (
-                          <span style={{
-                            fontFamily:"'Press Start 2P',monospace",
-                            fontSize: isTop ? "10px" : "8px",
-                            color: diff > 0 ? "#4ade80" : "var(--rojo-chile)",
-                          }}>
-                            {diff > 0 ? `▲${diff}` : `▼${Math.abs(diff)}`}
-                          </span>
-                        )}
-                        <span style={{
-                          fontFamily:"'Press Start 2P',monospace",
-                          fontSize: isTop ? "12px" : "9px",
-                          display:"inline-block",
-                          background: "var(--negro)",
-                          color: "#f4d03f",
-                          border: "2px solid var(--amarillo)",
-                          padding: "2px 8px",
-                          boxShadow: "2px 2px 0 rgba(0,0,0,0.4)",
-                          minWidth: "32px",
-                          textAlign: "center",
-                        }}>
-                          {u.puntosTotal ?? 0}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {usuarios.length === 0 && (
-                <tr>
-                  <td colSpan={3} style={{ textAlign:"center",padding:"20px",
-                    fontSize:"7px",color:"var(--gris-claro)" }}>Aún no hay jugadores</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {jugadorSel && (
-        <ModalPerfilConHistorial jugador={jugadorSel} onCerrar={() => setJugadorSel(null)} />
       )}
     </div>
   );
@@ -10804,6 +11700,7 @@ import NotificacionCartas from "./NotificacionCartas";
 import AvisoAdmin from "./AvisoAdmin";
 import NotificacionesModal from "./NotificacionesModal";
 import VozHinchada from "./VozHinchada";
+import EventoEnVivo from "./EventoEnVivo";
 import SeccionLaminas from "./SeccionLaminas";
 
 // ── Contexto de sonidos ───────────────────────────────────────
@@ -10915,7 +11812,7 @@ const PANTALLAS = {
 };
 
 // ── FECHA DE PROMOCIÓN ──────────────────────────────────────
-const FECHA_PROMO = "2026-06-29"; // Cambiar manualmente cada día
+const FECHA_PROMO = "2026-06-30"; // Cambiar manualmente cada día
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
@@ -11251,6 +12148,7 @@ function WithShell({ children, userProfile, onPerfil, onLogout,
       <NotificacionCartas />
       <AvisoAdmin />
       <NotificacionesModal />
+      <EventoEnVivo />
 
       <TopBar userProfile={userProfile} onPerfil={onPerfil} onLogout={onLogout}
         diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos} />
