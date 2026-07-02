@@ -1302,6 +1302,198 @@ export default function Registro() {
 }
 </file>
 
+<file path="src/data/sampleData.js">
+// src/data/sampleData.js  — v3
+// ─────────────────────────────────────────────────────────────
+
+export const PARTIDOS_EJEMPLO = [
+  {
+    id: "p1",
+    fecha: "2026-06-11",
+    horaInicio: "12:00",
+    local:     { nombre: "Chile",    bandera: "🇨🇱" },
+    visitante: { nombre: "España",   bandera: "🇪🇸" },
+    fase: "grupos",
+    estaDestacado: true,
+    resultado: null,
+  },
+  {
+    id: "p2",
+    fecha: "2026-06-11",
+    horaInicio: "15:00",
+    local:     { nombre: "Brasil",   bandera: "🇧🇷" },
+    visitante: { nombre: "Argentina",bandera: "🇦🇷" },
+    fase: "grupos",
+    estaDestacado: false,
+    resultado: null,
+  },
+  {
+    id: "p3",
+    fecha: "2026-06-11",
+    horaInicio: "18:00",
+    local:     { nombre: "Francia",  bandera: "🇫🇷" },
+    visitante: { nombre: "Alemania", bandera: "🇩🇪" },
+    fase: "grupos",
+    estaDestacado: false,
+    resultado: null,
+  },
+];
+
+export const PREGUNTAS_EJEMPLO = [
+  {
+    id: "q1",
+    fecha: "2026-06-11",
+    texto: "¿Cuántos goles se marcarán en el partido Chile vs España?",
+    opciones: ["0-1 goles", "2-3 goles", "4-5 goles", "6 o más"],
+    respuestaCorrecta: null,
+  },
+];
+
+// ── FRASES DEL DÍA ─────────────────────────────────────────────
+// Una por cada día del mundial (o más); se rotan cíclicamente.
+export const FRASES_DEL_DIA = [
+  "El lunes\nquieres cambiarlos a todos,\nel viernes piensas\nque puedes recuperar a cinco o seis,\ny el domingo juegan los mismos\nonce cabrones de siempre.\n\nJ.B Toshack",
+  "La prensa es muy mentirosa.\nDicen que me he acostado con 200 mujeres, pero solo fueron 100.\n\n George Best",
+  "El fútbol es un deporte que inventaron los ingleses,\njuegan once contra once, y siempre gana Alemania.\n\nGary Lineker",
+  "Dios estaba de nuestro lado,\npero el árbitro era francés.\n\nHristo Stoichkov",
+  "Un partido de fútbol sin goles,\nes como un domingo sin sol.\n\n- Di Stefano",
+  "El fútbol es la única religión\nque no tiene ateos.\n\nEduardo Galeano",
+  "No hay nada más peligroso\nque no arriesgarse.\n\nPep Guardiola",
+  "Dios es redondo.\n\nJuan Villoro",
+  "Como presidente del club tengo la obligación\nde respaldar al técnico del equipo\nhasta cinco minutos antes de echarlo.\n\nAlfredo Davicce, presidente del Inter",
+  "Nosotros no compramos superestrellas.\nNosotros las hacemos.\n\nArsène Wenger",
+  "Siempre es difícil perder\npara quien no está acostumbrado.\n\nMourinho",
+  "En el fútbol opino lo mismo\nque Ivan Lendl respecto al tenis:\nsi quieres tener un amigo,\ncómprate un perro.\n\nMarco van Basten",
+  "Si yo hubiese nacido feo,\nno habríais oído hablar de Pelé.\n\nGeorge Best",
+  "¿Usted ya se puso de acuerdo con los rivales\npara dejarnos hacer todo eso?\n\nGarrincha",
+  "Ver fútbol es como ver sexo.\nEstá bien, pero es mejor practicarlo.\n\nAlex James",
+  "Algunas personas creen que el fútbol\nes una cuestión de vida o muerte.\nMe decepciona esa actitud. Es más importante que eso.\n\nBill Shanky",
+  "Tenemos la mejor hinchada del mundo,\npero nunca he visto a un hincha marcar un gol.\n\nJock Stein",
+  "A mí siempre me pareció más interesante\n marcar un autogol que un gol.\nUn gol, salvo si uno se llama Pelé, es algo eminentemente vulgar y muy descortés con el arquero contrario\nmientras que un autogol es un gesto de independencia.\n\nRoberto Bolaño",
+  "El fútbol es un milagro que le permitió a Europa\nodiarse sin destruirse.\n\nPaul Auster",
+  "Gasté mucho dinero en coches,\nalcohol y mujeres.\nEl resto lo he malgastado.\n\nGeorge Best",
+  "El fútbol es como el ajedrez\npero sin dados.\n\nLukas Podolski",
+  "Recibí un golpe en mi tobillo izquierdo.\nPero algo me dijo que era mi derecho.\n\nLee Hendrie",
+  "Voy a correr como un negro\npara vivir como un blanco.\n\nSamuel Eto`o",
+  "Bueno, del país no puedo contarles nada…\nsolo puedo adelantarle que se trata\nde un equipo brasileño…\n\nMurci Rojas",
+  "…y bueno,\nsin duda es difícil jugar\na 3.000 kilómetros de altura\n\nManuel López",
+  "Esta ciudad tiene dos grandes equipos:\nel Liverpool y los suplentes del Liverpool.\n\nBill Shankly",
+  "Yo crecí en un barrio\nprivado de Buenos Aires…\nPrivado de agua, de luz y de teléfono.\n\nMaradona",
+  "No me importaría perder todos los partidos,\nsiempre y cuando ganemos la Liga.\n\nMark Viduka",
+  "Cuando un equipo anda bien,\nno anda mal y viceversa.\n\nMariano Puyol",
+  "Primero que nada un saludo\n a todos los señores televisores.\n\nJuan Carlos Letelier",
+  "A veces, en el fútbol,\ntienes que marcar goles.\n\nThierry Henry",
+  "El que inventó el color de camisetas es un fenómeno,\nLos del mismo color se la pasan entre ellos\ny patean al arco donde está el tipo\nque no almorzó con nosotros.\n\nBilardo",
+  "No hay nada entre medio.\nO eres bueno, o eres malo.\nNosotros estuvimos entre medio.\n\nGary Lineker",
+  "En 1969 dejé las mujeres y el alcohol.\nFueron los peores 20 minutos de mi vida.”\n\nGeorge Best",
+  "¿Cuántos pulmones tengo?\nBueno… Uno, como toda la gente, ¿no?\n\nHéctor Puebla",
+  "El fútbol es la cosa más importante\nde las cosas menos importantes.\n\nJorge Valdano",
+  "Ganar no es lo importante,\nsiempre y cuando ganes.\n\nVinnie Jones",
+  "En un partido de fútbol\ntodo se complica por la presencia\ndel equipo contrario.\n\nJean Paul Sartre",
+  "El Golde Maradona con la mano es,\npor ahora, la única prueba fiable\nde la existencia de Dios.\n\nMario Benedetti",
+  "El fútbol\nes la recuperación semanal de la infancia.\n\nJavier Marías",
+  "La cancha es el único lugar\ndonde los pobres pueden cobrar revancha\n\nJuan Villoro",
+];
+
+// ── AVATARES — 12 personajes con imágenes animadas ────────────
+// Las imágenes se guardan en /public/avatares/
+// Nombre de archivo: {slug}-1.png, {slug}-2.png, {slug}-3.png
+export const AVATARES = [
+  { id: "av1",  slug: "chancho-lorenzo",        nombre: "Chancho Lorenzo"         },
+  { id: "av2",  slug: "azkargorta",             nombre: "Azkargorta"              },
+  { id: "av3",  slug: "chinquihuin",            nombre: "Chinquihuin"             },
+  { id: "av4",  slug: "julio-martinez",         nombre: "Julio Martínez"          },
+  { id: "av5",  slug: "caszely",               nombre: "Caszely"                 },
+  { id: "av6",  slug: "dr-orozco",             nombre: "Dr Orozco"               },
+  { id: "av7",  slug: "peter-veneno",          nombre: "Peter Veneno"            },
+  { id: "av8",  slug: "bielsa",               nombre: "Bielsa"                  },
+  { id: "av9",  slug: "carcuro",              nombre: "Carcuro"                 },
+  { id: "av10", slug: "el-sapo",              nombre: "El Sapo"                 },
+  { id: "av11", slug: "el-hombre-del-maletin", nombre: "El Hombre del Maletín"   },
+  { id: "av12", slug: "ff17",                 nombre: "FF17"                    },
+];
+
+// Helper: retorna la URL del fotograma N (1, 2 o 3) de un avatar
+export function avatarFrame(slug, frame) {
+  return `/avatares/${slug}-${frame}.png`;
+}
+
+// ── CARTAS COLECCIONABLES ──────────────────────────────────────
+// Imágenes en /public/cartas/{slug}.png
+// multiplicador: 4 | 3 | 2
+export const CARTAS = [
+  // x4 — Legendarias
+  { id: "cx4-1", slug: "vargas-elimina-espana",   nombre: "Vargas elimina a España",      multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-2", slug: "penal-gato-silva",         nombre: "El Penal del Gato Silva",       multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-3", slug: "maniobra-heimlich",         nombre: "La Maniobra de Heimlich",       multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-4", slug: "el-perro-ron",             nombre: "El Perro Ron",                  multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-5", slug: "el-maracanazo",            nombre: "El Maracanazo",                 multiplicador: 4, rareza: "legendaria" },
+  { id: "cx4-6", slug: "el-dedo-de-jarita",        nombre: "El dedo de Jarita",             multiplicador: 4, rareza: "legendaria" },
+  // x3 — Raras
+  { id: "cx3-1", slug: "historico-orellana",       nombre: "El histórico de Orellana",      multiplicador: 3, rareza: "rara" },
+  { id: "cx3-2", slug: "matador-en-wembley",       nombre: "El Matador en Wembley",          multiplicador: 3, rareza: "rara" },
+  { id: "cx3-3", slug: "mi-familia-esta-bien",      nombre: "Mi familia está bien",           multiplicador: 3, rareza: "rara" },
+  { id: "cx3-4", slug: "ahi-quedo-brasil",         nombre: "Ahí Quedó Brasil",              multiplicador: 3, rareza: "rara" },
+  { id: "cx3-5", slug: "el-palo-de-pinilla",       nombre: "El Palo de Pinilla",             multiplicador: 3, rareza: "rara" },
+  { id: "cx3-6", slug: "pero-con-respeto",         nombre: "Pero con Respeto",              multiplicador: 3, rareza: "rara" },
+  // x2 — Comunes
+  { id: "cx2-1", slug: "las-luces-rojas",          nombre: "Las Luces Rojas",               multiplicador: 2, rareza: "comun" },
+  { id: "cx2-2", slug: "vargas-ataja-chilavert",   nombre: "Vargas ataja a Chilavert",      multiplicador: 2, rareza: "comun" },
+  { id: "cx2-3", slug: "que-sucede",               nombre: "¿Qué sucede?",                  multiplicador: 2, rareza: "comun" },
+  { id: "cx2-4", slug: "el-dublinazo",             nombre: "El dublinazo",                  multiplicador: 2, rareza: "comun" },
+  { id: "cx2-5", slug: "lesion-a-francescoli",     nombre: "Lesión a Francescoli",          multiplicador: 2, rareza: "comun" },
+  { id: "cx2-6", slug: "el-bautizazo",             nombre: "El Bautizazo",                  multiplicador: 2, rareza: "comun" },
+];
+
+// Helpers de cartas
+export function getCarta(cartaId) {
+  return CARTAS.find((c) => c.id === cartaId) || null;
+}
+
+export function cartasPorMultiplicador(multi) {
+  return CARTAS.filter((c) => c.multiplicador === multi);
+}
+
+export function cartaAleatoriaPorMultiplicador(multi) {
+  const pool = cartasPorMultiplicador(multi);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── FASES ──────────────────────────────────────────────────────
+export const FASE_LABELS = {
+  grupos:        "Fase de Grupos",
+  dieciseisavos: "Dieciseisavos de Final",
+  octavos:       "Octavos de Final",
+  cuartos:       "Cuartos de Final",
+  semifinal:     "Semifinal",
+  tercer_lugar:  "Tercer y Cuarto Lugar",
+  final:         "FINAL",
+};
+
+export const FASES_ELIMINATORIAS = [
+  "dieciseisavos", "octavos", "cuartos",
+  "semifinal", "tercer_lugar", "final",
+];
+
+// ── BANCO DE PREGUNTAS (estructura para el admin) ──────────────
+// El admin elige una de estas para el día.
+// Las opciones reales las pondrás tú; por ahora el array tiene
+// la estructura correcta para 104 preguntas.
+export const BANCO_PREGUNTAS = [
+  {
+    id: "bq1",
+    texto: "Cuántos goles se marcan hoy",
+    opciones: ["ente 0 y 1", "2", "mas de 3","100"],
+  },
+  {
+    id: "bq2",
+    texto: "¿Quién será el jugador del partido en el Chile vs España?",
+    opciones: ["Vargas", "Alexis", "Pulgar", "Otro"],
+  },
+  // → Agrega las 104 preguntas aquí con el mismo formato.
+];
+</file>
+
 <file path="src/firebase.js">
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
@@ -3095,198 +3287,6 @@ export function MusicaProvider({ children }) {
     </MusicaCtx.Provider>
   );
 }
-</file>
-
-<file path="src/data/sampleData.js">
-// src/data/sampleData.js  — v3
-// ─────────────────────────────────────────────────────────────
-
-export const PARTIDOS_EJEMPLO = [
-  {
-    id: "p1",
-    fecha: "2026-06-11",
-    horaInicio: "12:00",
-    local:     { nombre: "Chile",    bandera: "🇨🇱" },
-    visitante: { nombre: "España",   bandera: "🇪🇸" },
-    fase: "grupos",
-    estaDestacado: true,
-    resultado: null,
-  },
-  {
-    id: "p2",
-    fecha: "2026-06-11",
-    horaInicio: "15:00",
-    local:     { nombre: "Brasil",   bandera: "🇧🇷" },
-    visitante: { nombre: "Argentina",bandera: "🇦🇷" },
-    fase: "grupos",
-    estaDestacado: false,
-    resultado: null,
-  },
-  {
-    id: "p3",
-    fecha: "2026-06-11",
-    horaInicio: "18:00",
-    local:     { nombre: "Francia",  bandera: "🇫🇷" },
-    visitante: { nombre: "Alemania", bandera: "🇩🇪" },
-    fase: "grupos",
-    estaDestacado: false,
-    resultado: null,
-  },
-];
-
-export const PREGUNTAS_EJEMPLO = [
-  {
-    id: "q1",
-    fecha: "2026-06-11",
-    texto: "¿Cuántos goles se marcarán en el partido Chile vs España?",
-    opciones: ["0-1 goles", "2-3 goles", "4-5 goles", "6 o más"],
-    respuestaCorrecta: null,
-  },
-];
-
-// ── FRASES DEL DÍA ─────────────────────────────────────────────
-// Una por cada día del mundial (o más); se rotan cíclicamente.
-export const FRASES_DEL_DIA = [
-  "El lunes\nquieres cambiarlos a todos,\nel viernes piensas\nque puedes recuperar a cinco o seis,\ny el domingo juegan los mismos\nonce cabrones de siempre.\n\nJ.B Toshack",
-  "La prensa es muy mentirosa.\nDicen que me he acostado con 200 mujeres, pero solo fueron 100.\n\n George Best",
-  "El fútbol es un deporte que inventaron los ingleses,\njuegan once contra once, y siempre gana Alemania.\n\nGary Lineker",
-  "Dios estaba de nuestro lado,\npero el árbitro era francés.\n\nHristo Stoichkov",
-  "Un partido de fútbol sin goles,\nes como un domingo sin sol.\n\n- Di Stefano",
-  "El fútbol es la única religión\nque no tiene ateos.\n\nEduardo Galeano",
-  "No hay nada más peligroso\nque no arriesgarse.\n\nPep Guardiola",
-  "Dios es redondo.\n\nJuan Villoro",
-  "Como presidente del club tengo la obligación\nde respaldar al técnico del equipo\nhasta cinco minutos antes de echarlo.\n\nAlfredo Davicce, presidente del Inter",
-  "Nosotros no compramos superestrellas.\nNosotros las hacemos.\n\nArsène Wenger",
-  "Siempre es difícil perder\npara quien no está acostumbrado.\n\nMourinho",
-  "En el fútbol opino lo mismo\nque Ivan Lendl respecto al tenis:\nsi quieres tener un amigo,\ncómprate un perro.\n\nMarco van Basten",
-  "Si yo hubiese nacido feo,\nno habríais oído hablar de Pelé.\n\nGeorge Best",
-  "¿Usted ya se puso de acuerdo con los rivales\npara dejarnos hacer todo eso?\n\nGarrincha",
-  "Ver fútbol es como ver sexo.\nEstá bien, pero es mejor practicarlo.\n\nAlex James",
-  "Algunas personas creen que el fútbol\nes una cuestión de vida o muerte.\nMe decepciona esa actitud. Es más importante que eso.\n\nBill Shanky",
-  "Tenemos la mejor hinchada del mundo,\npero nunca he visto a un hincha marcar un gol.\n\nJock Stein",
-  "A mí siempre me pareció más interesante\n marcar un autogol que un gol.\nUn gol, salvo si uno se llama Pelé, es algo eminentemente vulgar y muy descortés con el arquero contrario\nmientras que un autogol es un gesto de independencia.\n\nRoberto Bolaño",
-  "El fútbol es un milagro que le permitió a Europa\nodiarse sin destruirse.\n\nPaul Auster",
-  "Gasté mucho dinero en coches,\nalcohol y mujeres.\nEl resto lo he malgastado.\n\nGeorge Best",
-  "El fútbol es como el ajedrez\npero sin dados.\n\nLukas Podolski",
-  "Recibí un golpe en mi tobillo izquierdo.\nPero algo me dijo que era mi derecho.\n\nLee Hendrie",
-  "Voy a correr como un negro\npara vivir como un blanco.\n\nSamuel Eto`o",
-  "Bueno, del país no puedo contarles nada…\nsolo puedo adelantarle que se trata\nde un equipo brasileño…\n\nMurci Rojas",
-  "…y bueno,\nsin duda es difícil jugar\na 3.000 kilómetros de altura\n\nManuel López",
-  "Esta ciudad tiene dos grandes equipos:\nel Liverpool y los suplentes del Liverpool.\n\nBill Shankly",
-  "Yo crecí en un barrio\nprivado de Buenos Aires…\nPrivado de agua, de luz y de teléfono.\n\nMaradona",
-  "No me importaría perder todos los partidos,\nsiempre y cuando ganemos la Liga.\n\nMark Viduka",
-  "Cuando un equipo anda bien,\nno anda mal y viceversa.\n\nMariano Puyol",
-  "Primero que nada un saludo\n a todos los señores televisores.\n\nJuan Carlos Letelier",
-  "A veces, en el fútbol,\ntienes que marcar goles.\n\nThierry Henry",
-  "El que inventó el color de camisetas es un fenómeno,\nLos del mismo color se la pasan entre ellos\ny patean al arco donde está el tipo\nque no almorzó con nosotros.\n\nBilardo",
-  "No hay nada entre medio.\nO eres bueno, o eres malo.\nNosotros estuvimos entre medio.\n\nGary Lineker",
-  "En 1969 dejé las mujeres y el alcohol.\nFueron los peores 20 minutos de mi vida.”\n\nGeorge Best",
-  "¿Cuántos pulmones tengo?\nBueno… Uno, como toda la gente, ¿no?\n\nHéctor Puebla",
-  "El fútbol es la cosa más importante\nde las cosas menos importantes.\n\nJorge Valdano",
-  "Ganar no es lo importante,\nsiempre y cuando ganes.\n\nVinnie Jones",
-  "En un partido de fútbol\ntodo se complica por la presencia\ndel equipo contrario.\n\nJean Paul Sartre",
-  "El Golde Maradona con la mano es,\npor ahora, la única prueba fiable\nde la existencia de Dios.\n\nMario Benedetti",
-  "El fútbol\nes la recuperación semanal de la infancia.\n\nJavier Marías",
-  "La cancha es el único lugar\ndonde los pobres pueden cobrar revancha\n\nJuan Villoro",
-];
-
-// ── AVATARES — 12 personajes con imágenes animadas ────────────
-// Las imágenes se guardan en /public/avatares/
-// Nombre de archivo: {slug}-1.png, {slug}-2.png, {slug}-3.png
-export const AVATARES = [
-  { id: "av1",  slug: "chancho-lorenzo",        nombre: "Chancho Lorenzo"         },
-  { id: "av2",  slug: "azkargorta",             nombre: "Azkargorta"              },
-  { id: "av3",  slug: "chinquihuin",            nombre: "Chinquihuin"             },
-  { id: "av4",  slug: "julio-martinez",         nombre: "Julio Martínez"          },
-  { id: "av5",  slug: "caszely",               nombre: "Caszely"                 },
-  { id: "av6",  slug: "dr-orozco",             nombre: "Dr Orozco"               },
-  { id: "av7",  slug: "peter-veneno",          nombre: "Peter Veneno"            },
-  { id: "av8",  slug: "bielsa",               nombre: "Bielsa"                  },
-  { id: "av9",  slug: "carcuro",              nombre: "Carcuro"                 },
-  { id: "av10", slug: "el-sapo",              nombre: "El Sapo"                 },
-  { id: "av11", slug: "el-hombre-del-maletin", nombre: "El Hombre del Maletín"   },
-  { id: "av12", slug: "ff17",                 nombre: "FF17"                    },
-];
-
-// Helper: retorna la URL del fotograma N (1, 2 o 3) de un avatar
-export function avatarFrame(slug, frame) {
-  return `/avatares/${slug}-${frame}.png`;
-}
-
-// ── CARTAS COLECCIONABLES ──────────────────────────────────────
-// Imágenes en /public/cartas/{slug}.png
-// multiplicador: 4 | 3 | 2
-export const CARTAS = [
-  // x4 — Legendarias
-  { id: "cx4-1", slug: "vargas-elimina-espana",   nombre: "Vargas elimina a España",      multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-2", slug: "penal-gato-silva",         nombre: "El Penal del Gato Silva",       multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-3", slug: "maniobra-heimlich",         nombre: "La Maniobra de Heimlich",       multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-4", slug: "el-perro-ron",             nombre: "El Perro Ron",                  multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-5", slug: "el-maracanazo",            nombre: "El Maracanazo",                 multiplicador: 4, rareza: "legendaria" },
-  { id: "cx4-6", slug: "el-dedo-de-jarita",        nombre: "El dedo de Jarita",             multiplicador: 4, rareza: "legendaria" },
-  // x3 — Raras
-  { id: "cx3-1", slug: "historico-orellana",       nombre: "El histórico de Orellana",      multiplicador: 3, rareza: "rara" },
-  { id: "cx3-2", slug: "matador-en-wembley",       nombre: "El Matador en Wembley",          multiplicador: 3, rareza: "rara" },
-  { id: "cx3-3", slug: "mi-familia-esta-bien",      nombre: "Mi familia está bien",           multiplicador: 3, rareza: "rara" },
-  { id: "cx3-4", slug: "ahi-quedo-brasil",         nombre: "Ahí Quedó Brasil",              multiplicador: 3, rareza: "rara" },
-  { id: "cx3-5", slug: "el-palo-de-pinilla",       nombre: "El Palo de Pinilla",             multiplicador: 3, rareza: "rara" },
-  { id: "cx3-6", slug: "pero-con-respeto",         nombre: "Pero con Respeto",              multiplicador: 3, rareza: "rara" },
-  // x2 — Comunes
-  { id: "cx2-1", slug: "las-luces-rojas",          nombre: "Las Luces Rojas",               multiplicador: 2, rareza: "comun" },
-  { id: "cx2-2", slug: "vargas-ataja-chilavert",   nombre: "Vargas ataja a Chilavert",      multiplicador: 2, rareza: "comun" },
-  { id: "cx2-3", slug: "que-sucede",               nombre: "¿Qué sucede?",                  multiplicador: 2, rareza: "comun" },
-  { id: "cx2-4", slug: "el-dublinazo",             nombre: "El dublinazo",                  multiplicador: 2, rareza: "comun" },
-  { id: "cx2-5", slug: "lesion-a-francescoli",     nombre: "Lesión a Francescoli",          multiplicador: 2, rareza: "comun" },
-  { id: "cx2-6", slug: "el-bautizazo",             nombre: "El Bautizazo",                  multiplicador: 2, rareza: "comun" },
-];
-
-// Helpers de cartas
-export function getCarta(cartaId) {
-  return CARTAS.find((c) => c.id === cartaId) || null;
-}
-
-export function cartasPorMultiplicador(multi) {
-  return CARTAS.filter((c) => c.multiplicador === multi);
-}
-
-export function cartaAleatoriaPorMultiplicador(multi) {
-  const pool = cartasPorMultiplicador(multi);
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-// ── FASES ──────────────────────────────────────────────────────
-export const FASE_LABELS = {
-  grupos:        "Fase de Grupos",
-  dieciseisavos: "Dieciseisavos de Final",
-  octavos:       "Octavos de Final",
-  cuartos:       "Cuartos de Final",
-  semifinal:     "Semifinal",
-  tercer_lugar:  "Tercer y Cuarto Lugar",
-  final:         "FINAL",
-};
-
-export const FASES_ELIMINATORIAS = [
-  "dieciseisavos", "octavos", "cuartos",
-  "semifinal", "tercer_lugar", "final",
-];
-
-// ── BANCO DE PREGUNTAS (estructura para el admin) ──────────────
-// El admin elige una de estas para el día.
-// Las opciones reales las pondrás tú; por ahora el array tiene
-// la estructura correcta para 104 preguntas.
-export const BANCO_PREGUNTAS = [
-  {
-    id: "bq1",
-    texto: "Cuántos goles se marcan hoy",
-    opciones: ["ente 0 y 1", "2", "mas de 3","100"],
-  },
-  {
-    id: "bq2",
-    texto: "¿Quién será el jugador del partido en el Chile vs España?",
-    opciones: ["Vargas", "Alexis", "Pulgar", "Otro"],
-  },
-  // → Agrega las 104 preguntas aquí con el mismo formato.
-];
 </file>
 
 <file path="src/styles/global.css">
@@ -7844,6 +7844,1210 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
 }
 </file>
 
+<file path="src/components/VozHinchada.jsx">
+// src/components/VozHinchada.jsx  — v7 (Bugfix 3)
+// ─────────────────────────────────────────────────────────────
+// FIX 2: Añade sistema de reacciones con cierre automático:
+//   • El selector de emojis se cierra automáticamente al elegir.
+//   • También se cierra al clicar fuera (mousedown en document).
+//   • Botón muestra el emoji activo o "😀" como icono base.
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useRef } from "react";
+import {
+  collection, getDocs, query, orderBy, addDoc, serverTimestamp,
+  doc, setDoc, deleteDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { hoyStr } from "../utils/helpers";
+
+const COLORES_MSG = [
+  ["#1a472a","#52b788"], ["#9b1c1c","#f4d03f"], ["#1a1a5e","#a8d8ea"],
+  ["#4a0e8f","#e0c3fc"], ["#1a3a00","#b5e48c"], ["#3d2b00","#ffd166"],
+  ["#003333","#56cfe1"], ["#3b0a0a","#ff9a76"],
+];
+const EMOJIS = ["😀","😡","😢","😂","👍","👎"];
+
+function colorMsg(idx) { return COLORES_MSG[idx % COLORES_MSG.length]; }
+
+function labelTiempo(fechaStr, horaStr) {
+  const hoy = hoyStr();
+  if (fechaStr === hoy) return `HOY · ${horaStr}`;
+  const [, m, d] = (fechaStr || "").split("-");
+  return m && d ? `${d}/${m} · ${horaStr}` : horaStr;
+}
+
+// ── Reacciones con cierre automático al seleccionar ───────────
+function Reacciones({ docId, miUid }) {
+  const [conteo,     setConteo]     = useState({});
+  const [miReaccion, setMiReaccion] = useState(null);
+  const [abierto,    setAbierto]    = useState(false);
+  const popRef = useRef(null);
+
+  useEffect(() => { if (docId) cargar(); }, [docId]);
+
+  // Cierre al clicar fuera
+  useEffect(() => {
+    if (!abierto) return;
+    const h = (e) => {
+      if (popRef.current && !popRef.current.contains(e.target)) setAbierto(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [abierto]);
+
+  const cargar = async () => {
+    try {
+      const snap = await getDocs(collection(db,"mensajesDia",docId,"reacciones"));
+      const c = {}; let mia = null;
+      snap.docs.forEach(d => {
+        const { emoji } = d.data();
+        c[emoji] = (c[emoji]||0) + 1;
+        if (d.id === miUid) mia = emoji;
+      });
+      setConteo(c); setMiReaccion(mia);
+    } catch(_) {}
+  };
+
+  const reaccionar = async (emoji) => {
+    if (!miUid) return;
+    // Fix 2: cerrar INMEDIATAMENTE al seleccionar
+    setAbierto(false);
+
+    const ref = doc(db,"mensajesDia",docId,"reacciones",miUid);
+    if (miReaccion === emoji) {
+      // Quitar reacción
+      await deleteDoc(ref);
+      setConteo(prev => {
+        const n = {...prev};
+        n[emoji] = Math.max(0,(n[emoji]||0)-1);
+        if (!n[emoji]) delete n[emoji];
+        return n;
+      });
+      setMiReaccion(null);
+    } else {
+      // Cambiar o poner
+      if (miReaccion) {
+        setConteo(prev => {
+          const n = {...prev};
+          n[miReaccion] = Math.max(0,(n[miReaccion]||0)-1);
+          if (!n[miReaccion]) delete n[miReaccion];
+          return n;
+        });
+      }
+      await setDoc(ref, { emoji, uid: miUid });
+      setConteo(prev => ({ ...prev, [emoji]: (prev[emoji]||0)+1 }));
+      setMiReaccion(emoji);
+    }
+  };
+
+  const tieneReacciones = Object.keys(conteo).some(k => conteo[k] > 0);
+
+  return (
+    <div style={{ marginTop:"5px",display:"flex",alignItems:"center",
+      gap:"4px",flexWrap:"wrap" }}>
+      <div ref={popRef} style={{ position:"relative" }}>
+        {/* Botón: emoji activo o ícono base 😀 */}
+        <button
+          onClick={() => setAbierto(v=>!v)}
+          title={miReaccion ? "Cambiar reacción" : "Reaccionar"}
+          style={{
+            fontSize:"12px", padding:"2px 5px", cursor:"pointer",
+            background: miReaccion
+              ? "rgba(255,255,255,0.22)"
+              : "rgba(255,255,255,0.07)",
+            border: miReaccion
+              ? "1px solid rgba(255,255,255,0.45)"
+              : "1px solid rgba(255,255,255,0.15)",
+            borderRadius:"3px", lineHeight:1,
+          }}>
+          {miReaccion || "😀"}
+        </button>
+
+        {/* Popover — se cierra solo al seleccionar */}
+        {abierto && (
+          <div style={{
+            position:"absolute",
+            bottom:"calc(100% + 4px)", left:0,
+            background:"var(--negro)",
+            border:"2px solid var(--verde-campo)",
+            boxShadow:"3px 3px 0 rgba(0,0,0,0.5)",
+            padding:"5px 6px",
+            display:"flex", gap:"2px",
+            zIndex:100,
+            borderRadius:"2px",
+          }}>
+            {EMOJIS.map(e => (
+              <button key={e}
+                onClick={() => reaccionar(e)}
+                style={{
+                  fontSize:"15px", padding:"3px 4px", cursor:"pointer",
+                  background: miReaccion===e
+                    ? "rgba(255,255,255,0.22)"
+                    : "transparent",
+                  border:"1px solid transparent",
+                  borderRadius:"2px",
+                }}>
+                {e}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Conteos */}
+      {tieneReacciones && Object.entries(conteo)
+        .filter(([,n])=>n>0)
+        .map(([e,n]) => (
+          <span key={e} style={{
+            fontSize:"9px",
+            background:"rgba(0,0,0,0.2)",
+            padding:"1px 5px",
+            border:"1px solid rgba(255,255,255,0.1)",
+            borderRadius:"2px",
+          }}>
+            {e} {n}
+          </span>
+        ))
+      }
+    </div>
+  );
+}
+
+// ── Mensaje individual ────────────────────────────────────────
+function MensajeItem({ mensaje, colorIdx, miUid }) {
+  const [fondo, texto] = colorMsg(colorIdx);
+  const tieneUrl = mensaje.url && mensaje.url.startsWith("http");
+  const tiempo   = labelTiempo(mensaje.fecha, mensaje.hora);
+
+  return (
+    <div style={{ padding:"8px 10px",background:fondo,
+      border:`2px solid ${texto}44`,marginBottom:"4px" }}>
+      <div style={{ display:"flex",justifyContent:"space-between",
+        marginBottom:"3px",gap:"6px",flexWrap:"wrap" }}>
+        <span style={{ fontSize:"6px",color:texto,
+          fontFamily:"'Press Start 2P',monospace",
+          overflow:"hidden",textOverflow:"ellipsis",
+          whiteSpace:"nowrap",maxWidth:"55%" }}>
+          {mensaje.autor}
+        </span>
+        <span style={{ fontSize:"5px",color:`${texto}bb`,
+          fontFamily:"'Press Start 2P',monospace",whiteSpace:"nowrap" }}>
+          {tiempo}
+        </span>
+      </div>
+      <p style={{ fontSize:"6px",color:texto,lineHeight:1.8,
+        fontFamily:"'Press Start 2P',monospace",wordBreak:"break-word" }}>
+        {mensaje.texto}
+      </p>
+      {tieneUrl && (
+        <a href={mensaje.url} target="_blank" rel="noopener noreferrer"
+          style={{ display:"block",marginTop:"4px",fontSize:"5px",
+            color:"#56cfe1",fontFamily:"'Press Start 2P',monospace",
+            wordBreak:"break-all",textDecoration:"underline" }}>
+          🔗 {mensaje.url.length>40?mensaje.url.slice(0,40)+"…":mensaje.url}
+        </a>
+      )}
+      {/* Fix 2: Reacciones con auto-cierre */}
+      <Reacciones docId={mensaje.docId} miUid={miUid} />
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+export default function VozHinchada() {
+  const { firebaseUser, userProfile } = useAuth();
+  const [mensajes,    setMensajes]    = useState([]);
+  const [cargando,    setCargando]    = useState(true);
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [texto,       setTexto]       = useState("");
+  const [url,         setUrl]         = useState("");
+  const [enviando,    setEnviando]    = useState(false);
+  const [enviado,     setEnviado]     = useState(false);
+  const hoy = hoyStr();
+
+  useEffect(() => { cargar(); }, []);
+
+  const cargar = async () => {
+    setCargando(true);
+    try {
+      const snap = await getDocs(
+        query(collection(db,"mensajesDia"), orderBy("timestamp","desc"))
+      );
+      setMensajes(snap.docs.map(d=>({docId:d.id,...d.data()})));
+    } catch(e){ console.error(e); }
+    finally { setCargando(false); }
+  };
+
+  const enviar = async () => {
+    if (!texto.trim()||!firebaseUser) return;
+    setEnviando(true);
+    try {
+      const ahora = new Date();
+      const msg = {
+        autor:     userProfile?.nickname||firebaseUser.displayName?.split(" ")[0]||"Anónimo",
+        texto:     texto.trim().slice(0,200),
+        url:       url.trim()||null,
+        timestamp: serverTimestamp(),
+        fecha:     hoy,
+        hora:      `${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
+        uid:       firebaseUser.uid,
+      };
+      const ref = await addDoc(collection(db,"mensajesDia"), msg);
+      setMensajes(prev=>[{docId:ref.id,...msg,timestamp:ahora},...prev]);
+      setTexto(""); setUrl(""); setEnviado(true); setMostrarForm(false);
+      setTimeout(()=>setEnviado(false),3000);
+    } catch(e){ console.error(e); }
+    finally { setEnviando(false); }
+  };
+
+  return (
+    <div style={{ marginBottom:"16px" }}>
+      <div style={{ display:"flex",justifyContent:"space-between",
+        alignItems:"center",marginBottom:"10px" }}>
+        <div className="seccion-titulo" style={{ margin:0 }}>
+          📢 LA VOZ DE LA HINCHADA
+        </div>
+        <button className="btn-pixel btn-amarillo"
+          style={{ fontSize:"6px",padding:"5px 10px" }}
+          onClick={()=>{setMostrarForm(v=>!v);setEnviado(false);}}>
+          {mostrarForm?"✕ CERRAR":"✏ DEJAR MENSAJE"}
+        </button>
+      </div>
+
+      {mostrarForm && (
+        <div style={{ background:"var(--negro)",border:"3px solid var(--amarillo)",
+          boxShadow:"4px 4px 0 var(--amarillo-oscuro)",padding:"14px 12px",
+          marginBottom:"10px",display:"flex",flexDirection:"column",gap:"8px" }}>
+          <p style={{ fontSize:"6px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
+          <textarea value={texto} onChange={e=>setTexto(e.target.value.slice(0,200))}
+            placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
+            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
+              width:"100%",padding:"8px",border:"2px solid var(--negro)",
+              background:"var(--blanco)",color:"var(--negro)",
+              outline:"none",resize:"none",lineHeight:2 }} />
+          <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>
+            {texto.length}/200
+          </p>
+          <input value={url} onChange={e=>setUrl(e.target.value)}
+            placeholder="URL opcional"
+            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+              width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
+              background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
+          <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
+            ⚠ Sin spam. Visible para todos.
+          </p>
+          <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
+            onClick={enviar} disabled={enviando||!texto.trim()}>
+            {enviando?"⚙ ENVIANDO...":"📣 PUBLICAR"}
+          </button>
+        </div>
+      )}
+
+      {enviado && (
+        <p style={{ fontSize:"7px",color:"var(--verde-claro)",
+          marginBottom:"8px",textAlign:"center" }}>
+          ✅ ¡Mensaje publicado!
+        </p>
+      )}
+
+      <div style={{ background:"var(--negro)",border:"3px solid var(--verde-campo)",
+        boxShadow:"4px 4px 0 var(--verde-oscuro)",padding:"8px",
+        maxHeight:"280px",overflowY:"auto" }}>
+        {cargando ? (
+          <p style={{ fontSize:"6px",color:"var(--gris-claro)",
+            textAlign:"center",padding:"16px" }}>Cargando mensajes...</p>
+        ) : mensajes.length===0 ? (
+          <p style={{ fontSize:"6px",color:"var(--gris-claro)",
+            textAlign:"center",padding:"16px",lineHeight:2 }}>
+            Todavía no hay mensajes.<br/>¡Sé el primero!
+          </p>
+        ) : (
+          mensajes.map((m,i)=>(
+            <MensajeItem key={m.docId} mensaje={m}
+              colorIdx={i} miUid={firebaseUser?.uid} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="firestore.rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ── Helpers ────────────────────────────────────────────────
+    function esAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ── usuarios ───────────────────────────────────────────────
+    match /usuarios/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null;
+      
+      match /notificaciones/{notifId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // ── predicciones ───────────────────────────────────────────
+    match /predicciones/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── respuestas ─────────────────────────────────────────────
+    match /respuestas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── partidos ───────────────────────────────────────────────
+    match /partidos/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── preguntas ──────────────────────────────────────────────
+    match /preguntas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── puntosDelDia ───────────────────────────────────────────
+    match /puntosDelDia/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── cartasDelUsuario ───────────────────────────────────────
+    match /cartasDelUsuario/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── config ──────────────────────────────────────────────────
+    match /config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── mensajesDia ────────────────────────────────────────────
+    match /mensajesDia/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // ── Reacciones en mensajes ────────────────────────────────
+    match /mensajesDia/{docId}/reacciones/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── admins ──────────────────────────────────────────────────
+    match /admins/{uid} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── sobresDelDia ───────────────────────────────────────────
+    match /sobresDelDia/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── preguntasEnVivo (legacy, atado a partidos) ─────────────
+    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── eventoEnVivo (independiente, array de preguntas) ───────
+    match /eventoEnVivo/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Respuestas: clave compuesta {uid}_{preguntaId}
+    // Permite que cada usuario responda varias preguntas del
+    // mismo evento sin sobrescribir respuestas anteriores.
+    match /eventoEnVivo/{docId}/respuestas/{respId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // Se permite update para que, al cerrar una pregunta, se pueda
+      // guardar en cada respuesta si fue correcta y cuántos puntos ganó
+      // ese usuario (usado luego en el historial de pronósticos).
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+
+  }
+}
+</file>
+
+<file path="src/components/HistorialPredicciones.jsx">
+// src/components/HistorialPredicciones.jsx  — v7 (Patch 2)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v7:
+//   Punto 3: Total del día calculado con fuente de verdad correcta:
+//     se usa puntosDelDia.puntos cuando existe (ya incluye bonus);
+//     si no, suma predicciones + pregunta + bonus localmente.
+//     Se elimina el doble-conteo del bonus.
+//   Punto 9: En FilaPartido, muestra "🃏 ×N" si pred.cartaId
+//     y pred.cartaConsumida, junto al multiplicador utilizado.
+// ─────────────────────────────────────────────────────────────
+import React, { useEffect, useState } from "react";
+import {
+  collection, getDocs, query, where, documentId, doc, getDoc,
+} from "firebase/firestore";
+
+// Trae docs por id en lotes de 30 (límite del operador "in" de Firestore),
+// en una query por lote en vez de un getDoc por id (evita N+1).
+async function traerPorIds(nombreColeccion, ids) {
+  const mapa = {};
+  const lotes = [];
+  for (let i = 0; i < ids.length; i += 30) lotes.push(ids.slice(i, i + 30));
+  await Promise.all(lotes.map(async lote => {
+    if (lote.length === 0) return;
+    const snap = await getDocs(query(collection(db, nombreColeccion), where(documentId(), "in", lote)));
+    snap.forEach(d => { mapa[d.id] = { id: d.id, ...d.data() }; });
+  }));
+  return mapa;
+}
+import { db } from "../firebase";
+import { CARTAS } from "../data/sampleData";
+
+// ── Helpers de texto ──────────────────────────────────────────
+function textoApuestaPartido(pred) {
+  if (pred.estaDestacado && pred.golesLocalPred !== undefined && pred.golesLocalPred !== null) {
+    return `Exacto: ${pred.golesLocalPred} - ${pred.golesVisitantePred}`;
+  }
+  if (pred.definicion === "normal") {
+    const g = pred.ganador90 === "local" ? "Local" : "Visitante";
+    return `90min: ${g}${pred.diferencia90 ? ` + dif (${pred.diferencia90} gol${pred.diferencia90==="1"?"":"es"})` : ""}`;
+  }
+  if (pred.definicion === "alargue") {
+    const g = pred.ganadorAlargue === "local" ? "Local" : "Visitante";
+    return `Alargue: ${g}${pred.diferenciaAlargue ? ` + dif (${pred.diferenciaAlargue} gol${pred.diferenciaAlargue==="1"?"":"es"})` : ""}`;
+  }
+  if (pred.definicion === "penales") {
+    const g = pred.ganadorPenales === "local" ? "Local" : "Visitante";
+    const marcador = pred.penalesLocal !== undefined ? ` (${pred.penalesLocal}-${pred.penalesVisitante})` : "";
+    return `Penales: ${g} gana${marcador}`;
+  }
+  const ganLabel = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
+  const dif = pred.diferencia ? ` + dif (${pred.diferencia} gol${pred.diferencia==="1"?"":"es"})` : "";
+  return `${ganLabel}${dif}`;
+}
+
+function textoResultadoReal(r) {
+  if (!r) return "—";
+  const base = `${r.golesLocal}-${r.golesVisitante}`;
+  if (r.definicion === "penales") return `${base} (pen ${r.penalesLocal}-${r.penalesVisitante})`;
+  if (r.definicion === "alargue") return `${base} (alargue)`;
+  return base;
+}
+
+function desgloseDesglose(puntos, estaDestacado, pred) {
+  if (puntos === 0) return "";
+  if (estaDestacado && puntos === 5) return "(3+2)";
+  if (!estaDestacado && pred.diferencia && pred.ganador !== "empate" && puntos === 3) return "(1+2)";
+  return "";
+}
+
+function diaNumDesde(fechaStr) {
+  const inicio = new Date("2026-06-11T00:00:00");
+  const [y,m,d] = fechaStr.split("-").map(Number);
+  const target = new Date(y,m-1,d); target.setHours(0,0,0,0);
+  const diff = Math.floor((target - inicio) / 86400000);
+  return diff >= 0 ? diff + 1 : null;
+}
+
+function labelFecha(fechaStr) {
+  const [y,m,d] = fechaStr.split("-").map(Number);
+  const meses = ["enero","febrero","marzo","abril","mayo","junio",
+    "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const nDia = diaNumDesde(fechaStr);
+  return `${d} de ${meses[m-1]} de ${y}${nDia ? ` — Día ${nDia}` : ""}`;
+}
+
+// ── Fila de un partido (punto 9: aviso de carta) ──────────────
+function FilaPartido({ pred, partido }) {
+  if (!partido?.resultado) return null;
+  const { resultado, estaDestacado, local, visitante } = partido;
+  const acertaste  = pred.esMaximo === true;
+  const pts        = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
+  // Puntos BASE (sin multiplicar) para el desglose
+  const ptsBase    = typeof pred.puntosBase === "number" ? pred.puntosBase : pts;
+  const desglose   = ptsBase ? desgloseDesglose(ptsBase, estaDestacado, pred) : "";
+  const apuesta    = textoApuestaPartido(pred);
+  const resReal    = textoResultadoReal(resultado);
+  const nombrePart = `${local?.bandera??""} ${local?.nombre??""} vs ${visitante?.nombre??""} ${visitante?.bandera??""}`;
+
+  // Carta usada (punto 9)
+  const cartaUsada = pred.cartaId && pred.cartaConsumida
+    ? CARTAS.find(c => c.id === pred.cartaId)
+    : null;
+
+  return (
+    <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
+      display:"flex",gap:"6px",alignItems:"flex-start" }}>
+      <span style={{ fontSize:"10px",lineHeight:1,flexShrink:0,marginTop:"1px" }}>
+        {acertaste ? "✅" : "❌"}
+      </span>
+      <div style={{ flex:1 }}>
+        <p style={{ fontSize:"6px",color:"var(--blanco)",lineHeight:1.8 }}>
+          {nombrePart}
+          {estaDestacado && <span style={{ color:"var(--amarillo)",marginLeft:"4px" }}>⭐</span>}
+        </p>
+        <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
+          Tu apuesta: <span style={{ color:"var(--blanco)" }}>{apuesta}</span>
+          {" · "}Real: <span style={{ color:"var(--amarillo)" }}>{resReal}</span>
+        </p>
+        {/* Aviso de carta (punto 9) */}
+        {cartaUsada && (
+          <p style={{ fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8,marginTop:"2px" }}>
+            🃏 Carta <strong>{cartaUsada.nombre}</strong> ×{cartaUsada.multiplicador} utilizada
+          </p>
+        )}
+      </div>
+      <div style={{ textAlign:"right",flexShrink:0 }}>
+        {pts !== null ? (
+          <div>
+            <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
+              color:pts>0?"var(--verde-claro)":"var(--gris)" }}>
+              {pts>0?`+${pts}`:"0"}
+            </span>
+            {desglose && (
+              <span style={{ fontSize:"5px",color:"var(--gris-claro)",display:"block" }}>{desglose}</span>
+            )}
+            {cartaUsada && pts > 0 && ptsBase && pts !== ptsBase && (
+              <span style={{ fontSize:"5px",color:"var(--amarillo)",display:"block" }}>
+                ×{cartaUsada.multiplicador}
+              </span>
+            )}
+          </div>
+        ) : <span style={{ fontSize:"5px",color:"var(--gris)" }}>—</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Bloque de un día ──────────────────────────────────────────
+function BloqueDia({ fecha, predicciones, partidos, respuesta, pregunta, puntosDelDia }) {
+  const [abierto, setAbierto] = useState(true);
+
+  // Punto 3: Total del día con fuente correcta
+  // puntosDelDia.puntos ya es la suma definitiva guardada por helpers.js
+  // (incluye partidos + pregunta + bonus diario).
+  // Solo calculamos localmente si no hay ese documento.
+  const ptsParts    = predicciones.reduce((s,p) => s + (p.puntosGanados??0), 0);
+  const ptsPregunta = respuesta?.puntosGanados ?? 0;
+  const bonusGanador = puntosDelDia?.esGanador ? (puntosDelDia.bonusGanador ?? 2) : 0;
+
+  // Fuente de verdad: puntosDelDia.puntos si existe, calculado si no
+  const totalDia = puntosDelDia?.puntos !== undefined && puntosDelDia?.puntos !== null
+    ? puntosDelDia.puntos
+    : ptsParts + ptsPregunta + bonusGanador;
+
+  return (
+    <div style={{ border:"2px solid var(--verde-campo)",marginBottom:"8px",background:"rgba(0,0,0,0.25)" }}>
+      <button onClick={() => setAbierto(v => !v)}
+        style={{ width:"100%",textAlign:"left",fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+          padding:"8px 10px",background:"var(--verde-oscuro)",border:"none",cursor:"pointer",
+          display:"flex",justifyContent:"space-between",alignItems:"center",color:"var(--blanco)" }}>
+        <span style={{ color:"var(--verde-claro)" }}>📅 {labelFecha(fecha)}</span>
+        <span style={{ color:"var(--amarillo)",fontSize:"8px" }}>
+          {totalDia}pts {abierto ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {abierto && (
+        <div>
+          {predicciones.length > 0 && (
+            <div>
+              <p style={{ fontSize:"5px",color:"var(--gris-claro)",padding:"4px 8px",
+                background:"rgba(0,0,0,0.3)",borderBottom:"1px solid var(--verde-campo)" }}>
+                PARTIDOS
+              </p>
+              {predicciones.map(pred => {
+                const partido = partidos[pred.partidoId];
+                return partido?.resultado
+                  ? <FilaPartido key={pred.predId} pred={pred} partido={partido} />
+                  : null;
+              })}
+            </div>
+          )}
+
+          {respuesta && (
+            <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
+              display:"flex",alignItems:"center",gap:"6px" }}>
+              <span style={{ fontSize:"10px" }}>{respuesta.esCorrecta ? "✅" : "❌"}</span>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
+                  PREGUNTA DEL DÍA
+                  {pregunta && <span style={{ color:"var(--blanco)",marginLeft:"4px" }}>
+                    — {pregunta.texto?.slice(0,40)}{pregunta.texto?.length>40?"…":""}
+                  </span>}
+                </p>
+                <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
+                  Tu respuesta: <span style={{ color:"var(--blanco)" }}>{respuesta.respuesta}</span>
+                  {respuesta.esCorrecta === false && pregunta?.respuestaCorrecta &&
+                    <span style={{ color:"var(--amarillo)",marginLeft:"4px" }}>
+                      (correcta: {pregunta.respuestaCorrecta})
+                    </span>
+                  }
+                </p>
+              </div>
+              <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
+                color:ptsPregunta>0?"var(--verde-claro)":"var(--gris)" }}>
+                {ptsPregunta>0?`+${ptsPregunta}`:"0"}
+              </span>
+            </div>
+          )}
+
+          {bonusGanador > 0 && (
+            <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
+              display:"flex",alignItems:"center",gap:"6px" }}>
+              <span style={{ fontSize:"10px" }}>🏆</span>
+              <p style={{ flex:1,fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8 }}>
+                BONUS GANADOR DEL DÍA
+              </p>
+              <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",color:"var(--amarillo)" }}>
+                +{bonusGanador}
+              </span>
+            </div>
+          )}
+
+          <div style={{ padding:"6px 10px",background:"rgba(244,208,63,0.08)",
+            borderTop:"2px solid var(--verde-campo)",
+            display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+            <span style={{ fontSize:"6px",color:"var(--gris-claro)" }}>TOTAL DEL DÍA</span>
+            <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"10px",color:"var(--amarillo)" }}>
+              {totalDia} pts
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Bloque: preguntas del EN VIVO respondidas por el usuario ──
+function BloqueEnVivo({ respuestasEnVivo }) {
+  const [abierto, setAbierto] = useState(true);
+  if (!respuestasEnVivo || respuestasEnVivo.length === 0) return null;
+
+  const totalPts = respuestasEnVivo.reduce((s, r) => s + (r.puntosGanados ?? 0), 0);
+
+  return (
+    <div style={{ border:"2px solid var(--rojo-chile)", marginBottom:"8px", background:"rgba(0,0,0,0.25)" }}>
+      <button onClick={() => setAbierto(v => !v)}
+        style={{ width:"100%", textAlign:"left", fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          padding:"8px 10px", background:"rgba(214,40,40,0.25)", border:"none", cursor:"pointer",
+          display:"flex", justifyContent:"space-between", alignItems:"center", color:"var(--blanco)" }}>
+        <span style={{ color:"var(--rojo-chile)" }}>🔴 PREGUNTAS DEL EN VIVO</span>
+        <span style={{ color:"var(--amarillo)", fontSize:"8px" }}>
+          {totalPts}pts {abierto ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {abierto && (
+        <div>
+          {respuestasEnVivo.map(r => {
+            // Fix: usar correcta/puntosGanados guardados en la respuesta
+            // (no depender de estado que requiere que el evento siga activo)
+            const resuelta  = r.correcta !== undefined;
+            const pendiente = !resuelta;
+            const pts = r.puntosGanados ?? 0;
+            return (
+              <div key={r.id} style={{ padding:"6px 8px", borderBottom:"1px solid rgba(214,40,40,0.2)",
+                display:"flex", gap:"6px", alignItems:"flex-start" }}>
+                <span style={{ fontSize:"10px", lineHeight:1, flexShrink:0, marginTop:"1px" }}>
+                  {pendiente ? "⏳" : (r.correcta ? "✅" : "❌")}
+                </span>
+                <div style={{ flex:1 }}>
+                  <p style={{ fontSize:"6px", color:"var(--blanco)", lineHeight:1.8 }}>
+                    {r.numero ? `#${r.numero} — ` : ""}{r.texto || "Pregunta del en vivo"}
+                  </p>
+                  <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:1.8 }}>
+                    Tu respuesta: <span style={{ color:"var(--blanco)" }}>{r.respuesta}</span>
+                    {!pendiente && r.respuestaCorrecta &&
+                      <span style={{ color:"var(--amarillo)", marginLeft:"4px" }}>
+                        (correcta: {r.respuestaCorrecta})
+                      </span>}
+                  </p>
+                </div>
+                <div style={{ textAlign:"right", flexShrink:0 }}>
+                  {pendiente ? (
+                    <span style={{ fontSize:"5px", color:"var(--gris)" }}>abierta</span>
+                  ) : (
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"2px" }}>
+                      <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                        color:pts>0?"var(--verde-claro)":"var(--rojo-chile)" }}>
+                        {pts>0 ? `✅ +${pts}pts` : "❌ Falló"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+const LIMITE_DIAS = 15;
+
+export default function HistorialPredicciones({ userId }) {
+  const [dias,     setDias]     = useState([]);
+  const [respuestasEnVivo, setRespuestasEnVivo] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error,    setError]    = useState(null);
+
+  useEffect(() => { if (userId) cargar(); }, [userId]);
+
+  const cargar = async () => {
+    setCargando(true); setError(null);
+    try {
+      const [snapPreds, snapResps, snapPDia, snapEV, snapEventoDoc] = await Promise.all([
+        getDocs(query(collection(db,"predicciones"), where("uid","==",userId))),
+        getDocs(query(collection(db,"respuestas"),   where("uid","==",userId))),
+        getDocs(query(collection(db,"puntosDelDia"), where("uid","==",userId))),
+        getDocs(query(collection(db,"eventoEnVivo","actual","respuestas"), where("uid","==",userId))),
+        getDoc(doc(db,"eventoEnVivo","actual")),
+      ]);
+
+      // ── Preguntas del EN VIVO: cruzar cada respuesta con la
+      // pregunta correspondiente (texto, número, estado) guardada
+      // en el array `preguntas` del documento del evento.
+      const preguntasEvento = snapEventoDoc.exists() ? (snapEventoDoc.data().preguntas || []) : [];
+      const respsEV = snapEV.docs
+        .map(d => {
+          const data = d.data();
+          // Buscar la pregunta en el evento activo (puede no existir si el evento cambió)
+          const preg = preguntasEvento.find(p => p.id === data.preguntaId);
+
+          // Usar campos guardados en la respuesta primero (persistentes),
+          // luego cruzar con la pregunta activa si están disponibles.
+          const correcta = data.correcta !== undefined
+            ? data.correcta
+            : preg?.estado === "cerrada"
+              ? data.respuesta === preg?.respuestaCorrecta
+              : undefined;
+
+          const puntosGanados = data.puntosGanados !== undefined
+            ? data.puntosGanados
+            : preg?.estado === "cerrada"
+              ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
+              : undefined;
+
+          return {
+            id:                d.id,
+            ...data,
+            // Texto y número: usar lo guardado en la respuesta, o del evento activo
+            texto:             data.texto             ?? preg?.texto,
+            numero:            data.numero            ?? preg?.numero,
+            respuestaCorrecta: data.respuestaCorrecta ?? preg?.respuestaCorrecta,
+            correcta,
+            puntosGanados,
+          };
+        })
+        // Última pregunta primero
+        .sort((a,b) => (b.numero ?? 0) - (a.numero ?? 0));
+      setRespuestasEnVivo(respsEV);
+
+      const porFecha = {};
+
+      for (const pDoc of snapPreds.docs) {
+        const pred = pDoc.data();
+        if (!pred.fecha) continue;
+        if (!porFecha[pred.fecha]) porFecha[pred.fecha] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
+        porFecha[pred.fecha].predicciones.push({ predId:pDoc.id, ...pred });
+      }
+      for (const rDoc of snapResps.docs) {
+        const resp = rDoc.data();
+        if (!resp.preguntaId) continue;
+        const fechaInf = resp.fecha || resp.preguntaId.split("_")[0];
+        if (!fechaInf || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInf)) continue;
+        if (!porFecha[fechaInf]) porFecha[fechaInf] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
+        porFecha[fechaInf].respuesta = { respId:rDoc.id, ...resp };
+      }
+      for (const dDoc of snapPDia.docs) {
+        const pd = dDoc.data();
+        if (!pd.fecha) continue;
+        if (!porFecha[pd.fecha]) porFecha[pd.fecha] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
+        porFecha[pd.fecha].puntosDelDia = pd;
+      }
+
+      const fechas = Object.keys(porFecha).sort((a,b)=>b.localeCompare(a)).slice(0, LIMITE_DIAS);
+
+      const partidoIds  = [...new Set(fechas.flatMap(f => porFecha[f].predicciones.map(p => p.partidoId)))];
+      const preguntaIds = [...new Set(fechas.filter(f=>porFecha[f].respuesta).map(f=>porFecha[f].respuesta.preguntaId).filter(Boolean))];
+
+      const [partidosMap, preguntasMap] = await Promise.all([
+        traerPorIds("partidos", partidoIds),
+        traerPorIds("preguntas", preguntaIds),
+      ]);
+
+      for (const fecha of fechas) {
+        const d = porFecha[fecha];
+        if (d.respuesta?.preguntaId) d.pregunta = preguntasMap[d.respuesta.preguntaId] || null;
+        d.predicciones = d.predicciones.filter(p => partidosMap[p.partidoId]?.resultado);
+      }
+
+      setDias(fechas
+        .filter(f => { const d=porFecha[f]; return d.predicciones.length>0||d.respuesta||d.puntosDelDia; })
+        .map(f => ({ fecha:f, ...porFecha[f], partidos:partidosMap }))
+      );
+    } catch(e) {
+      console.error(e); setError("No se pudo cargar el historial.");
+    } finally { setCargando(false); }
+  };
+
+  if (cargando) return (
+    <div style={{ padding:"16px",textAlign:"center" }}>
+      <span className="spinner">⚙</span>
+      <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginTop:"6px" }}>Cargando historial...</p>
+    </div>
+  );
+  if (error) return <p style={{ fontSize:"6px",color:"var(--rojo-chile)",padding:"8px" }}>{error}</p>;
+  if (dias.length === 0 && respuestasEnVivo.length === 0) return (
+    <p style={{ fontSize:"6px",color:"var(--gris-claro)",padding:"12px",textAlign:"center",lineHeight:2 }}>
+      Sin historial todavía.
+    </p>
+  );
+
+  return (
+    <div style={{ padding:"8px" }}>
+      <BloqueEnVivo respuestasEnVivo={respuestasEnVivo} />
+
+      {dias.length > 0 && (
+        <>
+          <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"8px",lineHeight:1.8 }}>
+            Últimos {Math.min(dias.length, LIMITE_DIAS)} días · Clic para desplegar/plegar
+          </p>
+          {dias.map(d => (
+            <BloqueDia key={d.fecha} fecha={d.fecha} predicciones={d.predicciones}
+              partidos={d.partidos} respuesta={d.respuesta} pregunta={d.pregunta}
+              puntosDelDia={d.puntosDelDia} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/TabPartidos.jsx">
+// src/components/TabPartidos.jsx  — v8 (Fase 4)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v8:
+//   Punto 10: Integra <SuperDestacado> para partidos con
+//             esSuperDestacado:true. El componente escucha en
+//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
+//   Todo lo demás idéntico a v7.
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  collection, getDocs, query, where, doc, getDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { hoyStr, partidoAbierto } from "../utils/helpers";
+import PartidoCard from "./PartidoCard";
+import PreguntaCard from "./PreguntaCard";
+import SuperDestacado from "./SuperDestacado";
+
+const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
+
+// ── Hook: sonido ambiental ────────────────────────────────────
+function useSonidoAmbiental(activado) {
+  const audioRef = useRef(null);
+  useEffect(() => {
+    let activo = true;
+    const iniciar = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "sonidoDia"));
+        if (!snap.exists() || !activo) return;
+        const { archivo, volumen = 0.4 } = snap.data();
+        if (!archivo || !activado) return;
+        const audio = new Audio(`/sounds/${archivo}`);
+        audio.loop = true; audio.volume = 0;
+        audioRef.current = audio;
+        await audio.play().catch(() => {});
+        let vol = 0;
+        const target = Math.min(1, Math.max(0, Number(volumen)));
+        const fade = setInterval(() => {
+          if (!activo) { clearInterval(fade); return; }
+          vol = Math.min(target, vol + 0.02);
+          if (audioRef.current) audioRef.current.volume = vol;
+          if (vol >= target) clearInterval(fade);
+        }, 80);
+      } catch(_) {}
+    };
+    iniciar();
+    return () => {
+      activo = false;
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    };
+  }, [activado]);
+  useEffect(() => {
+    if (!audioRef.current) return;
+    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
+  }, [activado]);
+}
+
+export default function TabPartidos({ onGuardado }) {
+  const { firebaseUser } = useAuth();
+  const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
+  useSonidoAmbiental(sonidosActivados);
+
+  const [partidos,    setPartidos]    = useState([]);
+  const [pregunta,    setPregunta]    = useState(null);
+  const [cargando,    setCargando]    = useState(true);
+  const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
+  const [respuestaUsuario, setRespuestaUsuario] = useState(null);
+
+  // Partido super destacado activo (para preguntas en vivo)
+  const [superDestacado, setSuperDestacado] = useState(null);
+
+  const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
+  const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
+  const [textoMensaje, setTextoMensaje] = useState("");
+  const [urlMensaje,   setUrlMensaje]   = useState("");
+  const [enviandoMsg,  setEnviandoMsg]  = useState(false);
+  const [msgEnviado,   setMsgEnviado]   = useState(false);
+  const hoy = hoyStr();
+
+  useEffect(() => { cargarDatos(); }, []);
+  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
+  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
+
+  const cargarDatos = async () => {
+    setCargando(true);
+    try {
+      let lista = [];
+      try {
+        // Partidos de hoy
+        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
+        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
+
+        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
+        let d16Lista = [];
+        try {
+          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
+          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
+        } catch(_) {}
+
+        // Combinar sin duplicados
+        const idsHoy = new Set(hoyLista.map(p => p.id));
+        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
+      } catch(_) {}
+      setPartidos(lista);
+
+      // Detectar partido super destacado — búsqueda separada (sin filtro de fecha)
+      // para que funcione aunque el partido no sea de hoy
+            let sd = lista.find(p => p.esSuperDestacado && !p.resultado);
+      if (!sd) {
+        try {
+          const snapSD = await getDocs(query(
+            collection(db,"partidos"), where("esSuperDestacado","==",true)
+          ));
+          sd = snapSD.docs
+            .map(d => ({ id:d.id, ...d.data() }))
+            .find(p => !p.resultado) || null;
+        } catch(_) {}
+      }
+      setSuperDestacado(sd || null);
+
+      try {
+        const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
+        if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
+      } catch(_) {}
+    } finally { setCargando(false); }
+  };
+
+  const verificarPredicciones = async () => {
+    if (!firebaseUser) return;
+    const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
+    if (abiertos.length === 0) return;
+    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
+    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
+    const idsAbiertos = new Set(abiertos.map(p => p.id));
+    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
+    const nuevas = new Set();
+    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
+    setPrediccionesGuardadas(nuevas);
+  };
+
+  const verificarRespuestaPregunta = async () => {
+    if (!firebaseUser || !pregunta) return;
+    try {
+      const snap = await getDoc(doc(db,"respuestas",`${firebaseUser.uid}_${pregunta.id}`));
+      if (snap.exists()) setRespuestaUsuario(snap.data().respuesta || "✓");
+    } catch(_) {}
+  };
+
+  const handlePrediccionGuardada = useCallback(() => {
+    setTimeout(verificarPredicciones, 500);
+    if (onGuardado) onGuardado();
+    const lsKey = LS_HINCHADA_KEY + hoy;
+    if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
+  }, [partidos, firebaseUser, hoy]);
+
+  const cerrarModalHinchada = () => {
+    localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
+    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
+    setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
+  };
+
+  const enviarMensajeHinchada = async () => {
+    if (!textoMensaje.trim() || !firebaseUser) return;
+    setEnviandoMsg(true);
+    try {
+      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
+      const ahora = new Date();
+      await addDoc(col(db,"mensajesDia"), {
+        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
+        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
+        timestamp:serverTimestamp(), fecha:hoy,
+        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
+        uid:firebaseUser.uid,
+      });
+      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
+    } catch(e) { console.error(e); }
+    finally { setEnviandoMsg(false); }
+  };
+
+  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
+  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
+
+  if (cargando) return (
+    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
+      <span className="spinner">⚙</span><p>CARGANDO...</p>
+    </div>
+  );
+
+  return (
+    <div style={{ paddingBottom:"80px" }}>
+      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
+      {superDestacado && (
+  <SuperDestacado
+    partidoId={superDestacado.id}
+    nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
+  />
+)}
+
+      {/* Modal hinchada */}
+      {mostrarModalHinchada && (
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
+          <div style={{ background:"var(--negro)",border:"4px solid var(--amarillo)",
+            boxShadow:"6px 6px 0 var(--amarillo-oscuro)",
+            padding:"24px 20px",maxWidth:"360px",width:"100%",
+            display:"flex",flexDirection:"column",gap:"14px" }}>
+            {!mostrarFormHinchada ? (
+              <>
+                <p style={{ fontSize:"24px",textAlign:"center" }}>📢</p>
+                <p style={{ fontSize:"8px",color:"var(--blanco)",textAlign:"center",lineHeight:2 }}>
+                  ¿Algún mensaje<br/>para la hinchada?
+                </p>
+                <div style={{ display:"flex",gap:"8px" }}>
+                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
+                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
+                  <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
+                    onClick={cerrarModalHinchada}>NO</button>
+                </div>
+              </>
+            ) : msgEnviado ? (
+              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
+            ) : (
+              <>
+                <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
+                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
+                  placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
+                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
+                    width:"100%",padding:"8px",border:"2px solid var(--negro)",
+                    background:"var(--blanco)",color:"var(--negro)",
+                    outline:"none",resize:"none",lineHeight:2 }} />
+                <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
+                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
+                  placeholder="URL opcional"
+                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+                    width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
+                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
+                <div style={{ display:"flex",gap:"8px" }}>
+                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
+                    onClick={enviarMensajeHinchada}
+                    disabled={enviandoMsg||!textoMensaje.trim()}>
+                    {enviandoMsg?"⚙...":"✅ ENVIAR"}
+                  </button>
+                  <button className="btn-pixel btn-gris" style={{ fontSize:"7px" }}
+                    onClick={cerrarModalHinchada}>✕</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="contenedor">
+        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
+        {partidos.length>0 ? (
+          partidos.map(p => (
+            <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
+          ))
+        ) : (
+          <div className="caja-pixel mb-16 text-center">
+            <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
+          </div>
+        )}
+        {abiertos.length>0 && (
+          <div style={{ padding:"8px 12px",marginBottom:"12px",
+            border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
+            fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+            color:"var(--verde-claro)",textAlign:"center" }}>
+            {todosPredecidos
+              ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
+              : `📝 ${prediccionesGuardadas.size} / ${abiertos.length} PRONÓSTICOS GUARDADOS`
+            }
+          </div>
+        )}
+        {pregunta && (
+          <>
+            <div className="seccion-titulo">
+              ❓ PREGUNTA DEL DÍA
+              {respuestaUsuario && (
+                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
+                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
+                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
+              )}
+            </div>
+            <PreguntaCard pregunta={pregunta} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="src/components/AdminEventoEnVivo.jsx">
 // src/components/AdminEventoEnVivo.jsx  — v3
 // ─────────────────────────────────────────────────────────────
@@ -7997,42 +9201,75 @@ export default function AdminEventoEnVivo({ onMensaje }) {
 
   // ── Reparar respuestas sin campo correcta (historial roto) ───
   const repararRespuestas = async () => {
-    const cerradas = preguntas.filter(p => p.estado === "cerrada");
-    if (cerradas.length === 0) {
-      onMensaje("error", "No hay preguntas cerradas en este evento."); return;
-    }
     setReparando(true);
     try {
-      // Leer TODAS las respuestas del evento
+      // Leer TODAS las respuestas (de cualquier evento, activo o pasado)
       const snapR = await getDocs(REF_RESPS());
+      if (snapR.empty) {
+        onMensaje("error", "No hay respuestas guardadas en Firestore."); return;
+      }
+
+      // Agrupar por preguntaId para poder buscar la respuesta correcta
+      // Las respuestas que YA tienen campo correcta se saltan.
+      // Para las que no tienen correcta, intentar deducir desde:
+      //   1. respuestaCorrecta guardada en la propia respuesta (campo heredado)
+      //   2. El evento activo actual (si la pregunta sigue ahí)
+      const preguntasActuales = evento?.preguntas || [];
+
       const batch = writeBatch(db);
       let reparadas = 0;
+      let sinInfo   = 0;
 
       snapR.docs.forEach(d => {
         const r = d.data();
-        // Solo reparar las que no tienen campo correcta
-        if (r.correcta !== undefined) return;
-        const preg = cerradas.find(p => p.id === r.preguntaId);
-        if (!preg) return; // respuesta de pregunta que no está cerrada, ignorar
-        const esCorrecta = r.respuesta === preg.respuestaCorrecta;
-        batch.update(d.ref, {
-          correcta:     esCorrecta,
-          puntosGanados: esCorrecta ? (preg.puntosEnVivo || 3) : 0,
-          texto:        preg.texto,
-          numero:       preg.numero,
-        });
-        reparadas++;
+        if (r.correcta !== undefined) return; // ya tiene resultado, saltar
+
+        // Buscar la pregunta en el evento actual
+        const preg = preguntasActuales.find(p => p.id === r.preguntaId);
+
+        // Si la pregunta está en el evento actual y está cerrada
+        if (preg && preg.estado === "cerrada" && preg.respuestaCorrecta) {
+          const esCorrecta = r.respuesta === preg.respuestaCorrecta;
+          batch.update(d.ref, {
+            correcta:      esCorrecta,
+            puntosGanados: esCorrecta ? (preg.puntosEnVivo || 3) : 0,
+            texto:         preg.texto   || r.texto   || "Pregunta EN VIVO",
+            numero:        preg.numero  || r.numero  || 0,
+            respuestaCorrecta: preg.respuestaCorrecta,
+          });
+          reparadas++;
+          return;
+        }
+
+        // Si la respuesta tiene respuestaCorrecta guardada (de versiones anteriores)
+        if (r.respuestaCorrecta) {
+          const esCorrecta = r.respuesta === r.respuestaCorrecta;
+          batch.update(d.ref, {
+            correcta:      esCorrecta,
+            puntosGanados: esCorrecta ? (r.puntosEnVivo || 3) : 0,
+          });
+          reparadas++;
+          return;
+        }
+
+        // Sin información suficiente para reparar esta respuesta
+        sinInfo++;
       });
 
-      if (reparadas === 0) {
-        onMensaje("ok", "✅ Todas las respuestas ya tienen resultado guardado. Nada que reparar.");
+      if (reparadas === 0 && sinInfo === 0) {
+        onMensaje("ok", "✅ Nada que reparar — todas las respuestas ya tienen resultado.");
         return;
       }
 
-      await batch.commit();
-      onMensaje("ok",
-        `✅ ${reparadas} respuesta(s) reparadas. Los usuarios ya verán Acertó/Falló correctamente.`
-      );
+      if (reparadas > 0) await batch.commit();
+
+      const msg = reparadas > 0
+        ? `✅ ${reparadas} respuesta(s) reparadas.`
+        : "";
+      const msg2 = sinInfo > 0
+        ? ` ${sinInfo} respuesta(s) no se pudieron reparar (evento ya no disponible).`
+        : "";
+      onMensaje(reparadas > 0 ? "ok" : "error", msg + msg2);
     } catch (e) { onMensaje("error", e.message); }
     finally { setReparando(false); }
   };
@@ -8397,1199 +9634,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           )}
         </div>
       )}
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/VozHinchada.jsx">
-// src/components/VozHinchada.jsx  — v7 (Bugfix 3)
-// ─────────────────────────────────────────────────────────────
-// FIX 2: Añade sistema de reacciones con cierre automático:
-//   • El selector de emojis se cierra automáticamente al elegir.
-//   • También se cierra al clicar fuera (mousedown en document).
-//   • Botón muestra el emoji activo o "😀" como icono base.
-// ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect, useRef } from "react";
-import {
-  collection, getDocs, query, orderBy, addDoc, serverTimestamp,
-  doc, setDoc, deleteDoc,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-import { hoyStr } from "../utils/helpers";
-
-const COLORES_MSG = [
-  ["#1a472a","#52b788"], ["#9b1c1c","#f4d03f"], ["#1a1a5e","#a8d8ea"],
-  ["#4a0e8f","#e0c3fc"], ["#1a3a00","#b5e48c"], ["#3d2b00","#ffd166"],
-  ["#003333","#56cfe1"], ["#3b0a0a","#ff9a76"],
-];
-const EMOJIS = ["😀","😡","😢","😂","👍","👎"];
-
-function colorMsg(idx) { return COLORES_MSG[idx % COLORES_MSG.length]; }
-
-function labelTiempo(fechaStr, horaStr) {
-  const hoy = hoyStr();
-  if (fechaStr === hoy) return `HOY · ${horaStr}`;
-  const [, m, d] = (fechaStr || "").split("-");
-  return m && d ? `${d}/${m} · ${horaStr}` : horaStr;
-}
-
-// ── Reacciones con cierre automático al seleccionar ───────────
-function Reacciones({ docId, miUid }) {
-  const [conteo,     setConteo]     = useState({});
-  const [miReaccion, setMiReaccion] = useState(null);
-  const [abierto,    setAbierto]    = useState(false);
-  const popRef = useRef(null);
-
-  useEffect(() => { if (docId) cargar(); }, [docId]);
-
-  // Cierre al clicar fuera
-  useEffect(() => {
-    if (!abierto) return;
-    const h = (e) => {
-      if (popRef.current && !popRef.current.contains(e.target)) setAbierto(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [abierto]);
-
-  const cargar = async () => {
-    try {
-      const snap = await getDocs(collection(db,"mensajesDia",docId,"reacciones"));
-      const c = {}; let mia = null;
-      snap.docs.forEach(d => {
-        const { emoji } = d.data();
-        c[emoji] = (c[emoji]||0) + 1;
-        if (d.id === miUid) mia = emoji;
-      });
-      setConteo(c); setMiReaccion(mia);
-    } catch(_) {}
-  };
-
-  const reaccionar = async (emoji) => {
-    if (!miUid) return;
-    // Fix 2: cerrar INMEDIATAMENTE al seleccionar
-    setAbierto(false);
-
-    const ref = doc(db,"mensajesDia",docId,"reacciones",miUid);
-    if (miReaccion === emoji) {
-      // Quitar reacción
-      await deleteDoc(ref);
-      setConteo(prev => {
-        const n = {...prev};
-        n[emoji] = Math.max(0,(n[emoji]||0)-1);
-        if (!n[emoji]) delete n[emoji];
-        return n;
-      });
-      setMiReaccion(null);
-    } else {
-      // Cambiar o poner
-      if (miReaccion) {
-        setConteo(prev => {
-          const n = {...prev};
-          n[miReaccion] = Math.max(0,(n[miReaccion]||0)-1);
-          if (!n[miReaccion]) delete n[miReaccion];
-          return n;
-        });
-      }
-      await setDoc(ref, { emoji, uid: miUid });
-      setConteo(prev => ({ ...prev, [emoji]: (prev[emoji]||0)+1 }));
-      setMiReaccion(emoji);
-    }
-  };
-
-  const tieneReacciones = Object.keys(conteo).some(k => conteo[k] > 0);
-
-  return (
-    <div style={{ marginTop:"5px",display:"flex",alignItems:"center",
-      gap:"4px",flexWrap:"wrap" }}>
-      <div ref={popRef} style={{ position:"relative" }}>
-        {/* Botón: emoji activo o ícono base 😀 */}
-        <button
-          onClick={() => setAbierto(v=>!v)}
-          title={miReaccion ? "Cambiar reacción" : "Reaccionar"}
-          style={{
-            fontSize:"12px", padding:"2px 5px", cursor:"pointer",
-            background: miReaccion
-              ? "rgba(255,255,255,0.22)"
-              : "rgba(255,255,255,0.07)",
-            border: miReaccion
-              ? "1px solid rgba(255,255,255,0.45)"
-              : "1px solid rgba(255,255,255,0.15)",
-            borderRadius:"3px", lineHeight:1,
-          }}>
-          {miReaccion || "😀"}
-        </button>
-
-        {/* Popover — se cierra solo al seleccionar */}
-        {abierto && (
-          <div style={{
-            position:"absolute",
-            bottom:"calc(100% + 4px)", left:0,
-            background:"var(--negro)",
-            border:"2px solid var(--verde-campo)",
-            boxShadow:"3px 3px 0 rgba(0,0,0,0.5)",
-            padding:"5px 6px",
-            display:"flex", gap:"2px",
-            zIndex:100,
-            borderRadius:"2px",
-          }}>
-            {EMOJIS.map(e => (
-              <button key={e}
-                onClick={() => reaccionar(e)}
-                style={{
-                  fontSize:"15px", padding:"3px 4px", cursor:"pointer",
-                  background: miReaccion===e
-                    ? "rgba(255,255,255,0.22)"
-                    : "transparent",
-                  border:"1px solid transparent",
-                  borderRadius:"2px",
-                }}>
-                {e}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Conteos */}
-      {tieneReacciones && Object.entries(conteo)
-        .filter(([,n])=>n>0)
-        .map(([e,n]) => (
-          <span key={e} style={{
-            fontSize:"9px",
-            background:"rgba(0,0,0,0.2)",
-            padding:"1px 5px",
-            border:"1px solid rgba(255,255,255,0.1)",
-            borderRadius:"2px",
-          }}>
-            {e} {n}
-          </span>
-        ))
-      }
-    </div>
-  );
-}
-
-// ── Mensaje individual ────────────────────────────────────────
-function MensajeItem({ mensaje, colorIdx, miUid }) {
-  const [fondo, texto] = colorMsg(colorIdx);
-  const tieneUrl = mensaje.url && mensaje.url.startsWith("http");
-  const tiempo   = labelTiempo(mensaje.fecha, mensaje.hora);
-
-  return (
-    <div style={{ padding:"8px 10px",background:fondo,
-      border:`2px solid ${texto}44`,marginBottom:"4px" }}>
-      <div style={{ display:"flex",justifyContent:"space-between",
-        marginBottom:"3px",gap:"6px",flexWrap:"wrap" }}>
-        <span style={{ fontSize:"6px",color:texto,
-          fontFamily:"'Press Start 2P',monospace",
-          overflow:"hidden",textOverflow:"ellipsis",
-          whiteSpace:"nowrap",maxWidth:"55%" }}>
-          {mensaje.autor}
-        </span>
-        <span style={{ fontSize:"5px",color:`${texto}bb`,
-          fontFamily:"'Press Start 2P',monospace",whiteSpace:"nowrap" }}>
-          {tiempo}
-        </span>
-      </div>
-      <p style={{ fontSize:"6px",color:texto,lineHeight:1.8,
-        fontFamily:"'Press Start 2P',monospace",wordBreak:"break-word" }}>
-        {mensaje.texto}
-      </p>
-      {tieneUrl && (
-        <a href={mensaje.url} target="_blank" rel="noopener noreferrer"
-          style={{ display:"block",marginTop:"4px",fontSize:"5px",
-            color:"#56cfe1",fontFamily:"'Press Start 2P',monospace",
-            wordBreak:"break-all",textDecoration:"underline" }}>
-          🔗 {mensaje.url.length>40?mensaje.url.slice(0,40)+"…":mensaje.url}
-        </a>
-      )}
-      {/* Fix 2: Reacciones con auto-cierre */}
-      <Reacciones docId={mensaje.docId} miUid={miUid} />
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────
-export default function VozHinchada() {
-  const { firebaseUser, userProfile } = useAuth();
-  const [mensajes,    setMensajes]    = useState([]);
-  const [cargando,    setCargando]    = useState(true);
-  const [mostrarForm, setMostrarForm] = useState(false);
-  const [texto,       setTexto]       = useState("");
-  const [url,         setUrl]         = useState("");
-  const [enviando,    setEnviando]    = useState(false);
-  const [enviado,     setEnviado]     = useState(false);
-  const hoy = hoyStr();
-
-  useEffect(() => { cargar(); }, []);
-
-  const cargar = async () => {
-    setCargando(true);
-    try {
-      const snap = await getDocs(
-        query(collection(db,"mensajesDia"), orderBy("timestamp","desc"))
-      );
-      setMensajes(snap.docs.map(d=>({docId:d.id,...d.data()})));
-    } catch(e){ console.error(e); }
-    finally { setCargando(false); }
-  };
-
-  const enviar = async () => {
-    if (!texto.trim()||!firebaseUser) return;
-    setEnviando(true);
-    try {
-      const ahora = new Date();
-      const msg = {
-        autor:     userProfile?.nickname||firebaseUser.displayName?.split(" ")[0]||"Anónimo",
-        texto:     texto.trim().slice(0,200),
-        url:       url.trim()||null,
-        timestamp: serverTimestamp(),
-        fecha:     hoy,
-        hora:      `${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
-        uid:       firebaseUser.uid,
-      };
-      const ref = await addDoc(collection(db,"mensajesDia"), msg);
-      setMensajes(prev=>[{docId:ref.id,...msg,timestamp:ahora},...prev]);
-      setTexto(""); setUrl(""); setEnviado(true); setMostrarForm(false);
-      setTimeout(()=>setEnviado(false),3000);
-    } catch(e){ console.error(e); }
-    finally { setEnviando(false); }
-  };
-
-  return (
-    <div style={{ marginBottom:"16px" }}>
-      <div style={{ display:"flex",justifyContent:"space-between",
-        alignItems:"center",marginBottom:"10px" }}>
-        <div className="seccion-titulo" style={{ margin:0 }}>
-          📢 LA VOZ DE LA HINCHADA
-        </div>
-        <button className="btn-pixel btn-amarillo"
-          style={{ fontSize:"6px",padding:"5px 10px" }}
-          onClick={()=>{setMostrarForm(v=>!v);setEnviado(false);}}>
-          {mostrarForm?"✕ CERRAR":"✏ DEJAR MENSAJE"}
-        </button>
-      </div>
-
-      {mostrarForm && (
-        <div style={{ background:"var(--negro)",border:"3px solid var(--amarillo)",
-          boxShadow:"4px 4px 0 var(--amarillo-oscuro)",padding:"14px 12px",
-          marginBottom:"10px",display:"flex",flexDirection:"column",gap:"8px" }}>
-          <p style={{ fontSize:"6px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
-          <textarea value={texto} onChange={e=>setTexto(e.target.value.slice(0,200))}
-            placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
-            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-              width:"100%",padding:"8px",border:"2px solid var(--negro)",
-              background:"var(--blanco)",color:"var(--negro)",
-              outline:"none",resize:"none",lineHeight:2 }} />
-          <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>
-            {texto.length}/200
-          </p>
-          <input value={url} onChange={e=>setUrl(e.target.value)}
-            placeholder="URL opcional"
-            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-              width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
-              background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
-          <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
-            ⚠ Sin spam. Visible para todos.
-          </p>
-          <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
-            onClick={enviar} disabled={enviando||!texto.trim()}>
-            {enviando?"⚙ ENVIANDO...":"📣 PUBLICAR"}
-          </button>
-        </div>
-      )}
-
-      {enviado && (
-        <p style={{ fontSize:"7px",color:"var(--verde-claro)",
-          marginBottom:"8px",textAlign:"center" }}>
-          ✅ ¡Mensaje publicado!
-        </p>
-      )}
-
-      <div style={{ background:"var(--negro)",border:"3px solid var(--verde-campo)",
-        boxShadow:"4px 4px 0 var(--verde-oscuro)",padding:"8px",
-        maxHeight:"280px",overflowY:"auto" }}>
-        {cargando ? (
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)",
-            textAlign:"center",padding:"16px" }}>Cargando mensajes...</p>
-        ) : mensajes.length===0 ? (
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)",
-            textAlign:"center",padding:"16px",lineHeight:2 }}>
-            Todavía no hay mensajes.<br/>¡Sé el primero!
-          </p>
-        ) : (
-          mensajes.map((m,i)=>(
-            <MensajeItem key={m.docId} mensaje={m}
-              colorIdx={i} miUid={firebaseUser?.uid} />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/HistorialPredicciones.jsx">
-// src/components/HistorialPredicciones.jsx  — v7 (Patch 2)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v7:
-//   Punto 3: Total del día calculado con fuente de verdad correcta:
-//     se usa puntosDelDia.puntos cuando existe (ya incluye bonus);
-//     si no, suma predicciones + pregunta + bonus localmente.
-//     Se elimina el doble-conteo del bonus.
-//   Punto 9: En FilaPartido, muestra "🃏 ×N" si pred.cartaId
-//     y pred.cartaConsumida, junto al multiplicador utilizado.
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
-import {
-  collection, getDocs, query, where, documentId, doc, getDoc,
-} from "firebase/firestore";
-
-// Trae docs por id en lotes de 30 (límite del operador "in" de Firestore),
-// en una query por lote en vez de un getDoc por id (evita N+1).
-async function traerPorIds(nombreColeccion, ids) {
-  const mapa = {};
-  const lotes = [];
-  for (let i = 0; i < ids.length; i += 30) lotes.push(ids.slice(i, i + 30));
-  await Promise.all(lotes.map(async lote => {
-    if (lote.length === 0) return;
-    const snap = await getDocs(query(collection(db, nombreColeccion), where(documentId(), "in", lote)));
-    snap.forEach(d => { mapa[d.id] = { id: d.id, ...d.data() }; });
-  }));
-  return mapa;
-}
-import { db } from "../firebase";
-import { CARTAS } from "../data/sampleData";
-
-// ── Helpers de texto ──────────────────────────────────────────
-function textoApuestaPartido(pred) {
-  if (pred.estaDestacado && pred.golesLocalPred !== undefined && pred.golesLocalPred !== null) {
-    return `Exacto: ${pred.golesLocalPred} - ${pred.golesVisitantePred}`;
-  }
-  if (pred.definicion === "normal") {
-    const g = pred.ganador90 === "local" ? "Local" : "Visitante";
-    return `90min: ${g}${pred.diferencia90 ? ` + dif (${pred.diferencia90} gol${pred.diferencia90==="1"?"":"es"})` : ""}`;
-  }
-  if (pred.definicion === "alargue") {
-    const g = pred.ganadorAlargue === "local" ? "Local" : "Visitante";
-    return `Alargue: ${g}${pred.diferenciaAlargue ? ` + dif (${pred.diferenciaAlargue} gol${pred.diferenciaAlargue==="1"?"":"es"})` : ""}`;
-  }
-  if (pred.definicion === "penales") {
-    const g = pred.ganadorPenales === "local" ? "Local" : "Visitante";
-    const marcador = pred.penalesLocal !== undefined ? ` (${pred.penalesLocal}-${pred.penalesVisitante})` : "";
-    return `Penales: ${g} gana${marcador}`;
-  }
-  const ganLabel = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
-  const dif = pred.diferencia ? ` + dif (${pred.diferencia} gol${pred.diferencia==="1"?"":"es"})` : "";
-  return `${ganLabel}${dif}`;
-}
-
-function textoResultadoReal(r) {
-  if (!r) return "—";
-  const base = `${r.golesLocal}-${r.golesVisitante}`;
-  if (r.definicion === "penales") return `${base} (pen ${r.penalesLocal}-${r.penalesVisitante})`;
-  if (r.definicion === "alargue") return `${base} (alargue)`;
-  return base;
-}
-
-function desgloseDesglose(puntos, estaDestacado, pred) {
-  if (puntos === 0) return "";
-  if (estaDestacado && puntos === 5) return "(3+2)";
-  if (!estaDestacado && pred.diferencia && pred.ganador !== "empate" && puntos === 3) return "(1+2)";
-  return "";
-}
-
-function diaNumDesde(fechaStr) {
-  const inicio = new Date("2026-06-11T00:00:00");
-  const [y,m,d] = fechaStr.split("-").map(Number);
-  const target = new Date(y,m-1,d); target.setHours(0,0,0,0);
-  const diff = Math.floor((target - inicio) / 86400000);
-  return diff >= 0 ? diff + 1 : null;
-}
-
-function labelFecha(fechaStr) {
-  const [y,m,d] = fechaStr.split("-").map(Number);
-  const meses = ["enero","febrero","marzo","abril","mayo","junio",
-    "julio","agosto","septiembre","octubre","noviembre","diciembre"];
-  const nDia = diaNumDesde(fechaStr);
-  return `${d} de ${meses[m-1]} de ${y}${nDia ? ` — Día ${nDia}` : ""}`;
-}
-
-// ── Fila de un partido (punto 9: aviso de carta) ──────────────
-function FilaPartido({ pred, partido }) {
-  if (!partido?.resultado) return null;
-  const { resultado, estaDestacado, local, visitante } = partido;
-  const acertaste  = pred.esMaximo === true;
-  const pts        = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
-  // Puntos BASE (sin multiplicar) para el desglose
-  const ptsBase    = typeof pred.puntosBase === "number" ? pred.puntosBase : pts;
-  const desglose   = ptsBase ? desgloseDesglose(ptsBase, estaDestacado, pred) : "";
-  const apuesta    = textoApuestaPartido(pred);
-  const resReal    = textoResultadoReal(resultado);
-  const nombrePart = `${local?.bandera??""} ${local?.nombre??""} vs ${visitante?.nombre??""} ${visitante?.bandera??""}`;
-
-  // Carta usada (punto 9)
-  const cartaUsada = pred.cartaId && pred.cartaConsumida
-    ? CARTAS.find(c => c.id === pred.cartaId)
-    : null;
-
-  return (
-    <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
-      display:"flex",gap:"6px",alignItems:"flex-start" }}>
-      <span style={{ fontSize:"10px",lineHeight:1,flexShrink:0,marginTop:"1px" }}>
-        {acertaste ? "✅" : "❌"}
-      </span>
-      <div style={{ flex:1 }}>
-        <p style={{ fontSize:"6px",color:"var(--blanco)",lineHeight:1.8 }}>
-          {nombrePart}
-          {estaDestacado && <span style={{ color:"var(--amarillo)",marginLeft:"4px" }}>⭐</span>}
-        </p>
-        <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
-          Tu apuesta: <span style={{ color:"var(--blanco)" }}>{apuesta}</span>
-          {" · "}Real: <span style={{ color:"var(--amarillo)" }}>{resReal}</span>
-        </p>
-        {/* Aviso de carta (punto 9) */}
-        {cartaUsada && (
-          <p style={{ fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8,marginTop:"2px" }}>
-            🃏 Carta <strong>{cartaUsada.nombre}</strong> ×{cartaUsada.multiplicador} utilizada
-          </p>
-        )}
-      </div>
-      <div style={{ textAlign:"right",flexShrink:0 }}>
-        {pts !== null ? (
-          <div>
-            <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
-              color:pts>0?"var(--verde-claro)":"var(--gris)" }}>
-              {pts>0?`+${pts}`:"0"}
-            </span>
-            {desglose && (
-              <span style={{ fontSize:"5px",color:"var(--gris-claro)",display:"block" }}>{desglose}</span>
-            )}
-            {cartaUsada && pts > 0 && ptsBase && pts !== ptsBase && (
-              <span style={{ fontSize:"5px",color:"var(--amarillo)",display:"block" }}>
-                ×{cartaUsada.multiplicador}
-              </span>
-            )}
-          </div>
-        ) : <span style={{ fontSize:"5px",color:"var(--gris)" }}>—</span>}
-      </div>
-    </div>
-  );
-}
-
-// ── Bloque de un día ──────────────────────────────────────────
-function BloqueDia({ fecha, predicciones, partidos, respuesta, pregunta, puntosDelDia }) {
-  const [abierto, setAbierto] = useState(true);
-
-  // Punto 3: Total del día con fuente correcta
-  // puntosDelDia.puntos ya es la suma definitiva guardada por helpers.js
-  // (incluye partidos + pregunta + bonus diario).
-  // Solo calculamos localmente si no hay ese documento.
-  const ptsParts    = predicciones.reduce((s,p) => s + (p.puntosGanados??0), 0);
-  const ptsPregunta = respuesta?.puntosGanados ?? 0;
-  const bonusGanador = puntosDelDia?.esGanador ? (puntosDelDia.bonusGanador ?? 2) : 0;
-
-  // Fuente de verdad: puntosDelDia.puntos si existe, calculado si no
-  const totalDia = puntosDelDia?.puntos !== undefined && puntosDelDia?.puntos !== null
-    ? puntosDelDia.puntos
-    : ptsParts + ptsPregunta + bonusGanador;
-
-  return (
-    <div style={{ border:"2px solid var(--verde-campo)",marginBottom:"8px",background:"rgba(0,0,0,0.25)" }}>
-      <button onClick={() => setAbierto(v => !v)}
-        style={{ width:"100%",textAlign:"left",fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-          padding:"8px 10px",background:"var(--verde-oscuro)",border:"none",cursor:"pointer",
-          display:"flex",justifyContent:"space-between",alignItems:"center",color:"var(--blanco)" }}>
-        <span style={{ color:"var(--verde-claro)" }}>📅 {labelFecha(fecha)}</span>
-        <span style={{ color:"var(--amarillo)",fontSize:"8px" }}>
-          {totalDia}pts {abierto ? "▲" : "▼"}
-        </span>
-      </button>
-
-      {abierto && (
-        <div>
-          {predicciones.length > 0 && (
-            <div>
-              <p style={{ fontSize:"5px",color:"var(--gris-claro)",padding:"4px 8px",
-                background:"rgba(0,0,0,0.3)",borderBottom:"1px solid var(--verde-campo)" }}>
-                PARTIDOS
-              </p>
-              {predicciones.map(pred => {
-                const partido = partidos[pred.partidoId];
-                return partido?.resultado
-                  ? <FilaPartido key={pred.predId} pred={pred} partido={partido} />
-                  : null;
-              })}
-            </div>
-          )}
-
-          {respuesta && (
-            <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
-              display:"flex",alignItems:"center",gap:"6px" }}>
-              <span style={{ fontSize:"10px" }}>{respuesta.esCorrecta ? "✅" : "❌"}</span>
-              <div style={{ flex:1 }}>
-                <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
-                  PREGUNTA DEL DÍA
-                  {pregunta && <span style={{ color:"var(--blanco)",marginLeft:"4px" }}>
-                    — {pregunta.texto?.slice(0,40)}{pregunta.texto?.length>40?"…":""}
-                  </span>}
-                </p>
-                <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
-                  Tu respuesta: <span style={{ color:"var(--blanco)" }}>{respuesta.respuesta}</span>
-                  {respuesta.esCorrecta === false && pregunta?.respuestaCorrecta &&
-                    <span style={{ color:"var(--amarillo)",marginLeft:"4px" }}>
-                      (correcta: {pregunta.respuestaCorrecta})
-                    </span>
-                  }
-                </p>
-              </div>
-              <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
-                color:ptsPregunta>0?"var(--verde-claro)":"var(--gris)" }}>
-                {ptsPregunta>0?`+${ptsPregunta}`:"0"}
-              </span>
-            </div>
-          )}
-
-          {bonusGanador > 0 && (
-            <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
-              display:"flex",alignItems:"center",gap:"6px" }}>
-              <span style={{ fontSize:"10px" }}>🏆</span>
-              <p style={{ flex:1,fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8 }}>
-                BONUS GANADOR DEL DÍA
-              </p>
-              <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",color:"var(--amarillo)" }}>
-                +{bonusGanador}
-              </span>
-            </div>
-          )}
-
-          <div style={{ padding:"6px 10px",background:"rgba(244,208,63,0.08)",
-            borderTop:"2px solid var(--verde-campo)",
-            display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-            <span style={{ fontSize:"6px",color:"var(--gris-claro)" }}>TOTAL DEL DÍA</span>
-            <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"10px",color:"var(--amarillo)" }}>
-              {totalDia} pts
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Bloque: preguntas del EN VIVO respondidas por el usuario ──
-function BloqueEnVivo({ respuestasEnVivo }) {
-  const [abierto, setAbierto] = useState(true);
-  if (!respuestasEnVivo || respuestasEnVivo.length === 0) return null;
-
-  const totalPts = respuestasEnVivo.reduce((s, r) => s + (r.puntosGanados ?? 0), 0);
-
-  return (
-    <div style={{ border:"2px solid var(--rojo-chile)", marginBottom:"8px", background:"rgba(0,0,0,0.25)" }}>
-      <button onClick={() => setAbierto(v => !v)}
-        style={{ width:"100%", textAlign:"left", fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-          padding:"8px 10px", background:"rgba(214,40,40,0.25)", border:"none", cursor:"pointer",
-          display:"flex", justifyContent:"space-between", alignItems:"center", color:"var(--blanco)" }}>
-        <span style={{ color:"var(--rojo-chile)" }}>🔴 PREGUNTAS DEL EN VIVO</span>
-        <span style={{ color:"var(--amarillo)", fontSize:"8px" }}>
-          {totalPts}pts {abierto ? "▲" : "▼"}
-        </span>
-      </button>
-
-      {abierto && (
-        <div>
-          {respuestasEnVivo.map(r => {
-            // Fix: usar correcta/puntosGanados guardados en la respuesta
-            // (no depender de estado que requiere que el evento siga activo)
-            const resuelta  = r.correcta !== undefined;
-            const pendiente = !resuelta;
-            const pts = r.puntosGanados ?? 0;
-            return (
-              <div key={r.id} style={{ padding:"6px 8px", borderBottom:"1px solid rgba(214,40,40,0.2)",
-                display:"flex", gap:"6px", alignItems:"flex-start" }}>
-                <span style={{ fontSize:"10px", lineHeight:1, flexShrink:0, marginTop:"1px" }}>
-                  {pendiente ? "⏳" : (r.correcta ? "✅" : "❌")}
-                </span>
-                <div style={{ flex:1 }}>
-                  <p style={{ fontSize:"6px", color:"var(--blanco)", lineHeight:1.8 }}>
-                    {r.numero ? `#${r.numero} — ` : ""}{r.texto || "Pregunta del en vivo"}
-                  </p>
-                  <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:1.8 }}>
-                    Tu respuesta: <span style={{ color:"var(--blanco)" }}>{r.respuesta}</span>
-                    {!pendiente && r.respuestaCorrecta &&
-                      <span style={{ color:"var(--amarillo)", marginLeft:"4px" }}>
-                        (correcta: {r.respuestaCorrecta})
-                      </span>}
-                  </p>
-                </div>
-                <div style={{ textAlign:"right", flexShrink:0 }}>
-                  {pendiente ? (
-                    <span style={{ fontSize:"5px", color:"var(--gris)" }}>abierta</span>
-                  ) : (
-                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"2px" }}>
-                      <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                        color:pts>0?"var(--verde-claro)":"var(--rojo-chile)" }}>
-                        {pts>0 ? `✅ +${pts}pts` : "❌ Falló"}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────
-const LIMITE_DIAS = 15;
-
-export default function HistorialPredicciones({ userId }) {
-  const [dias,     setDias]     = useState([]);
-  const [respuestasEnVivo, setRespuestasEnVivo] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error,    setError]    = useState(null);
-
-  useEffect(() => { if (userId) cargar(); }, [userId]);
-
-  const cargar = async () => {
-    setCargando(true); setError(null);
-    try {
-      const [snapPreds, snapResps, snapPDia, snapEV, snapEventoDoc] = await Promise.all([
-        getDocs(query(collection(db,"predicciones"), where("uid","==",userId))),
-        getDocs(query(collection(db,"respuestas"),   where("uid","==",userId))),
-        getDocs(query(collection(db,"puntosDelDia"), where("uid","==",userId))),
-        getDocs(query(collection(db,"eventoEnVivo","actual","respuestas"), where("uid","==",userId))),
-        getDoc(doc(db,"eventoEnVivo","actual")),
-      ]);
-
-      // ── Preguntas del EN VIVO: cruzar cada respuesta con la
-      // pregunta correspondiente (texto, número, estado) guardada
-      // en el array `preguntas` del documento del evento.
-      const preguntasEvento = snapEventoDoc.exists() ? (snapEventoDoc.data().preguntas || []) : [];
-      const respsEV = snapEV.docs
-        .map(d => {
-          const data = d.data();
-          const preg = preguntasEvento.find(p => p.id === data.preguntaId);
-          return {
-            id: d.id,
-            ...data,
-            texto: preg?.texto,
-            numero: preg?.numero,
-            estado: preg?.estado,
-            respuestaCorrecta: preg?.respuestaCorrecta,
-            // Compatibilidad con respuestas antiguas que no tenían
-            // guardado puntosGanados/correcta directamente:
-            correcta: data.correcta ?? (preg?.estado === "cerrada" ? data.respuesta === preg?.respuestaCorrecta : undefined),
-            puntosGanados: data.puntosGanados ?? (
-              preg?.estado === "cerrada"
-                ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
-                : undefined
-            ),
-          };
-        })
-        .sort((a,b) => (a.numero ?? 0) - (b.numero ?? 0));
-      setRespuestasEnVivo(respsEV);
-
-      const porFecha = {};
-
-      for (const pDoc of snapPreds.docs) {
-        const pred = pDoc.data();
-        if (!pred.fecha) continue;
-        if (!porFecha[pred.fecha]) porFecha[pred.fecha] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
-        porFecha[pred.fecha].predicciones.push({ predId:pDoc.id, ...pred });
-      }
-      for (const rDoc of snapResps.docs) {
-        const resp = rDoc.data();
-        if (!resp.preguntaId) continue;
-        const fechaInf = resp.fecha || resp.preguntaId.split("_")[0];
-        if (!fechaInf || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInf)) continue;
-        if (!porFecha[fechaInf]) porFecha[fechaInf] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
-        porFecha[fechaInf].respuesta = { respId:rDoc.id, ...resp };
-      }
-      for (const dDoc of snapPDia.docs) {
-        const pd = dDoc.data();
-        if (!pd.fecha) continue;
-        if (!porFecha[pd.fecha]) porFecha[pd.fecha] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
-        porFecha[pd.fecha].puntosDelDia = pd;
-      }
-
-      const fechas = Object.keys(porFecha).sort((a,b)=>b.localeCompare(a)).slice(0, LIMITE_DIAS);
-
-      const partidoIds  = [...new Set(fechas.flatMap(f => porFecha[f].predicciones.map(p => p.partidoId)))];
-      const preguntaIds = [...new Set(fechas.filter(f=>porFecha[f].respuesta).map(f=>porFecha[f].respuesta.preguntaId).filter(Boolean))];
-
-      const [partidosMap, preguntasMap] = await Promise.all([
-        traerPorIds("partidos", partidoIds),
-        traerPorIds("preguntas", preguntaIds),
-      ]);
-
-      for (const fecha of fechas) {
-        const d = porFecha[fecha];
-        if (d.respuesta?.preguntaId) d.pregunta = preguntasMap[d.respuesta.preguntaId] || null;
-        d.predicciones = d.predicciones.filter(p => partidosMap[p.partidoId]?.resultado);
-      }
-
-      setDias(fechas
-        .filter(f => { const d=porFecha[f]; return d.predicciones.length>0||d.respuesta||d.puntosDelDia; })
-        .map(f => ({ fecha:f, ...porFecha[f], partidos:partidosMap }))
-      );
-    } catch(e) {
-      console.error(e); setError("No se pudo cargar el historial.");
-    } finally { setCargando(false); }
-  };
-
-  if (cargando) return (
-    <div style={{ padding:"16px",textAlign:"center" }}>
-      <span className="spinner">⚙</span>
-      <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginTop:"6px" }}>Cargando historial...</p>
-    </div>
-  );
-  if (error) return <p style={{ fontSize:"6px",color:"var(--rojo-chile)",padding:"8px" }}>{error}</p>;
-  if (dias.length === 0 && respuestasEnVivo.length === 0) return (
-    <p style={{ fontSize:"6px",color:"var(--gris-claro)",padding:"12px",textAlign:"center",lineHeight:2 }}>
-      Sin historial todavía.
-    </p>
-  );
-
-  return (
-    <div style={{ padding:"8px" }}>
-      <BloqueEnVivo respuestasEnVivo={respuestasEnVivo} />
-
-      {dias.length > 0 && (
-        <>
-          <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"8px",lineHeight:1.8 }}>
-            Últimos {Math.min(dias.length, LIMITE_DIAS)} días · Clic para desplegar/plegar
-          </p>
-          {dias.map(d => (
-            <BloqueDia key={d.fecha} fecha={d.fecha} predicciones={d.predicciones}
-              partidos={d.partidos} respuesta={d.respuesta} pregunta={d.pregunta}
-              puntosDelDia={d.puntosDelDia} />
-          ))}
-        </>
-      )}
-    </div>
-  );
-}
-</file>
-
-<file path="firestore.rules">
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // ── Helpers ────────────────────────────────────────────────
-    function esAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    // ── usuarios ───────────────────────────────────────────────
-    match /usuarios/{uid} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if request.auth != null;
-      
-      match /notificaciones/{notifId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
-      }
-    }
-
-    // ── predicciones ───────────────────────────────────────────
-    match /predicciones/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── respuestas ─────────────────────────────────────────────
-    match /respuestas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── partidos ───────────────────────────────────────────────
-    match /partidos/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── preguntas ──────────────────────────────────────────────
-    match /preguntas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── puntosDelDia ───────────────────────────────────────────
-    match /puntosDelDia/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // ── cartasDelUsuario ───────────────────────────────────────
-    match /cartasDelUsuario/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // ── config ──────────────────────────────────────────────────
-    match /config/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── mensajesDia ────────────────────────────────────────────
-    match /mensajesDia/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
-    }
-
-    // ── Reacciones en mensajes ────────────────────────────────
-    match /mensajesDia/{docId}/reacciones/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-
-    // ── admins ──────────────────────────────────────────────────
-    match /admins/{uid} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-
-    // ── sobresDelDia ───────────────────────────────────────────
-    match /sobresDelDia/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // ── preguntasEnVivo (legacy, atado a partidos) ─────────────
-    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    // ── eventoEnVivo (independiente, array de preguntas) ───────
-    match /eventoEnVivo/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // Respuestas: clave compuesta {uid}_{preguntaId}
-    // Permite que cada usuario responda varias preguntas del
-    // mismo evento sin sobrescribir respuestas anteriores.
-    match /eventoEnVivo/{docId}/respuestas/{respId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      // Se permite update para que, al cerrar una pregunta, se pueda
-      // guardar en cada respuesta si fue correcta y cuántos puntos ganó
-      // ese usuario (usado luego en el historial de pronósticos).
-      allow update: if request.auth != null;
-      allow delete: if false;
-    }
-
-  }
-}
-</file>
-
-<file path="src/components/TabPartidos.jsx">
-// src/components/TabPartidos.jsx  — v8 (Fase 4)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v8:
-//   Punto 10: Integra <SuperDestacado> para partidos con
-//             esSuperDestacado:true. El componente escucha en
-//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
-//   Todo lo demás idéntico a v7.
-// ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  collection, getDocs, query, where, doc, getDoc,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-import { hoyStr, partidoAbierto } from "../utils/helpers";
-import PartidoCard from "./PartidoCard";
-import PreguntaCard from "./PreguntaCard";
-import SuperDestacado from "./SuperDestacado";
-
-const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
-
-// ── Hook: sonido ambiental ────────────────────────────────────
-function useSonidoAmbiental(activado) {
-  const audioRef = useRef(null);
-  useEffect(() => {
-    let activo = true;
-    const iniciar = async () => {
-      try {
-        const snap = await getDoc(doc(db, "config", "sonidoDia"));
-        if (!snap.exists() || !activo) return;
-        const { archivo, volumen = 0.4 } = snap.data();
-        if (!archivo || !activado) return;
-        const audio = new Audio(`/sounds/${archivo}`);
-        audio.loop = true; audio.volume = 0;
-        audioRef.current = audio;
-        await audio.play().catch(() => {});
-        let vol = 0;
-        const target = Math.min(1, Math.max(0, Number(volumen)));
-        const fade = setInterval(() => {
-          if (!activo) { clearInterval(fade); return; }
-          vol = Math.min(target, vol + 0.02);
-          if (audioRef.current) audioRef.current.volume = vol;
-          if (vol >= target) clearInterval(fade);
-        }, 80);
-      } catch(_) {}
-    };
-    iniciar();
-    return () => {
-      activo = false;
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    };
-  }, [activado]);
-  useEffect(() => {
-    if (!audioRef.current) return;
-    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
-  }, [activado]);
-}
-
-export default function TabPartidos({ onGuardado }) {
-  const { firebaseUser } = useAuth();
-  const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
-  useSonidoAmbiental(sonidosActivados);
-
-  const [partidos,    setPartidos]    = useState([]);
-  const [pregunta,    setPregunta]    = useState(null);
-  const [cargando,    setCargando]    = useState(true);
-  const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
-  const [respuestaUsuario, setRespuestaUsuario] = useState(null);
-
-  // Partido super destacado activo (para preguntas en vivo)
-  const [superDestacado, setSuperDestacado] = useState(null);
-
-  const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
-  const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
-  const [textoMensaje, setTextoMensaje] = useState("");
-  const [urlMensaje,   setUrlMensaje]   = useState("");
-  const [enviandoMsg,  setEnviandoMsg]  = useState(false);
-  const [msgEnviado,   setMsgEnviado]   = useState(false);
-  const hoy = hoyStr();
-
-  useEffect(() => { cargarDatos(); }, []);
-  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
-  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
-
-  const cargarDatos = async () => {
-    setCargando(true);
-    try {
-      let lista = [];
-      try {
-        // Partidos de hoy
-        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
-        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
-
-        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
-        let d16Lista = [];
-        try {
-          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
-          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
-        } catch(_) {}
-
-        // Combinar sin duplicados
-        const idsHoy = new Set(hoyLista.map(p => p.id));
-        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
-      } catch(_) {}
-      setPartidos(lista);
-
-      // Detectar partido super destacado — búsqueda separada (sin filtro de fecha)
-      // para que funcione aunque el partido no sea de hoy
-            let sd = lista.find(p => p.esSuperDestacado && !p.resultado);
-      if (!sd) {
-        try {
-          const snapSD = await getDocs(query(
-            collection(db,"partidos"), where("esSuperDestacado","==",true)
-          ));
-          sd = snapSD.docs
-            .map(d => ({ id:d.id, ...d.data() }))
-            .find(p => !p.resultado) || null;
-        } catch(_) {}
-      }
-      setSuperDestacado(sd || null);
-
-      try {
-        const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
-        if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
-      } catch(_) {}
-    } finally { setCargando(false); }
-  };
-
-  const verificarPredicciones = async () => {
-    if (!firebaseUser) return;
-    const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
-    if (abiertos.length === 0) return;
-    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
-    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
-    const idsAbiertos = new Set(abiertos.map(p => p.id));
-    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
-    const nuevas = new Set();
-    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
-    setPrediccionesGuardadas(nuevas);
-  };
-
-  const verificarRespuestaPregunta = async () => {
-    if (!firebaseUser || !pregunta) return;
-    try {
-      const snap = await getDoc(doc(db,"respuestas",`${firebaseUser.uid}_${pregunta.id}`));
-      if (snap.exists()) setRespuestaUsuario(snap.data().respuesta || "✓");
-    } catch(_) {}
-  };
-
-  const handlePrediccionGuardada = useCallback(() => {
-    setTimeout(verificarPredicciones, 500);
-    if (onGuardado) onGuardado();
-    const lsKey = LS_HINCHADA_KEY + hoy;
-    if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
-  }, [partidos, firebaseUser, hoy]);
-
-  const cerrarModalHinchada = () => {
-    localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
-    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
-    setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
-  };
-
-  const enviarMensajeHinchada = async () => {
-    if (!textoMensaje.trim() || !firebaseUser) return;
-    setEnviandoMsg(true);
-    try {
-      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
-      const ahora = new Date();
-      await addDoc(col(db,"mensajesDia"), {
-        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
-        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
-        timestamp:serverTimestamp(), fecha:hoy,
-        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
-        uid:firebaseUser.uid,
-      });
-      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
-    } catch(e) { console.error(e); }
-    finally { setEnviandoMsg(false); }
-  };
-
-  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
-  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
-
-  if (cargando) return (
-    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
-      <span className="spinner">⚙</span><p>CARGANDO...</p>
-    </div>
-  );
-
-  return (
-    <div style={{ paddingBottom:"80px" }}>
-      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
-      {superDestacado && (
-  <SuperDestacado
-    partidoId={superDestacado.id}
-    nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
-  />
-)}
-
-      {/* Modal hinchada */}
-      {mostrarModalHinchada && (
-        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
-          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
-          <div style={{ background:"var(--negro)",border:"4px solid var(--amarillo)",
-            boxShadow:"6px 6px 0 var(--amarillo-oscuro)",
-            padding:"24px 20px",maxWidth:"360px",width:"100%",
-            display:"flex",flexDirection:"column",gap:"14px" }}>
-            {!mostrarFormHinchada ? (
-              <>
-                <p style={{ fontSize:"24px",textAlign:"center" }}>📢</p>
-                <p style={{ fontSize:"8px",color:"var(--blanco)",textAlign:"center",lineHeight:2 }}>
-                  ¿Algún mensaje<br/>para la hinchada?
-                </p>
-                <div style={{ display:"flex",gap:"8px" }}>
-                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
-                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
-                  <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
-                    onClick={cerrarModalHinchada}>NO</button>
-                </div>
-              </>
-            ) : msgEnviado ? (
-              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
-            ) : (
-              <>
-                <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
-                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
-                  placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-                    width:"100%",padding:"8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",
-                    outline:"none",resize:"none",lineHeight:2 }} />
-                <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
-                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
-                  placeholder="URL opcional"
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-                    width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
-                <div style={{ display:"flex",gap:"8px" }}>
-                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
-                    onClick={enviarMensajeHinchada}
-                    disabled={enviandoMsg||!textoMensaje.trim()}>
-                    {enviandoMsg?"⚙...":"✅ ENVIAR"}
-                  </button>
-                  <button className="btn-pixel btn-gris" style={{ fontSize:"7px" }}
-                    onClick={cerrarModalHinchada}>✕</button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="contenedor">
-        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
-        {partidos.length>0 ? (
-          partidos.map(p => (
-            <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
-          ))
-        ) : (
-          <div className="caja-pixel mb-16 text-center">
-            <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
-          </div>
-        )}
-        {abiertos.length>0 && (
-          <div style={{ padding:"8px 12px",marginBottom:"12px",
-            border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
-            fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-            color:"var(--verde-claro)",textAlign:"center" }}>
-            {todosPredecidos
-              ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
-              : `📝 ${prediccionesGuardadas.size} / ${abiertos.length} PRONÓSTICOS GUARDADOS`
-            }
-          </div>
-        )}
-        {pregunta && (
-          <>
-            <div className="seccion-titulo">
-              ❓ PREGUNTA DEL DÍA
-              {respuestaUsuario && (
-                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
-                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
-                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
-              )}
-            </div>
-            <PreguntaCard pregunta={pregunta} />
-          </>
-        )}
-      </div>
     </div>
   );
 }
