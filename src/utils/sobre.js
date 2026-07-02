@@ -1,24 +1,64 @@
-// src/utils/sobre.js — lógica pura del sobre (SIN firebase; solo sampleData puro)
+// src/utils/sobre.js — v2
+// Cambios: 7 láminas por sobre, prioriza láminas no poseídas
 import { cartaAleatoriaPorMultiplicador } from "../data/sampleData.js";
 
-// Composición por puesto (1-based). pos null/0 => tier 1-3.
 export function composicionPorPuesto(pos) {
-  if (!pos || pos <= 3) return { laminas: 4, cartas: [] };
-  if (pos <= 7)         return { laminas: 3, cartas: [{ mult: 2, n: 1 }] };
-  if (pos <= 14)        return { laminas: 3, cartas: [{ mult: 3, n: 1 }] };
-  if (pos <= 22)        return { laminas: 3, cartas: [{ mult: 4, n: 1 }] };
-  return { laminas: 2, cartas: [{ mult: 4, n: 2 }] };
+  if (!pos || pos <= 3) return { laminas: 7, cartas: [] };
+  if (pos <= 7)         return { laminas: 6, cartas: [{ mult: 2, n: 1 }] };
+  if (pos <= 14)        return { laminas: 6, cartas: [{ mult: 3, n: 1 }] };
+  if (pos <= 22)        return { laminas: 6, cartas: [{ mult: 4, n: 1 }] };
+  return { laminas: 5, cartas: [{ mult: 4, n: 2 }] };
 }
 
-// Sorteo CON reemplazo de láminas + cartas. rnd inyectable para testear.
-export function generarSobre(todasLaminas, comp, rnd = Math.random) {
+// Prioriza láminas no poseídas (o poco repetidas).
+export function generarSobre(todasLaminas, comp, rnd = Math.random, laminasUsuario = {}) {
+  const n = comp.laminas;
+
+  const noPoseidas = todasLaminas.filter(l => !(laminasUsuario?.[l.file] > 0));
+  const pocasVeces = todasLaminas.filter(l => (laminasUsuario?.[l.file] || 0) === 1);
+  const poseidas   = todasLaminas.filter(l => (laminasUsuario?.[l.file] || 0) > 1);
+
+  // Pool en orden de prioridad
+  const pool = noPoseidas.length > 0
+    ? [...noPoseidas, ...pocasVeces, ...poseidas]
+    : todasLaminas;
+
   const laminas = [];
-  for (let i = 0; i < comp.laminas; i++) {
-    laminas.push(todasLaminas[Math.floor(rnd() * todasLaminas.length)]);
+  const usados  = new Set();
+
+  // Intentar sacar del pool priorizado (evitando repetir)
+  let intentos = 0;
+  while (laminas.length < n && intentos < pool.length * 4) {
+    // Sesgar hacia el inicio del pool (no-poseídas)
+    const maxIdx = Math.min(pool.length, Math.max(noPoseidas.length, 1));
+    const idx = Math.floor(rnd() * maxIdx);
+    const lam = pool[idx];
+    if (lam && !usados.has(lam.file)) {
+      laminas.push(lam);
+      usados.add(lam.file);
+    }
+    intentos++;
   }
+
+  // Completar con aleatorio si faltan
+  intentos = 0;
+  while (laminas.length < n && intentos < todasLaminas.length * 3) {
+    const lam = todasLaminas[Math.floor(rnd() * todasLaminas.length)];
+    if (lam && !usados.has(lam.file)) {
+      laminas.push(lam);
+      usados.add(lam.file);
+    }
+    intentos++;
+    // Última instancia: admitir repetidas
+    if (intentos > todasLaminas.length * 2 && laminas.length < n) {
+      laminas.push(todasLaminas[Math.floor(rnd() * todasLaminas.length)]);
+      break;
+    }
+  }
+
   const cartas = [];
-  for (const { mult, n } of comp.cartas) {
-    for (let i = 0; i < n; i++) {
+  for (const { mult, n: nc } of comp.cartas) {
+    for (let i = 0; i < nc; i++) {
       const c = cartaAleatoriaPorMultiplicador(mult);
       if (c) cartas.push(c);
     }
@@ -26,12 +66,11 @@ export function generarSobre(todasLaminas, comp, rnd = Math.random) {
   return { laminas, cartas };
 }
 
-// Gasta n copias sobrantes (sobrante de cada lámina = copias-1). Nunca baja de 1.
 export function gastarDuplicados(laminasUsuario, n) {
   const sobrantes = Object.entries(laminasUsuario || {})
     .map(([file, c]) => ({ file, sobra: Math.max(0, (c || 0) - 1) }))
     .filter(x => x.sobra > 0)
-    .sort((a, b) => b.sobra - a.sobra); // greedy: las que más copias tienen
+    .sort((a, b) => b.sobra - a.sobra);
   const total = sobrantes.reduce((s, x) => s + x.sobra, 0);
   if (total < n) return { ok: false, decrementos: {} };
   const decrementos = {};
@@ -45,11 +84,8 @@ export function gastarDuplicados(laminasUsuario, n) {
   return { ok: true, decrementos };
 }
 
-export function cartaImg(slug) {
-  return `/cartas/${slug}.jpg`;
-}
+export function cartaImg(slug) { return `/cartas/${slug}.jpg`; }
 
-// ── Recompensas por completar ──────────────────────────────────
 export function categoriaCompleta(laminasUsuario, todasLaminas, catKey) {
   const dela = todasLaminas.filter(l => l.categoria === catKey);
   if (dela.length === 0) return false;
@@ -61,7 +97,6 @@ export function albumCompleto(laminasUsuario, todasLaminas) {
   return todasLaminas.every(l => (laminasUsuario?.[l.file] || 0) > 0);
 }
 
-// Lista recompensas completas y NO reclamadas. reclamadas = {cat_KEY:true, album:true}
 export function recompensasPendientes(laminasUsuario, todasLaminas, reclamadas = {}, posicion = null) {
   const out = [];
   const keys = [...new Set(todasLaminas.map(l => l.categoria).filter(Boolean))];

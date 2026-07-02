@@ -222,7 +222,33 @@ export async function calcularGanadorDelDia(fecha) {
     const snap = await getDocs(query(collection(db,"puntosDelDia"),where("fecha","==",fecha)));
     if (snap.empty) return { ok:false, mensaje:"Sin datos de puntosDelDia para ese día." };
 
-    const jug = snap.docs.map(d=>({docId:d.id,...d.data()})).sort((a,b)=>b.puntos-a.puntos);
+    // Cargar puntos de EN VIVO del día: sumar respuestas correctas del evento
+    const ptsEnVivo = {};
+    try {
+      const evSnap = await getDoc(doc(db,"eventoEnVivo","actual"));
+      if (evSnap.exists() && evSnap.data().activo !== false) {
+        const evData   = evSnap.data();
+        const preguntas = evData.preguntas || [];
+        const cerradas  = preguntas.filter(p => p.estado === "cerrada");
+        if (cerradas.length > 0) {
+          const respSnap = await getDocs(collection(db,"eventoEnVivo","actual","respuestas"));
+          respSnap.docs.forEach(d => {
+            const r = d.data();
+            const preg = cerradas.find(p => p.id === r.preguntaId);
+            if (preg && r.respuesta === preg.respuestaCorrecta) {
+              ptsEnVivo[r.uid] = (ptsEnVivo[r.uid] || 0) + (preg.puntosEnVivo || 3);
+            }
+          });
+        }
+      }
+    } catch(evErr) { console.warn("calcularGanadorDelDia: no se pudo leer EN VIVO", evErr); }
+
+    // Combinar: puntos del día (partidos + preguntas) + puntos EN VIVO
+    const jug = snap.docs.map(d => {
+      const base = { docId:d.id, ...d.data() };
+      const extra = ptsEnVivo[base.uid] || 0;
+      return { ...base, puntos: (base.puntos || 0) + extra, ptsEnVivo: extra };
+    }).sort((a,b) => b.puntos - a.puntos);
 
     // ── Protección: si ya se entregaron bonus y cartas, no repetir ────
     if (jug.some(j => j.esGanador === true)) {

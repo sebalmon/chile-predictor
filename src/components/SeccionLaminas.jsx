@@ -16,7 +16,8 @@ import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
 import { composicionPorPuesto, generarSobre, gastarDuplicados, cartaImg, recompensasPendientes } from "../utils/sobre";
 
 const CARDS_URL = "https://kvtral.github.io/laminas_16_bits/cards.json";
-const LAMINAS_POR_SOBRE = 4;
+const LS_IMAGEN_TAPA = "cp8b_imagen_tapa"; // localStorage key para caché de imagen de tapa
+const LAMINAS_POR_SOBRE = 7;
 
 function hoyStr() {
   const d = new Date();
@@ -247,7 +248,7 @@ function SobreAnimado({ onAbrir }) {
 }
 
 // ── Lámina con flip ───────────────────────────────────────
-function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick }) {
+function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick, imagenTapa }) {
   const [volteada, setVolteada] = useState(yaVolteada);
 
   const dar = () => {
@@ -274,7 +275,7 @@ function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick }) {
         border: volteada ? "3px solid var(--verde-claro)" : "3px solid var(--amarillo)",
         boxShadow:"3px 3px 0 var(--negro)",
         overflow:"hidden",
-        background: volteada ? "transparent" : "linear-gradient(135deg,#1a1a5e,#4a0e8f)",
+        background: volteada ? "transparent" : imagenTapa ? `url(/${imagenTapa}) center/cover` : "linear-gradient(135deg,#1a1a5e,#4a0e8f)",
         display:"flex", alignItems:"center", justifyContent:"center",
         transition:"border-color 0.3s",
       }}>
@@ -791,6 +792,9 @@ export default function SeccionLaminas() {
   const [todasLaminas, setTodasLaminas] = useState([]);
   const [cargandoCat,  setCargandoCat]  = useState(true);
   const [errorCat,     setErrorCat]     = useState(null);
+  const [imagenTapa,   setImagenTapa]   = useState(
+    () => localStorage.getItem(LS_IMAGEN_TAPA) || null
+  );
 
   const [lightboxLamina,   setLightboxLamina]   = useState(null);
   const [lightboxCantidad, setLightboxCantidad] = useState(0);
@@ -832,6 +836,16 @@ export default function SeccionLaminas() {
         setErrorCat("No se pudo cargar el catálogo. Verifica la conexión.");
       })
       .finally(() => setCargandoCat(false));
+    // Cargar imagen de tapa configurable desde Firestore
+    getDoc(doc(db,"config","laminaConfig"))
+      .then(snap => {
+        if (snap.exists() && snap.data().imagenTapa) {
+          const img = snap.data().imagenTapa;
+          setImagenTapa(img);
+          localStorage.setItem(LS_IMAGEN_TAPA, img);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // 2. Cargar/crear el sobre del día (fuente de verdad: Firestore sobresDelDia)
@@ -855,7 +869,7 @@ export default function SeccionLaminas() {
       // 2) No existe -> generar por puesto y FIJAR en Firestore antes del reveal
       const { posicion } = await obtenerPosicionTotal(uid);
       const comp = composicionPorPuesto(posicion);
-      const generado = generarSobre(todasLaminas, comp);
+      const generado = generarSobre(todasLaminas, comp, Math.random, laminasLocal);
       await setDoc(ref, {
         uid, fecha: hoy, guardado: false,
         laminas: generado.laminas, cartas: generado.cartas,
@@ -1054,6 +1068,7 @@ export default function SeccionLaminas() {
                     yaVolteada={sobreGuardado}
                     onVoltear={() => setVolteadas(v => v+1)}
                     onClick={(l) => handleClickLamina(l, laminasLocal[l.file]||1)}
+                    imagenTapa={imagenTapa}
                   />
                 ))}
               </div>

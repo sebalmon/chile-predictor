@@ -268,79 +268,107 @@ export default function EventoEnVivo() {
 }
 
 // ── Pregunta abierta (vista grande) ──────────────────────────
+// Paleta de colores por número de pregunta (para diferenciarlas visualmente)
+const PALETA = [
+  { borde:"#f59e0b", fondo:"rgba(245,158,11,0.12)", texto:"#f59e0b" }, // ámbar
+  { borde:"#60a5fa", fondo:"rgba(96,165,250,0.12)", texto:"#60a5fa" }, // azul
+  { borde:"#a78bfa", fondo:"rgba(167,139,250,0.12)", texto:"#a78bfa" }, // violeta
+  { borde:"#34d399", fondo:"rgba(52,211,153,0.12)", texto:"#34d399" }, // verde
+  { borde:"#f87171", fondo:"rgba(248,113,113,0.12)", texto:"#f87171" }, // rojo
+  { borde:"#fb923c", fondo:"rgba(251,146,60,0.12)", texto:"#fb923c" }, // naranja
+];
+function colorPregunta(n) { return PALETA[((n||1)-1) % PALETA.length]; }
+
 function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
-  const pts = pregunta.puntosEnVivo || 3;
+  const pts    = pregunta.puntosEnVivo || 3;
+  const color  = colorPregunta(pregunta.numero);
+  const letras = ["A","B","C","D","E"];
+
   return (
-    <div>
-      <div style={{ textAlign:"center", marginBottom:"10px" }}>
-        <span style={{
-          fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-          color:"var(--rojo-chile)", background:"rgba(214,40,40,0.15)",
-          border:"1px solid var(--rojo-chile)", padding:"3px 10px",
-        }}>
+    <div style={{
+      border:`2px solid ${color.borde}`,
+      background: color.fondo,
+      backdropFilter:"blur(8px)",
+      overflow:"hidden",
+    }}>
+      {/* Cabecera de la pregunta */}
+      <div style={{
+        display:"flex", justifyContent:"space-between", alignItems:"center",
+        padding:"8px 12px",
+        background:`rgba(0,0,0,0.35)`,
+        borderBottom:`1px solid ${color.borde}44`,
+      }}>
+        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color: color.texto, letterSpacing:"1px" }}>
           PREGUNTA #{pregunta.numero}
         </span>
-      </div>
-
-      <div style={{ textAlign:"center", marginBottom:"10px" }}>
-        <span style={{
-          background:"rgba(244,208,63,0.15)", border:"2px solid var(--amarillo)",
-          color:"var(--amarillo)", fontSize:"7px", padding:"4px 14px",
-          boxShadow:"0 0 14px rgba(244,208,63,0.35)",
-        }}>
-          ¡RESPONDE Y GANA +{pts} PTS!
+        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color:"var(--amarillo)",
+          background:"rgba(244,208,63,0.15)",
+          border:"1px solid rgba(244,208,63,0.4)",
+          padding:"2px 8px" }}>
+          +{pts} PTS
         </span>
       </div>
 
-      <div style={{
-        background:"rgba(255,255,255,0.04)", border:"2px solid rgba(255,255,255,0.12)",
-        padding:"14px 12px", marginBottom:"12px",
-      }}>
+      {/* Texto de la pregunta */}
+      <div style={{ padding:"14px 12px 10px" }}>
         <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-          color:"var(--blanco)", lineHeight:2, textAlign:"center" }}>
+          color:"var(--blanco)", lineHeight:2.2, textAlign:"center",
+          textShadow:"0 1px 4px rgba(0,0,0,0.6)" }}>
           {pregunta.texto}
         </p>
       </div>
 
-      {!miRespuesta ? (
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {(pregunta.opciones||[]).map((op,i) => (
-            <button key={i} onClick={() => onResponder(op)} disabled={enviando}
-              style={{
-                fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                padding:"10px 12px", background:"rgba(255,255,255,0.05)",
-                border:"2px solid rgba(255,255,255,0.2)",
-                color:"var(--blanco)", cursor:"pointer", textAlign:"left",
-                transition:"all 0.15s",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = "var(--amarillo)";
-                e.currentTarget.style.background  = "rgba(244,208,63,0.12)";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)";
-                e.currentTarget.style.background  = "rgba(255,255,255,0.05)";
-              }}>
-              {op}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div style={{
-          background:"rgba(82,183,136,0.1)", border:"2px solid var(--verde-claro)",
-          padding:"14px", textAlign:"center",
-        }}>
-          <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
-            ✅ Tu respuesta:
-          </p>
-          <p style={{ fontSize:"9px", color:"var(--amarillo)", marginTop:"4px", lineHeight:2 }}>
-            {miRespuesta}
-          </p>
-          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"6px", lineHeight:2 }}>
-            Esperando que el admin cierre la pregunta...
-          </p>
-        </div>
-      )}
+      {/* Opciones o confirmación */}
+      <div style={{ padding:"0 12px 14px" }}>
+        {!miRespuesta ? (
+          <div style={{ display:"flex", flexDirection:"column", gap:"7px" }}>
+            {(pregunta.opciones||[]).map((op,i) => (
+              <button key={i} onClick={() => onResponder(op)} disabled={enviando}
+                style={{
+                  fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                  padding:"9px 12px",
+                  background:"rgba(0,0,0,0.45)",
+                  border:`2px solid rgba(255,255,255,0.15)`,
+                  color:"var(--blanco)", cursor:"pointer",
+                  textAlign:"left", display:"flex", alignItems:"center", gap:"10px",
+                  transition:"all 0.12s",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = color.borde;
+                  e.currentTarget.style.background  = color.fondo;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+                  e.currentTarget.style.background  = "rgba(0,0,0,0.45)";
+                }}>
+                <span style={{ color: color.texto, opacity:0.8, flexShrink:0 }}>
+                  {letras[i]}.
+                </span>
+                {op}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{
+            background:"rgba(0,0,0,0.35)", border:`1px solid ${color.borde}88`,
+            padding:"12px", textAlign:"center",
+          }}>
+            <p style={{ fontSize:"6px", color: color.texto, lineHeight:2 }}>
+              ✅ Respondiste:
+            </p>
+            <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+              color:"var(--blanco)", marginTop:"4px", lineHeight:2 }}>
+              {miRespuesta}
+            </p>
+            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
+              marginTop:"6px", lineHeight:2 }}>
+              El admin cerrará la pregunta en breve...
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

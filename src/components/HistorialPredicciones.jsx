@@ -289,12 +289,14 @@ function BloqueEnVivo({ respuestasEnVivo }) {
                 </div>
                 <div style={{ textAlign:"right", flexShrink:0 }}>
                   {pendiente ? (
-                    <span style={{ fontSize:"5px", color:"var(--gris)" }}>pendiente</span>
+                    <span style={{ fontSize:"5px", color:"var(--gris)" }}>abierta</span>
                   ) : (
-                    <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                      color:pts>0?"var(--verde-claro)":"var(--gris)" }}>
-                      {pts>0?`+${pts}`:"0"}
-                    </span>
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"2px" }}>
+                      <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                        color:pts>0?"var(--verde-claro)":"var(--rojo-chile)" }}>
+                        {pts>0 ? `✅ +${pts}pts` : "❌ Falló"}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
