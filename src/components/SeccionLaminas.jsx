@@ -170,14 +170,15 @@ function SobreAnimado({ onAbrir }) {
         >
           {/* Imagen del sobre */}
           <div style={{
-            position:"relative", width:"200px", height:"150px",
+            position:"relative",
+            width:"min(80vw, 420px)", height:"min(60vw, 315px)",
             margin:"0 auto",
           }}>
             <img
               src={fase === "abierto" ? "/sobre/sobre-abierto.png" : "/sobre/sobre-cerrado.png"}
               alt="sobre"
               style={{
-                width:"200px", height:"150px",
+                width:"100%", height:"100%",
                 imageRendering:"pixelated", objectFit:"contain",
                 filter: fase==="sacudiendo" ? "drop-shadow(0 0 20px gold)" :
                         fase==="abriendo"   ? "drop-shadow(0 0 30px gold)" : "none",
@@ -190,7 +191,7 @@ function SobreAnimado({ onAbrir }) {
             />
             {/* Fallback CSS */}
             <div style={{
-              display:"none", width:"200px", height:"150px",
+              display:"none", width:"100%", height:"100%",
               background: fase==="abierto" ? "#f4d03f" : "#e8a020",
               border:"4px solid var(--negro)", boxShadow:"4px 4px 0 var(--negro)",
               alignItems:"center", justifyContent:"center",
@@ -248,72 +249,6 @@ function SobreAnimado({ onAbrir }) {
 }
 
 // ── Lámina con flip ───────────────────────────────────────
-// ── CartaFlip — usa la misma tapa que las láminas ────────────
-// Antes de darla vuelta: muestra la imagen de tapa (igual que láminas).
-// Al darla vuelta: revela que es una carta multiplicadora con su arte.
-function CartaFlip({ carta, idx, onVoltear, yaVolteada, imagenTapa }) {
-  const [volteada, setVolteada] = React.useState(yaVolteada);
-
-  const dar = () => {
-    if (volteada) return;
-    setVolteada(true);
-    onVoltear();
-  };
-
-  const COLORES_RAREZA = {
-    comun:      "#4ade80",
-    rara:       "#f4d03f",
-    legendaria: "#f87171",
-  };
-  const color = COLORES_RAREZA[carta.rareza] || "#f4d03f";
-
-  return (
-    <div onClick={dar}
-      style={{ width:"80px", cursor: volteada ? "default" : "pointer", textAlign:"center",
-        animation:`laminaSale 0.5s ease ${idx*0.15}s both` }}>
-      <div style={{
-        width:"80px", height:"110px",
-        border: `3px solid ${volteada ? color : "var(--amarillo)"}`,
-        boxShadow:`3px 3px 0 var(--negro)`,
-        overflow:"hidden",
-        // Mismo fondo tapa que las láminas
-        background: volteada
-          ? "var(--negro)"
-          : imagenTapa
-            ? `url(/${imagenTapa}) center/cover`
-            : "linear-gradient(135deg,#1a1a5e,#4a0e8f)",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        position:"relative",
-      }}>
-        {volteada ? (
-          <>
-            <img src={cartaImg(carta.slug)} alt={carta.nombre}
-              style={{ width:"100%", height:"80%", objectFit:"cover", display:"block" }}
-              onError={e => { e.target.style.opacity = 0.2; }} />
-            {/* Badge multiplicador */}
-            <div style={{
-              position:"absolute", bottom:0, left:0, right:0,
-              background:"var(--negro)", padding:"3px 0", textAlign:"center",
-            }}>
-              <span style={{ fontFamily:"'Press Start 2P',monospace",
-                fontSize:"9px", color }}>
-                ×{carta.multiplicador}
-              </span>
-            </div>
-          </>
-        ) : null}
-      </div>
-      {volteada && (
-        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"4px",
-          color:"var(--amarillo)", marginTop:"3px", lineHeight:1.4,
-          overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-          {carta.nombre}
-        </p>
-      )}
-    </div>
-  );
-}
-
 function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick, imagenTapa }) {
   const [volteada, setVolteada] = useState(yaVolteada);
 
@@ -1120,7 +1055,7 @@ export default function SeccionLaminas() {
                 fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
                 color:"var(--amarillo)",textAlign:"center",marginBottom:"14px",
               }}>
-                {sobreGuardado ? "TUS LÁMINAS DE HOY" : `¡Da vuelta todo! (${volteadas}/${sobre.laminas.length + sobre.cartas.length})`}
+                {sobreGuardado ? "TUS LÁMINAS DE HOY" : `¡Da vuelta tus láminas! (${volteadas}/${sobre.laminas.length})`}
               </p>
               <div style={{
                 display:"flex",flexWrap:"wrap",justifyContent:"center",
@@ -1143,24 +1078,26 @@ export default function SeccionLaminas() {
                 <>
                   <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
                     color:"var(--amarillo)", textAlign:"center", margin:"10px 0" }}>
-                    ¡HAY SORPRESAS EXTRA!
+                    ¡CARTAS MULTIPLICADORAS!
                   </p>
                   <div style={{ display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"10px" }}>
                     {sobre.cartas.map((c, i) => (
-                      <CartaFlip
-                        key={c.id+"_"+i}
-                        carta={c}
-                        idx={i}
-                        yaVolteada={sobreGuardado}
-                        onVoltear={() => setVolteadas(v => v+1)}
-                        imagenTapa={imagenTapa}
-                      />
+                      <div key={c.id+"_"+i} style={{ width:"80px", textAlign:"center" }}>
+                        <div style={{ width:"80px", height:"110px", border:"3px solid var(--amarillo)",
+                          boxShadow:"3px 3px 0 var(--negro)", overflow:"hidden" }}>
+                          <img src={cartaImg(c.slug)} alt={c.nombre}
+                            style={{ width:"100%", height:"100%", objectFit:"cover" }}
+                            onError={e => { e.target.style.opacity = 0.2; }} />
+                        </div>
+                        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                          color:"var(--verde-claro)", marginTop:"3px" }}>×{c.multiplicador}</p>
+                      </div>
                     ))}
                   </div>
                 </>
               )}
 
-              {!sobreGuardado && volteadas >= sobre.laminas.length + sobre.cartas.length && (
+              {!sobreGuardado && volteadas >= sobre.laminas.length && (
                 <button
                   className="btn-pixel btn-verde w-full"
                   style={{ fontSize:"7px" }}
@@ -1171,7 +1108,7 @@ export default function SeccionLaminas() {
                 </button>
               )}
 
-              {!sobreGuardado && volteadas < sobre.laminas.length + sobre.cartas.length && (
+              {!sobreGuardado && volteadas < sobre.laminas.length && (
                 <p style={{
                   fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
                   color:"var(--gris-claro)",textAlign:"center",lineHeight:2,
