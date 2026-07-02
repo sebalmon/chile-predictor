@@ -267,7 +267,10 @@ function BloqueEnVivo({ respuestasEnVivo }) {
       {abierto && (
         <div>
           {respuestasEnVivo.map(r => {
-            const pendiente = r.estado !== "cerrada";
+            // Fix: usar correcta/puntosGanados guardados en la respuesta
+            // (no depender de estado que requiere que el evento siga activo)
+            const resuelta  = r.correcta !== undefined;
+            const pendiente = !resuelta;
             const pts = r.puntosGanados ?? 0;
             return (
               <div key={r.id} style={{ padding:"6px 8px", borderBottom:"1px solid rgba(214,40,40,0.2)",
@@ -355,7 +358,7 @@ export default function HistorialPredicciones({ userId }) {
             ),
           };
         })
-        .sort((a,b) => (b.numero ?? 0) - (a.numero ?? 0)); // última primero
+        .sort((a,b) => (a.numero ?? 0) - (b.numero ?? 0));
       setRespuestasEnVivo(respsEV);
 
       const porFecha = {};

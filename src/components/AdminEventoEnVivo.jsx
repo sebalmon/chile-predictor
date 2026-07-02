@@ -50,6 +50,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   // Cierre — ahora un mapa por pregunta
   const [respSels,  setRespSels]  = useState({}); // { preguntaId: opcion }
   const [cerrando,  setCerrando]  = useState(null); // preguntaId siendo cerrada
+  const [reparando, setReparando] = useState(false);
 
   useEffect(() => {
     unsubRef.current = onSnapshot(REF_EVENTO(), snap => {
@@ -145,6 +146,48 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       setTextoPrg(""); setOpciones(["",""]); setPuntos(3);
     } catch (e) { onMensaje("error", e.message); }
     finally { setCreando(false); }
+  };
+
+  // ── Reparar respuestas sin campo correcta (historial roto) ───
+  const repararRespuestas = async () => {
+    const cerradas = preguntas.filter(p => p.estado === "cerrada");
+    if (cerradas.length === 0) {
+      onMensaje("error", "No hay preguntas cerradas en este evento."); return;
+    }
+    setReparando(true);
+    try {
+      // Leer TODAS las respuestas del evento
+      const snapR = await getDocs(REF_RESPS());
+      const batch = writeBatch(db);
+      let reparadas = 0;
+
+      snapR.docs.forEach(d => {
+        const r = d.data();
+        // Solo reparar las que no tienen campo correcta
+        if (r.correcta !== undefined) return;
+        const preg = cerradas.find(p => p.id === r.preguntaId);
+        if (!preg) return; // respuesta de pregunta que no está cerrada, ignorar
+        const esCorrecta = r.respuesta === preg.respuestaCorrecta;
+        batch.update(d.ref, {
+          correcta:     esCorrecta,
+          puntosGanados: esCorrecta ? (preg.puntosEnVivo || 3) : 0,
+          texto:        preg.texto,
+          numero:       preg.numero,
+        });
+        reparadas++;
+      });
+
+      if (reparadas === 0) {
+        onMensaje("ok", "✅ Todas las respuestas ya tienen resultado guardado. Nada que reparar.");
+        return;
+      }
+
+      await batch.commit();
+      onMensaje("ok",
+        `✅ ${reparadas} respuesta(s) reparadas. Los usuarios ya verán Acertó/Falló correctamente.`
+      );
+    } catch (e) { onMensaje("error", e.message); }
+    finally { setReparando(false); }
   };
 
   // ── Cerrar UNA pregunta específica y dar sus puntos ─────────
@@ -463,6 +506,25 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           </div>
 
           {/* Historial de preguntas cerradas */}
+          {/* Botón reparar historial */}
+          {cerradas.length > 0 && (
+            <div style={{ marginBottom:"10px" }}>
+              <button
+                className="btn-pixel btn-gris w-full"
+                style={{ fontSize:"6px" }}
+                onClick={repararRespuestas}
+                disabled={reparando}>
+                {reparando
+                  ? "⚙ REPARANDO..."
+                  : `🔧 REPARAR RESPUESTAS SIN RESULTADO (${cerradas.length} preg. cerradas)`}
+              </button>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)",
+                marginTop:"4px", lineHeight:2 }}>
+                Pulsa si en el historial de algún usuario aparece "abierta" en preguntas ya cerradas.
+              </p>
+            </div>
+          )}
+
           {cerradas.length > 0 && (
             <div>
               <p style={{ fontSize:"5px", color:"var(--gris-claro)",
