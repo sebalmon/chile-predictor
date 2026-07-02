@@ -340,25 +340,36 @@ export default function HistorialPredicciones({ userId }) {
       const respsEV = snapEV.docs
         .map(d => {
           const data = d.data();
+          // Buscar la pregunta en el evento activo (puede no existir si el evento cambió)
           const preg = preguntasEvento.find(p => p.id === data.preguntaId);
+
+          // Usar campos guardados en la respuesta primero (persistentes),
+          // luego cruzar con la pregunta activa si están disponibles.
+          const correcta = data.correcta !== undefined
+            ? data.correcta
+            : preg?.estado === "cerrada"
+              ? data.respuesta === preg?.respuestaCorrecta
+              : undefined;
+
+          const puntosGanados = data.puntosGanados !== undefined
+            ? data.puntosGanados
+            : preg?.estado === "cerrada"
+              ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
+              : undefined;
+
           return {
-            id: d.id,
+            id:                d.id,
             ...data,
-            texto: preg?.texto,
-            numero: preg?.numero,
-            estado: preg?.estado,
-            respuestaCorrecta: preg?.respuestaCorrecta,
-            // Compatibilidad con respuestas antiguas que no tenían
-            // guardado puntosGanados/correcta directamente:
-            correcta: data.correcta ?? (preg?.estado === "cerrada" ? data.respuesta === preg?.respuestaCorrecta : undefined),
-            puntosGanados: data.puntosGanados ?? (
-              preg?.estado === "cerrada"
-                ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
-                : undefined
-            ),
+            // Texto y número: usar lo guardado en la respuesta, o del evento activo
+            texto:             data.texto             ?? preg?.texto,
+            numero:            data.numero            ?? preg?.numero,
+            respuestaCorrecta: data.respuestaCorrecta ?? preg?.respuestaCorrecta,
+            correcta,
+            puntosGanados,
           };
         })
-        .sort((a,b) => (a.numero ?? 0) - (b.numero ?? 0));
+        // Última pregunta primero
+        .sort((a,b) => (b.numero ?? 0) - (a.numero ?? 0));
       setRespuestasEnVivo(respsEV);
 
       const porFecha = {};
