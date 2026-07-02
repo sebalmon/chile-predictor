@@ -355,7 +355,7 @@ export default function HistorialPredicciones({ userId }) {
             ),
           };
         })
-        .sort((a,b) => (a.numero ?? 0) - (b.numero ?? 0));
+        .sort((a,b) => (b.numero ?? 0) - (a.numero ?? 0)); // última primero
       setRespuestasEnVivo(respsEV);
 
       const porFecha = {};
