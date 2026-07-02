@@ -267,16 +267,17 @@ function BloqueEnVivo({ respuestasEnVivo }) {
       {abierto && (
         <div>
           {respuestasEnVivo.map(r => {
-            // Fix: usar correcta/puntosGanados guardados en la respuesta
-            // (no depender de estado que requiere que el evento siga activo)
-            const resuelta  = r.correcta !== undefined;
+            // Resuelta si tiene correcta O si tiene puntosGanados guardado
+            const resuelta  = r.correcta !== undefined || r.puntosGanados !== undefined;
             const pendiente = !resuelta;
-            const pts = r.puntosGanados ?? 0;
+            const pts       = r.puntosGanados ?? 0;
+            // Si no tiene correcta pero sí puntosGanados, deducir si acertó
+            const acerto    = r.correcta !== undefined ? r.correcta : (r.puntosGanados > 0);
             return (
               <div key={r.id} style={{ padding:"6px 8px", borderBottom:"1px solid rgba(214,40,40,0.2)",
                 display:"flex", gap:"6px", alignItems:"flex-start" }}>
                 <span style={{ fontSize:"10px", lineHeight:1, flexShrink:0, marginTop:"1px" }}>
-                  {pendiente ? "⏳" : (r.correcta ? "✅" : "❌")}
+                  {pendiente ? "⏳" : (acerto ? "✅" : "❌")}
                 </span>
                 <div style={{ flex:1 }}>
                   <p style={{ fontSize:"6px", color:"var(--blanco)", lineHeight:1.8 }}>
@@ -297,7 +298,7 @@ function BloqueEnVivo({ respuestasEnVivo }) {
                     <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"2px" }}>
                       <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
                         color:pts>0?"var(--verde-claro)":"var(--rojo-chile)" }}>
-                        {pts>0 ? `✅ +${pts}pts` : "❌ Falló"}
+                        {acerto ? `✅ +${pts}pts` : "❌ Falló"}
                       </span>
                     </div>
                   )}
