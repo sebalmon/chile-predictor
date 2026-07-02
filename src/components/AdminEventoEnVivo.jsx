@@ -505,25 +505,20 @@ export default function AdminEventoEnVivo({ onMensaje }) {
             </button>
           </div>
 
-          {/* Historial de preguntas cerradas */}
-          {/* Botón reparar historial */}
-          {cerradas.length > 0 && (
-            <div style={{ marginBottom:"10px" }}>
-              <button
-                className="btn-pixel btn-gris w-full"
-                style={{ fontSize:"6px" }}
-                onClick={repararRespuestas}
-                disabled={reparando}>
-                {reparando
-                  ? "⚙ REPARANDO..."
-                  : `🔧 REPARAR RESPUESTAS SIN RESULTADO (${cerradas.length} preg. cerradas)`}
-              </button>
-              <p style={{ fontSize:"5px", color:"var(--gris-claro)",
-                marginTop:"4px", lineHeight:2 }}>
-                Pulsa si en el historial de algún usuario aparece "abierta" en preguntas ya cerradas.
-              </p>
-            </div>
-          )}
+          {/* Botón reparar — siempre visible cuando el evento está activo */}
+          <div style={{ marginBottom:"10px" }}>
+            <button
+              className="btn-pixel btn-gris w-full"
+              style={{ fontSize:"6px" }}
+              onClick={repararRespuestas}
+              disabled={reparando}>
+              {reparando ? "⚙ REPARANDO..." : "🔧 REPARAR RESPUESTAS SIN RESULTADO"}
+            </button>
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)",
+              marginTop:"4px", lineHeight:2 }}>
+              Si en el historial aparece "abierta" en preguntas ya cerradas, apreta aquí.
+            </p>
+          </div>
 
           {cerradas.length > 0 && (
             <div>
