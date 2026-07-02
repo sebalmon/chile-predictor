@@ -196,7 +196,7 @@ export default function EventoEnVivo() {
                 lineHeight:1.8,
                 textShadow:"0 0 8px rgba(244,208,63,0.6)",
               }}>
-                🏆 {ptsJugados} PTS EN JUEGO
+                🏆 {ptsJugados} PTS ENTREGADOS HASTA AHORA
               </p>
             </div>
           )}
