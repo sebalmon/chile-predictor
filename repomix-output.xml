@@ -115,10 +115,12 @@ public/pvivo_0.jpg
 public/pvivo_1.jpg
 public/pvivo_2.jpg
 public/pvivo_3.jpg
+public/pvivo_4.jpg
 public/sounds/ale.mp3
 public/sounds/brasil.mp3
 public/sounds/japo.mp3
 public/sounds/mex.mp3
+public/tapa_laminas.jpg
 public/watermarked_img_13728874305587068978.png
 README.md
 src/App.css
@@ -3208,88 +3210,6 @@ export function cartaSeAplica(tieneCartaId, yaConsumio, stockActual) {
 }
 </file>
 
-<file path="src/utils/sobre.js">
-// src/utils/sobre.js — lógica pura del sobre (SIN firebase; solo sampleData puro)
-import { cartaAleatoriaPorMultiplicador } from "../data/sampleData.js";
-
-// Composición por puesto (1-based). pos null/0 => tier 1-3.
-export function composicionPorPuesto(pos) {
-  if (!pos || pos <= 3) return { laminas: 4, cartas: [] };
-  if (pos <= 7)         return { laminas: 3, cartas: [{ mult: 2, n: 1 }] };
-  if (pos <= 14)        return { laminas: 3, cartas: [{ mult: 3, n: 1 }] };
-  if (pos <= 22)        return { laminas: 3, cartas: [{ mult: 4, n: 1 }] };
-  return { laminas: 2, cartas: [{ mult: 4, n: 2 }] };
-}
-
-// Sorteo CON reemplazo de láminas + cartas. rnd inyectable para testear.
-export function generarSobre(todasLaminas, comp, rnd = Math.random) {
-  const laminas = [];
-  for (let i = 0; i < comp.laminas; i++) {
-    laminas.push(todasLaminas[Math.floor(rnd() * todasLaminas.length)]);
-  }
-  const cartas = [];
-  for (const { mult, n } of comp.cartas) {
-    for (let i = 0; i < n; i++) {
-      const c = cartaAleatoriaPorMultiplicador(mult);
-      if (c) cartas.push(c);
-    }
-  }
-  return { laminas, cartas };
-}
-
-// Gasta n copias sobrantes (sobrante de cada lámina = copias-1). Nunca baja de 1.
-export function gastarDuplicados(laminasUsuario, n) {
-  const sobrantes = Object.entries(laminasUsuario || {})
-    .map(([file, c]) => ({ file, sobra: Math.max(0, (c || 0) - 1) }))
-    .filter(x => x.sobra > 0)
-    .sort((a, b) => b.sobra - a.sobra); // greedy: las que más copias tienen
-  const total = sobrantes.reduce((s, x) => s + x.sobra, 0);
-  if (total < n) return { ok: false, decrementos: {} };
-  const decrementos = {};
-  let restante = n;
-  for (const { file, sobra } of sobrantes) {
-    if (restante <= 0) break;
-    const usar = Math.min(sobra, restante);
-    decrementos[file] = -usar;
-    restante -= usar;
-  }
-  return { ok: true, decrementos };
-}
-
-export function cartaImg(slug) {
-  return `/cartas/${slug}.jpg`;
-}
-
-// ── Recompensas por completar ──────────────────────────────────
-export function categoriaCompleta(laminasUsuario, todasLaminas, catKey) {
-  const dela = todasLaminas.filter(l => l.categoria === catKey);
-  if (dela.length === 0) return false;
-  return dela.every(l => (laminasUsuario?.[l.file] || 0) > 0);
-}
-
-export function albumCompleto(laminasUsuario, todasLaminas) {
-  if (!todasLaminas || todasLaminas.length === 0) return false;
-  return todasLaminas.every(l => (laminasUsuario?.[l.file] || 0) > 0);
-}
-
-// Lista recompensas completas y NO reclamadas. reclamadas = {cat_KEY:true, album:true}
-export function recompensasPendientes(laminasUsuario, todasLaminas, reclamadas = {}, posicion = null) {
-  const out = [];
-  const keys = [...new Set(todasLaminas.map(l => l.categoria).filter(Boolean))];
-  for (const key of keys) {
-    if (reclamadas[`cat_${key}`]) continue;
-    if (categoriaCompleta(laminasUsuario, todasLaminas, key)) {
-      const mult = (!posicion || posicion <= 3) ? 2 : posicion <= 12 ? 3 : 4;
-      out.push({ tipo: "categoria", key, cartas: [{ mult, n: 2 }] });
-    }
-  }
-  if (!reclamadas.album && albumCompleto(laminasUsuario, todasLaminas)) {
-    out.push({ tipo: "album", key: "album", cartas: [{ mult: 4, n: 2 }] });
-  }
-  return out;
-}
-</file>
-
 <file path="vite.config.js">
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -5766,6 +5686,123 @@ h3 { font-size: 10px; }
 }
 </file>
 
+<file path="src/utils/sobre.js">
+// src/utils/sobre.js — v2
+// Cambios: 7 láminas por sobre, prioriza láminas no poseídas
+import { cartaAleatoriaPorMultiplicador } from "../data/sampleData.js";
+
+export function composicionPorPuesto(pos) {
+  if (!pos || pos <= 3) return { laminas: 7, cartas: [] };
+  if (pos <= 7)         return { laminas: 6, cartas: [{ mult: 2, n: 1 }] };
+  if (pos <= 14)        return { laminas: 6, cartas: [{ mult: 3, n: 1 }] };
+  if (pos <= 22)        return { laminas: 6, cartas: [{ mult: 4, n: 1 }] };
+  return { laminas: 5, cartas: [{ mult: 4, n: 2 }] };
+}
+
+// Prioriza láminas no poseídas (o poco repetidas).
+export function generarSobre(todasLaminas, comp, rnd = Math.random, laminasUsuario = {}) {
+  const n = comp.laminas;
+
+  const noPoseidas = todasLaminas.filter(l => !(laminasUsuario?.[l.file] > 0));
+  const pocasVeces = todasLaminas.filter(l => (laminasUsuario?.[l.file] || 0) === 1);
+  const poseidas   = todasLaminas.filter(l => (laminasUsuario?.[l.file] || 0) > 1);
+
+  // Pool en orden de prioridad
+  const pool = noPoseidas.length > 0
+    ? [...noPoseidas, ...pocasVeces, ...poseidas]
+    : todasLaminas;
+
+  const laminas = [];
+  const usados  = new Set();
+
+  // Intentar sacar del pool priorizado (evitando repetir)
+  let intentos = 0;
+  while (laminas.length < n && intentos < pool.length * 4) {
+    // Sesgar hacia el inicio del pool (no-poseídas)
+    const maxIdx = Math.min(pool.length, Math.max(noPoseidas.length, 1));
+    const idx = Math.floor(rnd() * maxIdx);
+    const lam = pool[idx];
+    if (lam && !usados.has(lam.file)) {
+      laminas.push(lam);
+      usados.add(lam.file);
+    }
+    intentos++;
+  }
+
+  // Completar con aleatorio si faltan
+  intentos = 0;
+  while (laminas.length < n && intentos < todasLaminas.length * 3) {
+    const lam = todasLaminas[Math.floor(rnd() * todasLaminas.length)];
+    if (lam && !usados.has(lam.file)) {
+      laminas.push(lam);
+      usados.add(lam.file);
+    }
+    intentos++;
+    // Última instancia: admitir repetidas
+    if (intentos > todasLaminas.length * 2 && laminas.length < n) {
+      laminas.push(todasLaminas[Math.floor(rnd() * todasLaminas.length)]);
+      break;
+    }
+  }
+
+  const cartas = [];
+  for (const { mult, n: nc } of comp.cartas) {
+    for (let i = 0; i < nc; i++) {
+      const c = cartaAleatoriaPorMultiplicador(mult);
+      if (c) cartas.push(c);
+    }
+  }
+  return { laminas, cartas };
+}
+
+export function gastarDuplicados(laminasUsuario, n) {
+  const sobrantes = Object.entries(laminasUsuario || {})
+    .map(([file, c]) => ({ file, sobra: Math.max(0, (c || 0) - 1) }))
+    .filter(x => x.sobra > 0)
+    .sort((a, b) => b.sobra - a.sobra);
+  const total = sobrantes.reduce((s, x) => s + x.sobra, 0);
+  if (total < n) return { ok: false, decrementos: {} };
+  const decrementos = {};
+  let restante = n;
+  for (const { file, sobra } of sobrantes) {
+    if (restante <= 0) break;
+    const usar = Math.min(sobra, restante);
+    decrementos[file] = -usar;
+    restante -= usar;
+  }
+  return { ok: true, decrementos };
+}
+
+export function cartaImg(slug) { return `/cartas/${slug}.jpg`; }
+
+export function categoriaCompleta(laminasUsuario, todasLaminas, catKey) {
+  const dela = todasLaminas.filter(l => l.categoria === catKey);
+  if (dela.length === 0) return false;
+  return dela.every(l => (laminasUsuario?.[l.file] || 0) > 0);
+}
+
+export function albumCompleto(laminasUsuario, todasLaminas) {
+  if (!todasLaminas || todasLaminas.length === 0) return false;
+  return todasLaminas.every(l => (laminasUsuario?.[l.file] || 0) > 0);
+}
+
+export function recompensasPendientes(laminasUsuario, todasLaminas, reclamadas = {}, posicion = null) {
+  const out = [];
+  const keys = [...new Set(todasLaminas.map(l => l.categoria).filter(Boolean))];
+  for (const key of keys) {
+    if (reclamadas[`cat_${key}`]) continue;
+    if (categoriaCompleta(laminasUsuario, todasLaminas, key)) {
+      const mult = (!posicion || posicion <= 3) ? 2 : posicion <= 12 ? 3 : 4;
+      out.push({ tipo: "categoria", key, cartas: [{ mult, n: 2 }] });
+    }
+  }
+  if (!reclamadas.album && albumCompleto(laminasUsuario, todasLaminas)) {
+    out.push({ tipo: "album", key: "album", cartas: [{ mult: 4, n: 2 }] });
+  }
+  return out;
+}
+</file>
+
 <file path="src/components/PodioF1.jsx">
 // src/components/PodioF1.jsx  — v6 (Fase 3)
 // ─────────────────────────────────────────────────────────────
@@ -6115,1142 +6152,6 @@ export default function PodioF1({ datos }) {
       </div>
     </>
   );
-}
-</file>
-
-<file path="src/components/EventoEnVivo.jsx">
-// src/components/EventoEnVivo.jsx  — v4
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v4:
-//   • La imagen ahora ocupa 42% de la altura de pantalla (40vh-45vh)
-//     en vez de un alto fijo pequeño — se ve grande y completa.
-//   • Banderas y nombres se superponen SOBRE la imagen (parte
-//     inferior, con degradado para legibilidad), no debajo de ella
-//     compitiendo por espacio.
-//   • Todo el contenido de preguntas va en una zona inferior con
-//     scroll propio, dejando la imagen siempre visible y fija.
-// ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect } from "react";
-import {
-  doc, onSnapshot, setDoc, serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-
-const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
-
-export default function EventoEnVivo() {
-  const { firebaseUser } = useAuth();
-  const [evento,        setEvento]        = useState(null);
-  const [misRespuestas, setMisRespuestas] = useState({});
-  const [enviando,      setEnviando]      = useState(null);
-  const [minimizado,    setMinimizado]    = useState(false);
-  const [imgError,      setImgError]      = useState(false);
-  const [expandidaId,   setExpandidaId]   = useState(null);
-
-  useEffect(() => {
-    const unsub = onSnapshot(REF_EVENTO(), snap => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setEvento(data);
-        const preguntas = data.preguntas || [];
-        const resp = {};
-        preguntas.forEach(p => {
-          const guardada = localStorage.getItem(`cp8b_ev_resp_${p.id}`);
-          if (guardada) resp[p.id] = guardada;
-        });
-        setMisRespuestas(resp);
-      } else {
-        setEvento(null);
-      }
-    });
-    return () => unsub();
-  }, []);
-
-  const preguntas = evento?.preguntas || [];
-  // Pueden convivir varias preguntas abiertas a la vez.
-  // Se invierte el orden: la pregunta más reciente aparece arriba.
-  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
-  const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
-
-  // Cuando aparece una pregunta nueva abierta, des-minimizar
-  const idsAbiertas = abiertas.map(p => p.id).join(",");
-  useEffect(() => {
-    if (abiertas.length > 0) setMinimizado(false);
-  }, [idsAbiertas]);
-
-  const responder = async (pregunta, opcion) => {
-    if (!firebaseUser || misRespuestas[pregunta.id] || enviando) return;
-    setEnviando(pregunta.id);
-    try {
-      await setDoc(
-        doc(db, "eventoEnVivo", "actual", "respuestas", `${firebaseUser.uid}_${pregunta.id}`),
-        {
-          uid:        firebaseUser.uid,
-          respuesta:  opcion,
-          preguntaId: pregunta.id,
-          timestamp:  serverTimestamp(),
-        }
-      );
-      setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
-      localStorage.setItem(`cp8b_ev_resp_${pregunta.id}`, opcion);
-    } catch (e) { console.error(e); }
-    finally { setEnviando(null); }
-  };
-
-  if (!evento?.activo) return null;
-  if (preguntas.length === 0) return null;
-
-  const localBandera     = evento.equipoLocal?.bandera     || "🏳️";
-  const visitanteBandera = evento.equipoVisitante?.bandera || "🏳️";
-  const localNombre      = evento.equipoLocal?.nombre      || "Local";
-  const visitanteNombre  = evento.equipoVisitante?.nombre  || "Visitante";
-  const imagenFondo      = evento.imagenFondo;
-
-  // ── BURBUJA MINIMIZADA ──────────────────────────────────────
-  if (minimizado) {
-    return (
-      <button
-        onClick={() => setMinimizado(false)}
-        style={{
-          position:"fixed", bottom:"90px", right:"16px", zIndex:650,
-          width:"56px", height:"56px", borderRadius:"50%",
-          background:"var(--rojo-chile)",
-          border:"3px solid var(--blanco)",
-          boxShadow:"0 0 16px rgba(214,40,40,0.7)",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:"24px", cursor:"pointer",
-          animation:"latido 1.4s ease-in-out infinite",
-        }}
-        title="Reabrir evento en vivo"
-      >
-        🔴
-        <style>{`@keyframes latido{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
-      </button>
-    );
-  }
-
-  // ── MODAL FULLSCREEN ─────────────────────────────────────────
-  return (
-    <div style={{
-      position:"fixed", inset:0, zIndex:700,
-      display:"flex", flexDirection:"column",
-      fontFamily:"'Press Start 2P', monospace",
-      background:"#0a0510",
-    }}>
-      {/* ═══ IMAGEN PROTAGONISTA (fija, 42% de la pantalla) ═══ */}
-      <div style={{
-        position:"relative", width:"100%", height:"42vh",
-        minHeight:"260px", flexShrink:0, overflow:"hidden",
-      }}>
-        {imagenFondo && !imgError ? (
-          <img
-            src={`/${imagenFondo}`}
-            alt="Imagen del partido"
-            style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div style={{
-            width:"100%", height:"100%",
-            background:"radial-gradient(ellipse at center, #2a0050 0%, #0a0510 100%)",
-          }} />
-        )}
-
-        {/* Degradado solo en la franja inferior, para legibilidad de banderas */}
-        <div style={{
-          position:"absolute", left:0, right:0, bottom:0, height:"50%",
-          background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
-        }} />
-
-        {/* Botón minimizar */}
-        <button
-          onClick={() => setMinimizado(true)}
-          style={{
-            position:"absolute", top:"14px", right:"14px", zIndex:2,
-            width:"34px", height:"34px",
-            background:"rgba(0,0,0,0.55)",
-            border:"2px solid rgba(255,255,255,0.35)",
-            color:"var(--blanco)", fontSize:"15px",
-            cursor:"pointer", display:"flex",
-            alignItems:"center", justifyContent:"center",
-          }}
-          title="Minimizar"
-        >
-          ✕
-        </button>
-
-        {/* Aviso si imagen no carga */}
-        {imagenFondo && imgError && (
-          <div style={{
-            position:"absolute", top:"14px", left:"14px", zIndex:2,
-            fontSize:"5px", color:"var(--amarillo)",
-            background:"rgba(0,0,0,0.6)", padding:"4px 8px",
-            border:"1px solid var(--amarillo)", maxWidth:"180px", lineHeight:2,
-          }}>
-            ⚠ No se encontró /{imagenFondo}
-          </div>
-        )}
-
-        {/* Banderas y nombres SUPERPUESTOS sobre la franja inferior */}
-        <div style={{
-          position:"absolute", left:0, right:0, bottom:0, zIndex:1,
-          padding:"0 16px 14px",
-          display:"flex", flexDirection:"column", alignItems:"center",
-        }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
-            <span style={{ fontSize:"40px", lineHeight:1,
-              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
-              {localBandera}
-            </span>
-            <div style={{ textAlign:"center" }}>
-              {abiertas.length > 0 && (
-                <span style={{
-                  background:"var(--rojo-chile)", color:"var(--blanco)",
-                  padding:"2px 8px", fontSize:"5px",
-                  animation:"parpadeo 1s ease-in-out infinite",
-                  display:"inline-block",
-                }}>
-                  🔴 EN VIVO
-                </span>
-              )}
-            </div>
-            <span style={{ fontSize:"40px", lineHeight:1,
-              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
-              {visitanteBandera}
-            </span>
-          </div>
-          <p style={{ fontSize:"6px", color:"var(--blanco)", textAlign:"center",
-            lineHeight:1.8, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>
-            {localNombre} vs {visitanteNombre}
-          </p>
-        </div>
-      </div>
-
-      {/* ═══ ZONA INFERIOR: preguntas, con scroll propio ═══════ */}
-      <div style={{
-        flex:1, overflowY:"auto",
-        width:"100%", maxWidth:"440px", margin:"0 auto",
-        padding:"16px 16px 24px",
-        display:"flex", flexDirection:"column", gap:"10px",
-      }}>
-
-        {abiertas.length > 0 && (
-          <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
-            {abiertas.map(preg => (
-              <PreguntaGrande
-                key={preg.id}
-                pregunta={preg}
-                miRespuesta={misRespuestas[preg.id]}
-                enviando={enviando === preg.id}
-                onResponder={(op) => responder(preg, op)}
-              />
-            ))}
-          </div>
-        )}
-
-        {cerradas.length > 0 && (
-          <div>
-            {abiertas.length > 0 && (
-              <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
-                margin:"8px 0 6px", letterSpacing:"1px" }}>
-                PREGUNTAS ANTERIORES
-              </p>
-            )}
-            <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
-              {cerradas.map(pq => (
-                <PreguntaMinimizada
-                  key={pq.id}
-                  pregunta={pq}
-                  miRespuesta={misRespuestas[pq.id]}
-                  expandida={expandidaId === pq.id}
-                  onToggle={() => setExpandidaId(prev => prev===pq.id ? null : pq.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {abiertas.length === 0 && (
-          <button
-            onClick={() => setMinimizado(true)}
-            className="btn-pixel btn-gris w-full"
-            style={{ fontSize:"6px", marginTop:"8px" }}>
-            MINIMIZAR EVENTO
-          </button>
-        )}
-      </div>
-
-      <style>{`
-        @keyframes parpadeo { 0%,100%{opacity:1} 50%{opacity:0.55} }
-      `}</style>
-    </div>
-  );
-}
-
-// ── Pregunta abierta (vista grande) ──────────────────────────
-function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
-  const pts = pregunta.puntosEnVivo || 3;
-  return (
-    <div>
-      <div style={{ textAlign:"center", marginBottom:"10px" }}>
-        <span style={{
-          fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-          color:"var(--rojo-chile)", background:"rgba(214,40,40,0.15)",
-          border:"1px solid var(--rojo-chile)", padding:"3px 10px",
-        }}>
-          PREGUNTA #{pregunta.numero}
-        </span>
-      </div>
-
-      <div style={{ textAlign:"center", marginBottom:"10px" }}>
-        <span style={{
-          background:"rgba(244,208,63,0.15)", border:"2px solid var(--amarillo)",
-          color:"var(--amarillo)", fontSize:"7px", padding:"4px 14px",
-          boxShadow:"0 0 14px rgba(244,208,63,0.35)",
-        }}>
-          ¡RESPONDE Y GANA +{pts} PTS!
-        </span>
-      </div>
-
-      <div style={{
-        background:"rgba(255,255,255,0.04)", border:"2px solid rgba(255,255,255,0.12)",
-        padding:"14px 12px", marginBottom:"12px",
-      }}>
-        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-          color:"var(--blanco)", lineHeight:2, textAlign:"center" }}>
-          {pregunta.texto}
-        </p>
-      </div>
-
-      {!miRespuesta ? (
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {(pregunta.opciones||[]).map((op,i) => (
-            <button key={i} onClick={() => onResponder(op)} disabled={enviando}
-              style={{
-                fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                padding:"10px 12px", background:"rgba(255,255,255,0.05)",
-                border:"2px solid rgba(255,255,255,0.2)",
-                color:"var(--blanco)", cursor:"pointer", textAlign:"left",
-                transition:"all 0.15s",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = "var(--amarillo)";
-                e.currentTarget.style.background  = "rgba(244,208,63,0.12)";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)";
-                e.currentTarget.style.background  = "rgba(255,255,255,0.05)";
-              }}>
-              {op}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div style={{
-          background:"rgba(82,183,136,0.1)", border:"2px solid var(--verde-claro)",
-          padding:"14px", textAlign:"center",
-        }}>
-          <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
-            ✅ Tu respuesta:
-          </p>
-          <p style={{ fontSize:"9px", color:"var(--amarillo)", marginTop:"4px", lineHeight:2 }}>
-            {miRespuesta}
-          </p>
-          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"6px", lineHeight:2 }}>
-            Esperando que el admin cierre la pregunta...
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Pregunta cerrada (vista minimizada/plegable) ─────────────
-function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
-  const correcta = pregunta.respuestaCorrecta;
-  const acerte   = miRespuesta && miRespuesta === correcta;
-  const pts      = pregunta.puntosEnVivo || 3;
-
-  return (
-    <div style={{
-      background:"rgba(255,255,255,0.03)",
-      border:`1px solid ${acerte ? "rgba(82,183,136,0.4)" : "rgba(255,255,255,0.1)"}`,
-    }}>
-      <button
-        onClick={onToggle}
-        style={{
-          width:"100%", display:"flex", justifyContent:"space-between",
-          alignItems:"center", padding:"8px 10px",
-          background:"transparent", border:"none", cursor:"pointer",
-        }}>
-        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
-          color:"rgba(255,255,255,0.6)", textAlign:"left" }}>
-          PREGUNTA #{pregunta.numero}
-        </span>
-
-        {miRespuesta ? (
-          <span style={{
-            fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-            color: acerte ? "var(--verde-claro)" : "var(--rojo-chile)",
-            display:"flex", alignItems:"center", gap:"4px",
-          }}>
-            {acerte ? `🎉 +${pts} PTS` : "❌ NO ACERTASTE"}
-            <span style={{ color:"rgba(255,255,255,0.4)", fontSize:"8px" }}>
-              {expandida ? "▲" : "▼"}
-            </span>
-          </span>
-        ) : (
-          <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
-            color:"rgba(255,255,255,0.35)", display:"flex", alignItems:"center", gap:"4px" }}>
-            SIN RESPONDER
-            <span style={{ fontSize:"8px" }}>{expandida ? "▲" : "▼"}</span>
-          </span>
-        )}
-      </button>
-
-      {expandida && (
-        <div style={{ padding:"0 10px 10px" }}>
-          <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-            color:"var(--blanco)", lineHeight:2, marginBottom:"8px" }}>
-            {pregunta.texto}
-          </p>
-          <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-            color:"var(--amarillo)", marginBottom:"4px" }}>
-            ✅ Correcta: <strong>{correcta}</strong>
-          </p>
-          {miRespuesta && (
-            <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-              color: acerte ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
-              Tu respuesta: {miRespuesta}
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/HistorialPredicciones.jsx">
-// src/components/HistorialPredicciones.jsx  — v7 (Patch 2)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v7:
-//   Punto 3: Total del día calculado con fuente de verdad correcta:
-//     se usa puntosDelDia.puntos cuando existe (ya incluye bonus);
-//     si no, suma predicciones + pregunta + bonus localmente.
-//     Se elimina el doble-conteo del bonus.
-//   Punto 9: En FilaPartido, muestra "🃏 ×N" si pred.cartaId
-//     y pred.cartaConsumida, junto al multiplicador utilizado.
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
-import {
-  collection, getDocs, query, where, documentId, doc, getDoc,
-} from "firebase/firestore";
-
-// Trae docs por id en lotes de 30 (límite del operador "in" de Firestore),
-// en una query por lote en vez de un getDoc por id (evita N+1).
-async function traerPorIds(nombreColeccion, ids) {
-  const mapa = {};
-  const lotes = [];
-  for (let i = 0; i < ids.length; i += 30) lotes.push(ids.slice(i, i + 30));
-  await Promise.all(lotes.map(async lote => {
-    if (lote.length === 0) return;
-    const snap = await getDocs(query(collection(db, nombreColeccion), where(documentId(), "in", lote)));
-    snap.forEach(d => { mapa[d.id] = { id: d.id, ...d.data() }; });
-  }));
-  return mapa;
-}
-import { db } from "../firebase";
-import { CARTAS } from "../data/sampleData";
-
-// ── Helpers de texto ──────────────────────────────────────────
-function textoApuestaPartido(pred) {
-  if (pred.estaDestacado && pred.golesLocalPred !== undefined && pred.golesLocalPred !== null) {
-    return `Exacto: ${pred.golesLocalPred} - ${pred.golesVisitantePred}`;
-  }
-  if (pred.definicion === "normal") {
-    const g = pred.ganador90 === "local" ? "Local" : "Visitante";
-    return `90min: ${g}${pred.diferencia90 ? ` + dif (${pred.diferencia90} gol${pred.diferencia90==="1"?"":"es"})` : ""}`;
-  }
-  if (pred.definicion === "alargue") {
-    const g = pred.ganadorAlargue === "local" ? "Local" : "Visitante";
-    return `Alargue: ${g}${pred.diferenciaAlargue ? ` + dif (${pred.diferenciaAlargue} gol${pred.diferenciaAlargue==="1"?"":"es"})` : ""}`;
-  }
-  if (pred.definicion === "penales") {
-    const g = pred.ganadorPenales === "local" ? "Local" : "Visitante";
-    const marcador = pred.penalesLocal !== undefined ? ` (${pred.penalesLocal}-${pred.penalesVisitante})` : "";
-    return `Penales: ${g} gana${marcador}`;
-  }
-  const ganLabel = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
-  const dif = pred.diferencia ? ` + dif (${pred.diferencia} gol${pred.diferencia==="1"?"":"es"})` : "";
-  return `${ganLabel}${dif}`;
-}
-
-function textoResultadoReal(r) {
-  if (!r) return "—";
-  const base = `${r.golesLocal}-${r.golesVisitante}`;
-  if (r.definicion === "penales") return `${base} (pen ${r.penalesLocal}-${r.penalesVisitante})`;
-  if (r.definicion === "alargue") return `${base} (alargue)`;
-  return base;
-}
-
-function desgloseDesglose(puntos, estaDestacado, pred) {
-  if (puntos === 0) return "";
-  if (estaDestacado && puntos === 5) return "(3+2)";
-  if (!estaDestacado && pred.diferencia && pred.ganador !== "empate" && puntos === 3) return "(1+2)";
-  return "";
-}
-
-function diaNumDesde(fechaStr) {
-  const inicio = new Date("2026-06-11T00:00:00");
-  const [y,m,d] = fechaStr.split("-").map(Number);
-  const target = new Date(y,m-1,d); target.setHours(0,0,0,0);
-  const diff = Math.floor((target - inicio) / 86400000);
-  return diff >= 0 ? diff + 1 : null;
-}
-
-function labelFecha(fechaStr) {
-  const [y,m,d] = fechaStr.split("-").map(Number);
-  const meses = ["enero","febrero","marzo","abril","mayo","junio",
-    "julio","agosto","septiembre","octubre","noviembre","diciembre"];
-  const nDia = diaNumDesde(fechaStr);
-  return `${d} de ${meses[m-1]} de ${y}${nDia ? ` — Día ${nDia}` : ""}`;
-}
-
-// ── Fila de un partido (punto 9: aviso de carta) ──────────────
-function FilaPartido({ pred, partido }) {
-  if (!partido?.resultado) return null;
-  const { resultado, estaDestacado, local, visitante } = partido;
-  const acertaste  = pred.esMaximo === true;
-  const pts        = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
-  // Puntos BASE (sin multiplicar) para el desglose
-  const ptsBase    = typeof pred.puntosBase === "number" ? pred.puntosBase : pts;
-  const desglose   = ptsBase ? desgloseDesglose(ptsBase, estaDestacado, pred) : "";
-  const apuesta    = textoApuestaPartido(pred);
-  const resReal    = textoResultadoReal(resultado);
-  const nombrePart = `${local?.bandera??""} ${local?.nombre??""} vs ${visitante?.nombre??""} ${visitante?.bandera??""}`;
-
-  // Carta usada (punto 9)
-  const cartaUsada = pred.cartaId && pred.cartaConsumida
-    ? CARTAS.find(c => c.id === pred.cartaId)
-    : null;
-
-  return (
-    <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
-      display:"flex",gap:"6px",alignItems:"flex-start" }}>
-      <span style={{ fontSize:"10px",lineHeight:1,flexShrink:0,marginTop:"1px" }}>
-        {acertaste ? "✅" : "❌"}
-      </span>
-      <div style={{ flex:1 }}>
-        <p style={{ fontSize:"6px",color:"var(--blanco)",lineHeight:1.8 }}>
-          {nombrePart}
-          {estaDestacado && <span style={{ color:"var(--amarillo)",marginLeft:"4px" }}>⭐</span>}
-        </p>
-        <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
-          Tu apuesta: <span style={{ color:"var(--blanco)" }}>{apuesta}</span>
-          {" · "}Real: <span style={{ color:"var(--amarillo)" }}>{resReal}</span>
-        </p>
-        {/* Aviso de carta (punto 9) */}
-        {cartaUsada && (
-          <p style={{ fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8,marginTop:"2px" }}>
-            🃏 Carta <strong>{cartaUsada.nombre}</strong> ×{cartaUsada.multiplicador} utilizada
-          </p>
-        )}
-      </div>
-      <div style={{ textAlign:"right",flexShrink:0 }}>
-        {pts !== null ? (
-          <div>
-            <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
-              color:pts>0?"var(--verde-claro)":"var(--gris)" }}>
-              {pts>0?`+${pts}`:"0"}
-            </span>
-            {desglose && (
-              <span style={{ fontSize:"5px",color:"var(--gris-claro)",display:"block" }}>{desglose}</span>
-            )}
-            {cartaUsada && pts > 0 && ptsBase && pts !== ptsBase && (
-              <span style={{ fontSize:"5px",color:"var(--amarillo)",display:"block" }}>
-                ×{cartaUsada.multiplicador}
-              </span>
-            )}
-          </div>
-        ) : <span style={{ fontSize:"5px",color:"var(--gris)" }}>—</span>}
-      </div>
-    </div>
-  );
-}
-
-// ── Bloque de un día ──────────────────────────────────────────
-function BloqueDia({ fecha, predicciones, partidos, respuesta, pregunta, puntosDelDia }) {
-  const [abierto, setAbierto] = useState(true);
-
-  // Punto 3: Total del día con fuente correcta
-  // puntosDelDia.puntos ya es la suma definitiva guardada por helpers.js
-  // (incluye partidos + pregunta + bonus diario).
-  // Solo calculamos localmente si no hay ese documento.
-  const ptsParts    = predicciones.reduce((s,p) => s + (p.puntosGanados??0), 0);
-  const ptsPregunta = respuesta?.puntosGanados ?? 0;
-  const bonusGanador = puntosDelDia?.esGanador ? (puntosDelDia.bonusGanador ?? 2) : 0;
-
-  // Fuente de verdad: puntosDelDia.puntos si existe, calculado si no
-  const totalDia = puntosDelDia?.puntos !== undefined && puntosDelDia?.puntos !== null
-    ? puntosDelDia.puntos
-    : ptsParts + ptsPregunta + bonusGanador;
-
-  return (
-    <div style={{ border:"2px solid var(--verde-campo)",marginBottom:"8px",background:"rgba(0,0,0,0.25)" }}>
-      <button onClick={() => setAbierto(v => !v)}
-        style={{ width:"100%",textAlign:"left",fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-          padding:"8px 10px",background:"var(--verde-oscuro)",border:"none",cursor:"pointer",
-          display:"flex",justifyContent:"space-between",alignItems:"center",color:"var(--blanco)" }}>
-        <span style={{ color:"var(--verde-claro)" }}>📅 {labelFecha(fecha)}</span>
-        <span style={{ color:"var(--amarillo)",fontSize:"8px" }}>
-          {totalDia}pts {abierto ? "▲" : "▼"}
-        </span>
-      </button>
-
-      {abierto && (
-        <div>
-          {predicciones.length > 0 && (
-            <div>
-              <p style={{ fontSize:"5px",color:"var(--gris-claro)",padding:"4px 8px",
-                background:"rgba(0,0,0,0.3)",borderBottom:"1px solid var(--verde-campo)" }}>
-                PARTIDOS
-              </p>
-              {predicciones.map(pred => {
-                const partido = partidos[pred.partidoId];
-                return partido?.resultado
-                  ? <FilaPartido key={pred.predId} pred={pred} partido={partido} />
-                  : null;
-              })}
-            </div>
-          )}
-
-          {respuesta && (
-            <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
-              display:"flex",alignItems:"center",gap:"6px" }}>
-              <span style={{ fontSize:"10px" }}>{respuesta.esCorrecta ? "✅" : "❌"}</span>
-              <div style={{ flex:1 }}>
-                <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
-                  PREGUNTA DEL DÍA
-                  {pregunta && <span style={{ color:"var(--blanco)",marginLeft:"4px" }}>
-                    — {pregunta.texto?.slice(0,40)}{pregunta.texto?.length>40?"…":""}
-                  </span>}
-                </p>
-                <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
-                  Tu respuesta: <span style={{ color:"var(--blanco)" }}>{respuesta.respuesta}</span>
-                  {respuesta.esCorrecta === false && pregunta?.respuestaCorrecta &&
-                    <span style={{ color:"var(--amarillo)",marginLeft:"4px" }}>
-                      (correcta: {pregunta.respuestaCorrecta})
-                    </span>
-                  }
-                </p>
-              </div>
-              <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
-                color:ptsPregunta>0?"var(--verde-claro)":"var(--gris)" }}>
-                {ptsPregunta>0?`+${ptsPregunta}`:"0"}
-              </span>
-            </div>
-          )}
-
-          {bonusGanador > 0 && (
-            <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
-              display:"flex",alignItems:"center",gap:"6px" }}>
-              <span style={{ fontSize:"10px" }}>🏆</span>
-              <p style={{ flex:1,fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8 }}>
-                BONUS GANADOR DEL DÍA
-              </p>
-              <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",color:"var(--amarillo)" }}>
-                +{bonusGanador}
-              </span>
-            </div>
-          )}
-
-          <div style={{ padding:"6px 10px",background:"rgba(244,208,63,0.08)",
-            borderTop:"2px solid var(--verde-campo)",
-            display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-            <span style={{ fontSize:"6px",color:"var(--gris-claro)" }}>TOTAL DEL DÍA</span>
-            <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"10px",color:"var(--amarillo)" }}>
-              {totalDia} pts
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Bloque: preguntas del EN VIVO respondidas por el usuario ──
-function BloqueEnVivo({ respuestasEnVivo }) {
-  const [abierto, setAbierto] = useState(true);
-  if (!respuestasEnVivo || respuestasEnVivo.length === 0) return null;
-
-  const totalPts = respuestasEnVivo.reduce((s, r) => s + (r.puntosGanados ?? 0), 0);
-
-  return (
-    <div style={{ border:"2px solid var(--rojo-chile)", marginBottom:"8px", background:"rgba(0,0,0,0.25)" }}>
-      <button onClick={() => setAbierto(v => !v)}
-        style={{ width:"100%", textAlign:"left", fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-          padding:"8px 10px", background:"rgba(214,40,40,0.25)", border:"none", cursor:"pointer",
-          display:"flex", justifyContent:"space-between", alignItems:"center", color:"var(--blanco)" }}>
-        <span style={{ color:"var(--rojo-chile)" }}>🔴 PREGUNTAS DEL EN VIVO</span>
-        <span style={{ color:"var(--amarillo)", fontSize:"8px" }}>
-          {totalPts}pts {abierto ? "▲" : "▼"}
-        </span>
-      </button>
-
-      {abierto && (
-        <div>
-          {respuestasEnVivo.map(r => {
-            const pendiente = r.estado !== "cerrada";
-            const pts = r.puntosGanados ?? 0;
-            return (
-              <div key={r.id} style={{ padding:"6px 8px", borderBottom:"1px solid rgba(214,40,40,0.2)",
-                display:"flex", gap:"6px", alignItems:"flex-start" }}>
-                <span style={{ fontSize:"10px", lineHeight:1, flexShrink:0, marginTop:"1px" }}>
-                  {pendiente ? "⏳" : (r.correcta ? "✅" : "❌")}
-                </span>
-                <div style={{ flex:1 }}>
-                  <p style={{ fontSize:"6px", color:"var(--blanco)", lineHeight:1.8 }}>
-                    {r.numero ? `#${r.numero} — ` : ""}{r.texto || "Pregunta del en vivo"}
-                  </p>
-                  <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:1.8 }}>
-                    Tu respuesta: <span style={{ color:"var(--blanco)" }}>{r.respuesta}</span>
-                    {!pendiente && r.respuestaCorrecta &&
-                      <span style={{ color:"var(--amarillo)", marginLeft:"4px" }}>
-                        (correcta: {r.respuestaCorrecta})
-                      </span>}
-                  </p>
-                </div>
-                <div style={{ textAlign:"right", flexShrink:0 }}>
-                  {pendiente ? (
-                    <span style={{ fontSize:"5px", color:"var(--gris)" }}>pendiente</span>
-                  ) : (
-                    <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                      color:pts>0?"var(--verde-claro)":"var(--gris)" }}>
-                      {pts>0?`+${pts}`:"0"}
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────
-const LIMITE_DIAS = 15;
-
-export default function HistorialPredicciones({ userId }) {
-  const [dias,     setDias]     = useState([]);
-  const [respuestasEnVivo, setRespuestasEnVivo] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error,    setError]    = useState(null);
-
-  useEffect(() => { if (userId) cargar(); }, [userId]);
-
-  const cargar = async () => {
-    setCargando(true); setError(null);
-    try {
-      const [snapPreds, snapResps, snapPDia, snapEV, snapEventoDoc] = await Promise.all([
-        getDocs(query(collection(db,"predicciones"), where("uid","==",userId))),
-        getDocs(query(collection(db,"respuestas"),   where("uid","==",userId))),
-        getDocs(query(collection(db,"puntosDelDia"), where("uid","==",userId))),
-        getDocs(query(collection(db,"eventoEnVivo","actual","respuestas"), where("uid","==",userId))),
-        getDoc(doc(db,"eventoEnVivo","actual")),
-      ]);
-
-      // ── Preguntas del EN VIVO: cruzar cada respuesta con la
-      // pregunta correspondiente (texto, número, estado) guardada
-      // en el array `preguntas` del documento del evento.
-      const preguntasEvento = snapEventoDoc.exists() ? (snapEventoDoc.data().preguntas || []) : [];
-      const respsEV = snapEV.docs
-        .map(d => {
-          const data = d.data();
-          const preg = preguntasEvento.find(p => p.id === data.preguntaId);
-          return {
-            id: d.id,
-            ...data,
-            texto: preg?.texto,
-            numero: preg?.numero,
-            estado: preg?.estado,
-            respuestaCorrecta: preg?.respuestaCorrecta,
-            // Compatibilidad con respuestas antiguas que no tenían
-            // guardado puntosGanados/correcta directamente:
-            correcta: data.correcta ?? (preg?.estado === "cerrada" ? data.respuesta === preg?.respuestaCorrecta : undefined),
-            puntosGanados: data.puntosGanados ?? (
-              preg?.estado === "cerrada"
-                ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
-                : undefined
-            ),
-          };
-        })
-        .sort((a,b) => (a.numero ?? 0) - (b.numero ?? 0));
-      setRespuestasEnVivo(respsEV);
-
-      const porFecha = {};
-
-      for (const pDoc of snapPreds.docs) {
-        const pred = pDoc.data();
-        if (!pred.fecha) continue;
-        if (!porFecha[pred.fecha]) porFecha[pred.fecha] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
-        porFecha[pred.fecha].predicciones.push({ predId:pDoc.id, ...pred });
-      }
-      for (const rDoc of snapResps.docs) {
-        const resp = rDoc.data();
-        if (!resp.preguntaId) continue;
-        const fechaInf = resp.fecha || resp.preguntaId.split("_")[0];
-        if (!fechaInf || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInf)) continue;
-        if (!porFecha[fechaInf]) porFecha[fechaInf] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
-        porFecha[fechaInf].respuesta = { respId:rDoc.id, ...resp };
-      }
-      for (const dDoc of snapPDia.docs) {
-        const pd = dDoc.data();
-        if (!pd.fecha) continue;
-        if (!porFecha[pd.fecha]) porFecha[pd.fecha] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
-        porFecha[pd.fecha].puntosDelDia = pd;
-      }
-
-      const fechas = Object.keys(porFecha).sort((a,b)=>b.localeCompare(a)).slice(0, LIMITE_DIAS);
-
-      const partidoIds  = [...new Set(fechas.flatMap(f => porFecha[f].predicciones.map(p => p.partidoId)))];
-      const preguntaIds = [...new Set(fechas.filter(f=>porFecha[f].respuesta).map(f=>porFecha[f].respuesta.preguntaId).filter(Boolean))];
-
-      const [partidosMap, preguntasMap] = await Promise.all([
-        traerPorIds("partidos", partidoIds),
-        traerPorIds("preguntas", preguntaIds),
-      ]);
-
-      for (const fecha of fechas) {
-        const d = porFecha[fecha];
-        if (d.respuesta?.preguntaId) d.pregunta = preguntasMap[d.respuesta.preguntaId] || null;
-        d.predicciones = d.predicciones.filter(p => partidosMap[p.partidoId]?.resultado);
-      }
-
-      setDias(fechas
-        .filter(f => { const d=porFecha[f]; return d.predicciones.length>0||d.respuesta||d.puntosDelDia; })
-        .map(f => ({ fecha:f, ...porFecha[f], partidos:partidosMap }))
-      );
-    } catch(e) {
-      console.error(e); setError("No se pudo cargar el historial.");
-    } finally { setCargando(false); }
-  };
-
-  if (cargando) return (
-    <div style={{ padding:"16px",textAlign:"center" }}>
-      <span className="spinner">⚙</span>
-      <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginTop:"6px" }}>Cargando historial...</p>
-    </div>
-  );
-  if (error) return <p style={{ fontSize:"6px",color:"var(--rojo-chile)",padding:"8px" }}>{error}</p>;
-  if (dias.length === 0 && respuestasEnVivo.length === 0) return (
-    <p style={{ fontSize:"6px",color:"var(--gris-claro)",padding:"12px",textAlign:"center",lineHeight:2 }}>
-      Sin historial todavía.
-    </p>
-  );
-
-  return (
-    <div style={{ padding:"8px" }}>
-      <BloqueEnVivo respuestasEnVivo={respuestasEnVivo} />
-
-      {dias.length > 0 && (
-        <>
-          <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"8px",lineHeight:1.8 }}>
-            Últimos {Math.min(dias.length, LIMITE_DIAS)} días · Clic para desplegar/plegar
-          </p>
-          {dias.map(d => (
-            <BloqueDia key={d.fecha} fecha={d.fecha} predicciones={d.predicciones}
-              partidos={d.partidos} respuesta={d.respuesta} pregunta={d.pregunta}
-              puntosDelDia={d.puntosDelDia} />
-          ))}
-        </>
-      )}
-    </div>
-  );
-}
-</file>
-
-<file path="src/utils/helpers.js">
-// src/utils/helpers.js  — v6 (Fase 3)
-// CAMBIO v6: procesarResultadoPartido consume carta (decrement -1)
-// usando flag cartaConsumida para evitar doble descuento en recálculo.
-// Todo lo demás idéntico a v5.
-import {
-  collection, getDocs, query, where, doc,
-  updateDoc, setDoc, increment, getDoc, addDoc, serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
-import {
-  calcularPuntosPartido, calcularPuntosPregunta,
-  aplicarMultiplicadorCarta, cartaSeAplica,
-} from "./scoring";
-
-// Re-export para compatibilidad con quien importe desde helpers.
-export { calcularPuntosPartido, calcularPuntosPregunta, aplicarMultiplicadorCarta };
-
-export function hoyStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-export function ayerStr() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-export function formatHora(h) { return `${h} hrs`; }
-export function formatFecha(fechaStr) {
-  const [y,m,d] = fechaStr.split("-").map(Number);
-  return new Date(y,m-1,d).toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long"});
-}
-export function diaNumero() {
-  const inicio = new Date("2026-06-11T00:00:00");
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const diff = Math.floor((hoy - inicio) / 86400000);
-  return diff < 0 ? 0 : diff + 1;
-}
-export function partidoAbierto(partido) {
-  if (!partido || !partido.cierre) return true;
-  let cd;
-  if (typeof partido.cierre.toDate === "function") cd = partido.cierre.toDate();
-  else if (partido.cierre._seconds !== undefined)  cd = new Date(partido.cierre._seconds * 1000);
-  else if (typeof partido.cierre === "number")     cd = new Date(partido.cierre * 1000);
-  else if (typeof partido.cierre === "string")     cd = new Date(partido.cierre);
-  else return true;
-  return new Date() < cd;
-}
-
-// ── Notificación interna ─────────────────────────────────────
-async function _notif(uid, datos) {
-  try {
-    await addDoc(collection(db,"usuarios",uid,"notificaciones"),
-      { ...datos, leido: false, timestamp: serverTimestamp() });
-  } catch(e) { console.error("notif error", e); }
-}
-function _txtPred(pred, dest) {
-  if (dest) return `${pred.golesLocalPred??'?'} - ${pred.golesVisitantePred??'?'}`;
-  const g = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
-  return g + (pred.diferencia ? ` (dif. ${pred.diferencia})` : "");
-}
-function _txtRes(res) {
-  const b = `${res.golesLocal}-${res.golesVisitante}`;
-  if (res.definicion === "penales") return `${b} (pen. ${res.penalesLocal}-${res.penalesVisitante})`;
-  if (res.definicion === "alargue") return `${b} (alg.)`;
-  return b;
-}
-
-// ── procesarResultadoPartido v6 (consume carta) ──────────────
-export async function procesarResultadoPartido(partidoId, resultado, fase, estaDestacado, fecha) {
-  let procesados = 0, errores = 0;
-  try {
-    let nombrePartido = partidoId;
-    try {
-      const ps = await getDoc(doc(db,"partidos",partidoId));
-      if (ps.exists()) {
-        const pd = ps.data();
-        nombrePartido = `${pd.local?.bandera??''}${pd.local?.nombre??''} vs ${pd.visitante?.nombre??''}${pd.visitante?.bandera??''}`;
-      }
-    } catch(_) {}
-
-    const snap = await getDocs(query(collection(db,"predicciones"),where("partidoId","==",partidoId)));
-    if (snap.empty) return { procesados:0, errores:0 };
-
-    const deltasPorUid = {}, notifsPorUid = {};
-
-    // Cache de inventario de cartas por uid: la carta solo multiplica si el
-    // usuario tiene stock al momento de procesar (evita que una misma carta
-    // multiplique varios partidos y que el contador quede negativo).
-    const stockCartas = {};
-    async function stockDisponible(uid, cartaId) {
-      if (!(uid in stockCartas)) {
-        try {
-          const us = await getDoc(doc(db,"usuarios",uid));
-          stockCartas[uid] = us.exists() ? (us.data().cartas || {}) : {};
-        } catch { stockCartas[uid] = {}; }
-      }
-      return (stockCartas[uid][cartaId] || 0) > 0;
-    }
-
-    for (const pDoc of snap.docs) {
-      try {
-        const pred = pDoc.data();
-        const uid  = pred.uid;
-        const puntosViejos = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
-        const yaConsumio   = pred.cartaConsumida === true;
-
-        // ¿La carta se aplica? (lógica pura en scoring.cartaSeAplica)
-        const stock = pred.cartaId && !yaConsumio ? (await stockDisponible(uid, pred.cartaId) ? 1 : 0) : 0;
-        const cartaAplica = cartaSeAplica(!!pred.cartaId, yaConsumio, stock);
-
-        const { puntos: base, esMaximo } = calcularPuntosPartido(pred, resultado, fase, estaDestacado);
-        const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, cartaAplica ? pred.cartaId : null);
-        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
-
-        // Actualizar predicción
-        const upd = { puntosGanados: puntosNuevos, puntosBase: base, esMaximo, calculadoEn: new Date().toISOString() };
-        if (cartaAplica && !yaConsumio) upd.cartaConsumida = true;
-        await updateDoc(doc(db,"predicciones",pDoc.id), upd);
-
-        // Consumir carta (solo primera vez y si había stock; descuenta del cache local)
-        if (cartaAplica && !yaConsumio) {
-          try {
-            await updateDoc(doc(db,"usuarios",uid), { [`cartas.${pred.cartaId}`]: increment(-1) });
-            stockCartas[uid][pred.cartaId] = (stockCartas[uid][pred.cartaId] || 0) - 1;
-          } catch(e) { console.error("Error consumiendo carta:", e); }
-        }
-
-        if (delta !== 0) {
-          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
-          deltasPorUid[uid] = (deltasPorUid[uid] || 0) + delta;
-        }
-
-        // Notificar solo en el primer procesamiento o si el puntaje cambió
-        // (evita spam de notificaciones al re-guardar un resultado sin cambios).
-        if (puntosViejos === null || delta !== 0) {
-          notifsPorUid[uid] = {
-            tipo:"resultado_partido", partidoId, nombrePartido,
-            tuApuesta: _txtPred(pred, estaDestacado), resultado: _txtRes(resultado),
-            acertaste: esMaximo, puntosGanados: puntosNuevos, fecha,
-          };
-        }
-        procesados++;
-      } catch(e) { console.error("Error pred:", pDoc.id, e); errores++; }
-    }
-
-    for (const [uid, delta] of Object.entries(deltasPorUid)) {
-      if (delta === 0) continue;
-      try {
-        const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
-        const diaSnap = await getDoc(diaRef);
-        if (diaSnap.exists()) {
-          await updateDoc(diaRef, { puntos: increment(delta) });
-        } else {
-          const uSnap = await getDoc(doc(db,"usuarios",uid));
-          const ud = uSnap.exists() ? uSnap.data() : {};
-          await setDoc(diaRef, { uid, fecha, puntos: delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
-        }
-      } catch(e) { console.error("puntosDelDia error:", uid, e); }
-    }
-
-    for (const [uid, datos] of Object.entries(notifsPorUid)) await _notif(uid, datos);
-    return { procesados, errores };
-  } catch(e) {
-    console.error("Error general procesarResultadoPartido:", e);
-    return { procesados:0, errores:1 };
-  }
-}
-
-// ── procesarPreguntaDelDia ────────────────────────────────────
-export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha) {
-  let procesados = 0;
-  try {
-    let textoPregunta = "Pregunta del día";
-    try {
-      const ps = await getDoc(doc(db,"preguntas",preguntaId));
-      if (ps.exists()) textoPregunta = ps.data().texto || textoPregunta;
-    } catch(_) {}
-
-    const snap = await getDocs(query(collection(db,"respuestas"),where("preguntaId","==",preguntaId)));
-    for (const rDoc of snap.docs) {
-      try {
-        const data = rDoc.data(); const uid = data.uid;
-        const puntosViejos = typeof data.puntosGanados === "number" ? data.puntosGanados : null;
-        const esCorrecta   = data.respuesta === respuestaCorrecta;
-        const puntosNuevos = esCorrecta ? 2 : 0;
-        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
-
-        await updateDoc(doc(db,"respuestas",rDoc.id), { esCorrecta, puntosGanados: puntosNuevos });
-
-        if (delta !== 0) {
-          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
-          const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
-          const diaSnap = await getDoc(diaRef);
-          if (diaSnap.exists()) {
-            await updateDoc(diaRef, { puntos: increment(delta) });
-          } else {
-            const uSnap = await getDoc(doc(db,"usuarios",uid));
-            const ud = uSnap.exists() ? uSnap.data() : {};
-            await setDoc(diaRef, { uid, fecha, puntos:delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
-          }
-        }
-
-        await _notif(uid, {
-          tipo:"resultado_pregunta", preguntaId, textoPregunta,
-          tuRespuesta:data.respuesta, respuestaCorrecta,
-          acertaste:esCorrecta, puntosGanados:puntosNuevos, fecha,
-        });
-        if (esCorrecta) procesados++;
-      } catch(e) { console.error("Error resp:", rDoc.id, e); }
-    }
-    return { ok:true, procesados };
-  } catch(e) {
-    console.error("Error procesarPreguntaDelDia:", e);
-    return { ok:false, error:e.message };
-  }
-}
-
-// ── calcularGanadorDelDia ─────────────────────────────────────
-export async function calcularGanadorDelDia(fecha) {
-  try {
-    const snap = await getDocs(query(collection(db,"puntosDelDia"),where("fecha","==",fecha)));
-    if (snap.empty) return { ok:false, mensaje:"Sin datos de puntosDelDia para ese día." };
-
-    const jug = snap.docs.map(d=>({docId:d.id,...d.data()})).sort((a,b)=>b.puntos-a.puntos);
-
-    // ── Protección: si ya se entregaron bonus y cartas, no repetir ────
-    if (jug.some(j => j.esGanador === true)) {
-      return {
-        ok: false,
-        yaEntregado: true,
-        mensaje: `Las cartas y bonus del día ${fecha} ya fueron entregados. Para revertir, elimina el campo esGanador desde Firebase Console.`,
-      };
-    }
-    const maxPts = jug[0].puntos;
-    // No premiar si nadie sumó puntos ese día (evita carta x4 + bonus a un "líder" con 0 pts).
-    if (maxPts <= 0) return { ok:false, mensaje:`Nadie sumó puntos el día ${fecha}; no se entregan cartas ni bonus.` };
-    const l1 = jug.filter(j=>j.puntos===maxPts);
-    const r1 = jug.filter(j=>j.puntos<maxPts);
-    const p2 = r1[0]?.puntos;
-    const l2 = p2!==undefined ? r1.filter(j=>j.puntos===p2) : [];
-    const r2 = r1.filter(j=>j.puntos<(p2??-Infinity));
-    const p3 = r2[0]?.puntos;
-    const l3 = p3!==undefined ? r2.filter(j=>j.puntos===p3) : [];
-
-    for (const j of l1) {
-      await updateDoc(doc(db,"puntosDelDia",j.docId),{esGanador:true,bonusGanador:2});
-      await updateDoc(doc(db,"usuarios",j.uid),{puntosTotal:increment(2)});
-      await _asignarCarta(j.uid,4,fecha);
-      await _notif(j.uid,{tipo:"bonus_ganador",lugar:1,bonus:2,fecha,mensaje:`🥇 ¡Ganaste el día ${fecha}! +2 pts bonus y una carta x4.`});
-    }
-    for (const j of l2) { await _asignarCarta(j.uid,3,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:2,bonus:0,fecha,mensaje:`🥈 Quedaste 2° el día ${fecha}. ¡Carta x3!`}); }
-    for (const j of l3) { await _asignarCarta(j.uid,2,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:3,bonus:0,fecha,mensaje:`🥉 Quedaste 3° el día ${fecha}. ¡Carta x2!`}); }
-
-    return { ok:true, ganador:l1.map(j=>j.nickname).join(", "), totalJugadores:jug.length,
-      lugar1:l1.map(j=>j.nickname), lugar2:l2.map(j=>j.nickname), lugar3:l3.map(j=>j.nickname) };
-  } catch(e) {
-    console.error("Error calcularGanadorDelDia:", e);
-    return { ok:false, error:e.message };
-  }
-}
-
-async function _asignarCarta(uid, mult, fecha) {
-  const carta = cartaAleatoriaPorMultiplicador(mult);
-  if (!carta) return;
-  await setDoc(doc(db,"cartasDelUsuario",`${uid}_${carta.id}_${fecha}`),{
-    uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
-    multiplicador:carta.multiplicador, rareza:carta.rareza, fecha, visto:false,
-  });
-  await updateDoc(doc(db,"usuarios",uid),{[`cartas.${carta.id}`]:increment(1)});
-}
-
-export async function publicarAvisoAdmin(texto) {
-  await setDoc(doc(db,"config","avisoAdmin"),{texto,fecha:new Date().toISOString(),activo:true});
-}
-export async function cerrarAvisoAdmin() {
-  await updateDoc(doc(db,"config","avisoAdmin"),{activo:false});
 }
 </file>
 
@@ -7750,671 +6651,886 @@ export default function AdminEventoEnVivo({ onMensaje }) {
 }
 </file>
 
-<file path="src/components/SuperDestacado.jsx">
-// src/components/SuperDestacado.jsx  — v7
+<file path="src/components/EventoEnVivo.jsx">
+// src/components/EventoEnVivo.jsx  — v4
 // ─────────────────────────────────────────────────────────────
-// Vista del USUARIO durante un partido Super Destacado.
-// • Polling cada 8 segundos (más rápido que v6).
-// • La imagen de fondo viene del campo `imagenFondo` del partido
-//   en Firestore. Ejemplo: imagenFondo = "A_PAISES_MARRUECOS.jpg"
-//   → la imagen debe estar en /public/A_PAISES_MARRUECOS.jpg
-// • Si no hay imagenFondo definida, usa gradiente por defecto.
-// • Ocupa PANTALLA COMPLETA como modal (fullscreen overlay).
-// • Muestra banderas grandes de ambos equipos.
-// • Puntaje variable (lee puntosEnVivo de cada pregunta).
+// CAMBIOS v4:
+//   • La imagen ahora ocupa 42% de la altura de pantalla (40vh-45vh)
+//     en vez de un alto fijo pequeño — se ve grande y completa.
+//   • Banderas y nombres se superponen SOBRE la imagen (parte
+//     inferior, con degradado para legibilidad), no debajo de ella
+//     compitiendo por espacio.
+//   • Todo el contenido de preguntas va en una zona inferior con
+//     scroll propio, dejando la imagen siempre visible y fija.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
-  collection, getDocs, query, where, doc,
-  setDoc, getDoc, serverTimestamp,
+  doc, onSnapshot, setDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 
-const LS_PREFIX = "cp8b_sd_visto_";
+const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
 
-export default function SuperDestacado({ partidoId, nombrePartido }) {
+export default function EventoEnVivo() {
   const { firebaseUser } = useAuth();
-  const [preguntaActiva, setPreguntaActiva] = useState(null);
-  const [miRespuesta,    setMiRespuesta]    = useState(null);
-  const [enviando,       setEnviando]       = useState(false);
-  const [resultado,      setResultado]      = useState(null);
-  const [resultadoVisto, setResultadoVisto] = useState(false);
-  const [partidoData,    setPartidoData]    = useState(null);
+  const [evento,        setEvento]        = useState(null);
+  const [misRespuestas, setMisRespuestas] = useState({});
+  const [enviando,      setEnviando]      = useState(null);
+  const [minimizado,    setMinimizado]    = useState(false);
+  const [imgError,      setImgError]      = useState(false);
+  const [expandidaId,   setExpandidaId]   = useState(null);
 
-  // Cargar datos del partido una vez
   useEffect(() => {
-    if (!partidoId) return;
-    getDoc(doc(db, "partidos", partidoId))
-      .then(snap => { if (snap.exists()) setPartidoData(snap.data()); })
-      .catch(() => {});
-  }, [partidoId]);
+    const unsub = onSnapshot(REF_EVENTO(), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setEvento(data);
+        const preguntas = data.preguntas || [];
+        const resp = {};
+        preguntas.forEach(p => {
+          const guardada = localStorage.getItem(`cp8b_ev_resp_${p.id}`);
+          if (guardada) resp[p.id] = guardada;
+        });
+        setMisRespuestas(resp);
+      } else {
+        setEvento(null);
+      }
+    });
+    return () => unsub();
+  }, []);
 
-  // Polling cada 8 segundos
+  const preguntas = evento?.preguntas || [];
+  // Pueden convivir varias preguntas abiertas a la vez.
+  // Se invierte el orden: la pregunta más reciente aparece arriba.
+  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
+  const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
+
+  // Cuando aparece una pregunta nueva abierta, des-minimizar
+  const idsAbiertas = abiertas.map(p => p.id).join(",");
   useEffect(() => {
-    if (!partidoId) return;
-    let cancelado = false;
+    if (abiertas.length > 0) setMinimizado(false);
+  }, [idsAbiertas]);
 
-    const poll = async () => {
-      try {
-        const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
-
-        // 1. Buscar pregunta abierta
-        const snapA = await getDocs(query(ref, where("estado","==","abierta")));
-        if (cancelado) return;
-
-        if (!snapA.empty) {
-          const preg = { id: snapA.docs[0].id, ...snapA.docs[0].data() };
-          setPreguntaActiva(preg);
-          setResultado(null);
-
-          // ¿Ya respondí?
-          if (firebaseUser) {
-            const rSnap = await getDoc(
-              doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
-                  `${firebaseUser.uid}_${preg.id}`)
-            );
-            if (!cancelado)
-              setMiRespuesta(rSnap.exists() ? rSnap.data().respuesta : null);
-          }
-        } else {
-          // 2. Buscar la más reciente cerrada
-          setPreguntaActiva(null);
-          const snapC = await getDocs(query(ref, where("estado","==","cerrada")));
-          if (cancelado) return;
-
-          if (!snapC.empty) {
-            const cerradas = snapC.docs
-              .map(d => ({ id: d.id, ...d.data() }))
-              .sort((a,b) => (b.creadaEn?.seconds||0) - (a.creadaEn?.seconds||0));
-            const ultima = cerradas[0];
-            const clave  = `${LS_PREFIX}${partidoId}_${ultima.id}`;
-            setResultado(ultima);
-            setResultadoVisto(localStorage.getItem(clave) === "true");
-          } else {
-            setResultado(null);
-          }
-        }
-      } catch (_) {}
-    };
-
-    poll();
-    const iv = setInterval(poll, 8000);
-    return () => { cancelado = true; clearInterval(iv); };
-  }, [partidoId, firebaseUser]);
-
-  const responder = async (opcion) => {
-    if (!firebaseUser || !preguntaActiva || miRespuesta || enviando) return;
-    setEnviando(true);
+  const responder = async (pregunta, opcion) => {
+    if (!firebaseUser || misRespuestas[pregunta.id] || enviando) return;
+    setEnviando(pregunta.id);
     try {
       await setDoc(
-        doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
-            `${firebaseUser.uid}_${preguntaActiva.id}`),
+        doc(db, "eventoEnVivo", "actual", "respuestas", `${firebaseUser.uid}_${pregunta.id}`),
         {
           uid:        firebaseUser.uid,
-          preguntaId: preguntaActiva.id,
           respuesta:  opcion,
-          partidoId,
+          preguntaId: pregunta.id,
           timestamp:  serverTimestamp(),
         }
       );
-      setMiRespuesta(opcion);
-    } catch (_) {}
-    finally { setEnviando(false); }
+      setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
+      localStorage.setItem(`cp8b_ev_resp_${pregunta.id}`, opcion);
+    } catch (e) { console.error(e); }
+    finally { setEnviando(null); }
   };
 
-  const ocultarResultado = () => {
-    if (!resultado) return;
-    localStorage.setItem(`${LS_PREFIX}${partidoId}_${resultado.id}`, "true");
-    setResultadoVisto(true);
-  };
+  if (!evento?.activo) return null;
+  if (preguntas.length === 0) return null;
 
-  if (!partidoId) return null;
-  if (!preguntaActiva && !resultado) return null;
-  if (resultado && resultadoVisto) return null;
+  const localBandera     = evento.equipoLocal?.bandera     || "🏳️";
+  const visitanteBandera = evento.equipoVisitante?.bandera || "🏳️";
+  const localNombre      = evento.equipoLocal?.nombre      || "Local";
+  const visitanteNombre  = evento.equipoVisitante?.nombre  || "Visitante";
+  const imagenFondo      = evento.imagenFondo;
 
-  // Datos visuales
-  const localBandera     = partidoData?.local?.bandera     || "🏳️";
-  const visitanteBandera = partidoData?.visitante?.bandera || "🏳️";
-  const localNombre      = partidoData?.local?.nombre      || "Local";
-  const visitanteNombre  = partidoData?.visitante?.nombre  || "Visitante";
-  const imagenFondo      = partidoData?.imagenFondo;
-  const pts              = preguntaActiva?.puntosEnVivo || resultado?.puntosEnVivo || 3;
+  // ── BURBUJA MINIMIZADA ──────────────────────────────────────
+  if (minimizado) {
+    return (
+      <button
+        onClick={() => setMinimizado(false)}
+        style={{
+          position:"fixed", bottom:"90px", right:"16px", zIndex:650,
+          width:"56px", height:"56px", borderRadius:"50%",
+          background:"var(--rojo-chile)",
+          border:"3px solid var(--blanco)",
+          boxShadow:"0 0 16px rgba(214,40,40,0.7)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontSize:"24px", cursor:"pointer",
+          animation:"latido 1.4s ease-in-out infinite",
+        }}
+        title="Reabrir evento en vivo"
+      >
+        🔴
+        <style>{`@keyframes latido{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
+      </button>
+    );
+  }
 
-  // ── MODAL FULLSCREEN ────────────────────────────────────────
+  // ── MODAL FULLSCREEN ─────────────────────────────────────────
   return (
     <div style={{
       position:"fixed", inset:0, zIndex:700,
       display:"flex", flexDirection:"column",
-      alignItems:"center", justifyContent:"center",
       fontFamily:"'Press Start 2P', monospace",
+      background:"#0a0510",
     }}>
-      {/* Capa de imagen de fondo */}
-      {imagenFondo ? (
-        <div style={{
-          position:"absolute", inset:0,
-          backgroundImage:`url(/${imagenFondo})`,
-          backgroundSize:"cover", backgroundPosition:"center",
-          filter:"brightness(0.35) saturate(1.3)",
-        }} />
-      ) : (
-        <div style={{
-          position:"absolute", inset:0,
-          background:"radial-gradient(ellipse at center, #1a0a2e 0%, #0a0510 100%)",
-        }} />
-      )}
-
-      {/* Overlay oscuro degradado */}
+      {/* ═══ IMAGEN PROTAGONISTA (fija, 42% de la pantalla) ═══ */}
       <div style={{
-        position:"absolute", inset:0,
-        background:"linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.85) 100%)",
-      }} />
-
-      {/* Contenido */}
-      <div style={{
-        position:"relative", zIndex:1,
-        width:"100%", maxWidth:"440px",
-        padding:"20px 16px",
-        display:"flex", flexDirection:"column", alignItems:"center",
+        position:"relative", width:"100%", height:"42vh",
+        minHeight:"260px", flexShrink:0, overflow:"hidden",
       }}>
+        {imagenFondo && !imgError ? (
+          <img
+            src={`/${imagenFondo}`}
+            alt="Imagen del partido"
+            style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div style={{
+            width:"100%", height:"100%",
+            background:"radial-gradient(ellipse at center, #2a0050 0%, #0a0510 100%)",
+          }} />
+        )}
 
-        {/* Banderas grandes */}
+        {/* Degradado solo en la franja inferior, para legibilidad de banderas */}
         <div style={{
-          display:"flex", alignItems:"center", gap:"16px",
-          marginBottom:"12px",
-        }}>
-          <span style={{ fontSize:"52px", lineHeight:1,
-            filter:"drop-shadow(0 0 8px rgba(255,255,255,0.3))" }}>
-            {localBandera}
-          </span>
-          <div style={{ textAlign:"center" }}>
-            <p style={{ fontSize:"6px", color:"rgba(255,255,255,0.6)", lineHeight:2 }}>VS</p>
-            <div style={{
-              background:"var(--rojo-chile)", color:"var(--blanco)",
-              padding:"2px 8px", fontSize:"5px",
-              border:"1px solid rgba(255,255,255,0.3)",
-              animation:"parpadeo 1s ease-in-out infinite",
-            }}>
-              🔴 EN VIVO
-            </div>
-          </div>
-          <span style={{ fontSize:"52px", lineHeight:1,
-            filter:"drop-shadow(0 0 8px rgba(255,255,255,0.3))" }}>
-            {visitanteBandera}
-          </span>
-        </div>
+          position:"absolute", left:0, right:0, bottom:0, height:"50%",
+          background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
+        }} />
 
-        {/* Nombres */}
-        <p style={{ fontSize:"6px", color:"rgba(255,255,255,0.7)",
-          marginBottom:"16px", textAlign:"center", lineHeight:2 }}>
-          {localNombre} vs {visitanteNombre}
-        </p>
+        {/* Botón minimizar */}
+        <button
+          onClick={() => setMinimizado(true)}
+          style={{
+            position:"absolute", top:"14px", right:"14px", zIndex:2,
+            width:"34px", height:"34px",
+            background:"rgba(0,0,0,0.55)",
+            border:"2px solid rgba(255,255,255,0.35)",
+            color:"var(--blanco)", fontSize:"15px",
+            cursor:"pointer", display:"flex",
+            alignItems:"center", justifyContent:"center",
+          }}
+          title="Minimizar"
+        >
+          ✕
+        </button>
 
-        {/* ── PREGUNTA ACTIVA ─────────────────────────────── */}
-        {preguntaActiva && (
-          <div style={{ width:"100%" }}>
-            {/* Badge de puntos */}
-            <div style={{ textAlign:"center", marginBottom:"12px" }}>
-              <span style={{
-                background:"rgba(244,208,63,0.2)",
-                border:"2px solid var(--amarillo)",
-                color:"var(--amarillo)",
-                fontSize:"7px", padding:"4px 12px",
-                boxShadow:"0 0 12px rgba(244,208,63,0.4)",
-              }}>
-                ¡RESPONDE Y GANA +{pts} PTS!
-              </span>
-            </div>
-
-            {/* Texto de la pregunta */}
-            <div style={{
-              background:"rgba(0,0,0,0.6)",
-              border:"2px solid rgba(255,255,255,0.15)",
-              padding:"14px 12px", marginBottom:"12px",
-              backdropFilter:"blur(4px)",
-            }}>
-              <p style={{ fontSize:"8px", color:"var(--blanco)",
-                lineHeight:2, textAlign:"center",
-                textShadow:"2px 2px 4px rgba(0,0,0,0.8)" }}>
-                {preguntaActiva.texto}
-              </p>
-            </div>
-
-            {/* Opciones o confirmación */}
-            {!miRespuesta ? (
-              <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-                {(preguntaActiva.opciones||[]).map((op, i) => (
-                  <button key={i}
-                    onClick={() => responder(op)}
-                    disabled={enviando}
-                    style={{
-                      fontFamily:"'Press Start 2P',monospace",
-                      fontSize:"7px", padding:"10px 12px",
-                      background:"rgba(0,0,0,0.65)",
-                      border:"2px solid rgba(255,255,255,0.25)",
-                      color:"var(--blanco)", cursor:"pointer",
-                      textAlign:"left",
-                      backdropFilter:"blur(4px)",
-                      transition:"all 0.15s",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = "var(--amarillo)";
-                      e.currentTarget.style.background  = "rgba(244,208,63,0.18)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)";
-                      e.currentTarget.style.background  = "rgba(0,0,0,0.65)";
-                    }}
-                  >
-                    {op}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div style={{
-                background:"rgba(82,183,136,0.15)",
-                border:"2px solid var(--verde-claro)",
-                padding:"14px", textAlign:"center",
-              }}>
-                <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
-                  ✅ Tu respuesta:
-                </p>
-                <p style={{ fontSize:"8px", color:"var(--amarillo)",
-                  marginTop:"4px", lineHeight:2 }}>
-                  {miRespuesta}
-                </p>
-                <p style={{ fontSize:"5px", color:"var(--gris-claro)",
-                  marginTop:"6px", lineHeight:2 }}>
-                  Esperando que el admin cierre la pregunta...
-                </p>
-              </div>
-            )}
+        {/* Aviso si imagen no carga */}
+        {imagenFondo && imgError && (
+          <div style={{
+            position:"absolute", top:"14px", left:"14px", zIndex:2,
+            fontSize:"5px", color:"var(--amarillo)",
+            background:"rgba(0,0,0,0.6)", padding:"4px 8px",
+            border:"1px solid var(--amarillo)", maxWidth:"180px", lineHeight:2,
+          }}>
+            ⚠ No se encontró /{imagenFondo}
           </div>
         )}
 
-        {/* ── RESULTADO ───────────────────────────────────── */}
-        {!preguntaActiva && resultado && !resultadoVisto && (
-          <div style={{ width:"100%" }}>
-            <div style={{
-              background:"rgba(0,0,0,0.7)",
-              border:`3px solid ${miRespuesta===resultado.respuestaCorrecta
-                ? "var(--verde-claro)" : "var(--gris)"}`,
-              padding:"16px 14px",
-              backdropFilter:"blur(4px)",
-            }}>
-              <p style={{ fontSize:"6px", color:"var(--gris-claro)",
-                marginBottom:"8px", textAlign:"center" }}>
-                RESULTADO DE LA PREGUNTA
-              </p>
-              <p style={{ fontSize:"7px", color:"var(--blanco)",
-                lineHeight:2, marginBottom:"10px", textAlign:"center" }}>
-                {resultado.texto}
-              </p>
-              <p style={{ fontSize:"7px", color:"var(--amarillo)",
-                marginBottom:"8px", textAlign:"center" }}>
-                ✅ Correcta: <strong>{resultado.respuestaCorrecta}</strong>
-              </p>
-              {miRespuesta ? (
-                <p style={{ fontSize:"8px", textAlign:"center",
-                  color: miRespuesta===resultado.respuestaCorrecta
-                    ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
-                  {miRespuesta===resultado.respuestaCorrecta
-                    ? `🎉 ¡ACERTASTE! +${resultado.puntosEnVivo||3} PTS`
-                    : `❌ Respondiste: ${miRespuesta}`}
-                </p>
-              ) : (
-                <p style={{ fontSize:"6px", color:"var(--gris-claro)",
-                  textAlign:"center" }}>
-                  No respondiste esta pregunta.
-                </p>
+        {/* Banderas y nombres SUPERPUESTOS sobre la franja inferior */}
+        <div style={{
+          position:"absolute", left:0, right:0, bottom:0, zIndex:1,
+          padding:"0 16px 14px",
+          display:"flex", flexDirection:"column", alignItems:"center",
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
+            <span style={{ fontSize:"40px", lineHeight:1,
+              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
+              {localBandera}
+            </span>
+            <div style={{ textAlign:"center" }}>
+              {abiertas.length > 0 && (
+                <span style={{
+                  background:"var(--rojo-chile)", color:"var(--blanco)",
+                  padding:"2px 8px", fontSize:"5px",
+                  animation:"parpadeo 1s ease-in-out infinite",
+                  display:"inline-block",
+                }}>
+                  🔴 EN VIVO
+                </span>
               )}
-              <button
-                onClick={ocultarResultado}
-                className="btn-pixel btn-gris w-full"
-                style={{ fontSize:"7px", marginTop:"14px" }}>
-                CERRAR ✕
-              </button>
+            </div>
+            <span style={{ fontSize:"40px", lineHeight:1,
+              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
+              {visitanteBandera}
+            </span>
+          </div>
+          <p style={{ fontSize:"6px", color:"var(--blanco)", textAlign:"center",
+            lineHeight:1.8, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>
+            {localNombre} vs {visitanteNombre}
+          </p>
+        </div>
+      </div>
+
+      {/* ═══ ZONA INFERIOR: preguntas, con scroll propio ═══════ */}
+      <div style={{
+        flex:1, overflowY:"auto",
+        width:"100%", maxWidth:"440px", margin:"0 auto",
+        padding:"16px 16px 24px",
+        display:"flex", flexDirection:"column", gap:"10px",
+      }}>
+
+        {abiertas.length > 0 && (
+          <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
+            {abiertas.map(preg => (
+              <PreguntaGrande
+                key={preg.id}
+                pregunta={preg}
+                miRespuesta={misRespuestas[preg.id]}
+                enviando={enviando === preg.id}
+                onResponder={(op) => responder(preg, op)}
+              />
+            ))}
+          </div>
+        )}
+
+        {cerradas.length > 0 && (
+          <div>
+            {abiertas.length > 0 && (
+              <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
+                margin:"8px 0 6px", letterSpacing:"1px" }}>
+                PREGUNTAS ANTERIORES
+              </p>
+            )}
+            <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+              {cerradas.map(pq => (
+                <PreguntaMinimizada
+                  key={pq.id}
+                  pregunta={pq}
+                  miRespuesta={misRespuestas[pq.id]}
+                  expandida={expandidaId === pq.id}
+                  onToggle={() => setExpandidaId(prev => prev===pq.id ? null : pq.id)}
+                />
+              ))}
             </div>
           </div>
+        )}
+
+        {abiertas.length === 0 && (
+          <button
+            onClick={() => setMinimizado(true)}
+            className="btn-pixel btn-gris w-full"
+            style={{ fontSize:"6px", marginTop:"8px" }}>
+            MINIMIZAR EVENTO
+          </button>
         )}
       </div>
 
       <style>{`
-        @keyframes parpadeo {
-          0%,100% { opacity:1; }
-          50%      { opacity:0.6; }
-        }
+        @keyframes parpadeo { 0%,100%{opacity:1} 50%{opacity:0.55} }
       `}</style>
+    </div>
+  );
+}
+
+// ── Pregunta abierta (vista grande) ──────────────────────────
+// Paleta de colores por número de pregunta (para diferenciarlas visualmente)
+const PALETA = [
+  { borde:"#f59e0b", fondo:"rgba(245,158,11,0.12)", texto:"#f59e0b" }, // ámbar
+  { borde:"#60a5fa", fondo:"rgba(96,165,250,0.12)", texto:"#60a5fa" }, // azul
+  { borde:"#a78bfa", fondo:"rgba(167,139,250,0.12)", texto:"#a78bfa" }, // violeta
+  { borde:"#34d399", fondo:"rgba(52,211,153,0.12)", texto:"#34d399" }, // verde
+  { borde:"#f87171", fondo:"rgba(248,113,113,0.12)", texto:"#f87171" }, // rojo
+  { borde:"#fb923c", fondo:"rgba(251,146,60,0.12)", texto:"#fb923c" }, // naranja
+];
+function colorPregunta(n) { return PALETA[((n||1)-1) % PALETA.length]; }
+
+function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
+  const pts    = pregunta.puntosEnVivo || 3;
+  const color  = colorPregunta(pregunta.numero);
+  const letras = ["A","B","C","D","E"];
+
+  return (
+    <div style={{
+      border:`2px solid ${color.borde}`,
+      background: color.fondo,
+      backdropFilter:"blur(8px)",
+      overflow:"hidden",
+    }}>
+      {/* Cabecera de la pregunta */}
+      <div style={{
+        display:"flex", justifyContent:"space-between", alignItems:"center",
+        padding:"8px 12px",
+        background:`rgba(0,0,0,0.35)`,
+        borderBottom:`1px solid ${color.borde}44`,
+      }}>
+        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color: color.texto, letterSpacing:"1px" }}>
+          PREGUNTA #{pregunta.numero}
+        </span>
+        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color:"var(--amarillo)",
+          background:"rgba(244,208,63,0.15)",
+          border:"1px solid rgba(244,208,63,0.4)",
+          padding:"2px 8px" }}>
+          +{pts} PTS
+        </span>
+      </div>
+
+      {/* Texto de la pregunta */}
+      <div style={{ padding:"14px 12px 10px" }}>
+        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+          color:"var(--blanco)", lineHeight:2.2, textAlign:"center",
+          textShadow:"0 1px 4px rgba(0,0,0,0.6)" }}>
+          {pregunta.texto}
+        </p>
+      </div>
+
+      {/* Opciones o confirmación */}
+      <div style={{ padding:"0 12px 14px" }}>
+        {!miRespuesta ? (
+          <div style={{ display:"flex", flexDirection:"column", gap:"7px" }}>
+            {(pregunta.opciones||[]).map((op,i) => (
+              <button key={i} onClick={() => onResponder(op)} disabled={enviando}
+                style={{
+                  fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                  padding:"9px 12px",
+                  background:"rgba(0,0,0,0.45)",
+                  border:`2px solid rgba(255,255,255,0.15)`,
+                  color:"var(--blanco)", cursor:"pointer",
+                  textAlign:"left", display:"flex", alignItems:"center", gap:"10px",
+                  transition:"all 0.12s",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = color.borde;
+                  e.currentTarget.style.background  = color.fondo;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+                  e.currentTarget.style.background  = "rgba(0,0,0,0.45)";
+                }}>
+                <span style={{ color: color.texto, opacity:0.8, flexShrink:0 }}>
+                  {letras[i]}.
+                </span>
+                {op}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{
+            background:"rgba(0,0,0,0.35)", border:`1px solid ${color.borde}88`,
+            padding:"12px", textAlign:"center",
+          }}>
+            <p style={{ fontSize:"6px", color: color.texto, lineHeight:2 }}>
+              ✅ Respondiste:
+            </p>
+            <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+              color:"var(--blanco)", marginTop:"4px", lineHeight:2 }}>
+              {miRespuesta}
+            </p>
+            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
+              marginTop:"6px", lineHeight:2 }}>
+              El admin cerrará la pregunta en breve...
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Pregunta cerrada (vista minimizada/plegable) ─────────────
+function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
+  const correcta = pregunta.respuestaCorrecta;
+  const acerte   = miRespuesta && miRespuesta === correcta;
+  const pts      = pregunta.puntosEnVivo || 3;
+
+  return (
+    <div style={{
+      background:"rgba(255,255,255,0.03)",
+      border:`1px solid ${acerte ? "rgba(82,183,136,0.4)" : "rgba(255,255,255,0.1)"}`,
+    }}>
+      <button
+        onClick={onToggle}
+        style={{
+          width:"100%", display:"flex", justifyContent:"space-between",
+          alignItems:"center", padding:"8px 10px",
+          background:"transparent", border:"none", cursor:"pointer",
+        }}>
+        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+          color:"rgba(255,255,255,0.6)", textAlign:"left" }}>
+          PREGUNTA #{pregunta.numero}
+        </span>
+
+        {miRespuesta ? (
+          <span style={{
+            fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color: acerte ? "var(--verde-claro)" : "var(--rojo-chile)",
+            display:"flex", alignItems:"center", gap:"4px",
+          }}>
+            {acerte ? `🎉 +${pts} PTS` : "❌ NO ACERTASTE"}
+            <span style={{ color:"rgba(255,255,255,0.4)", fontSize:"8px" }}>
+              {expandida ? "▲" : "▼"}
+            </span>
+          </span>
+        ) : (
+          <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+            color:"rgba(255,255,255,0.35)", display:"flex", alignItems:"center", gap:"4px" }}>
+            SIN RESPONDER
+            <span style={{ fontSize:"8px" }}>{expandida ? "▲" : "▼"}</span>
+          </span>
+        )}
+      </button>
+
+      {expandida && (
+        <div style={{ padding:"0 10px 10px" }}>
+          <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color:"var(--blanco)", lineHeight:2, marginBottom:"8px" }}>
+            {pregunta.texto}
+          </p>
+          <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color:"var(--amarillo)", marginBottom:"4px" }}>
+            ✅ Correcta: <strong>{correcta}</strong>
+          </p>
+          {miRespuesta && (
+            <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+              color: acerte ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
+              Tu respuesta: {miRespuesta}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 </file>
 
-<file path="src/components/VozHinchada.jsx">
-// src/components/VozHinchada.jsx  — v7 (Bugfix 3)
+<file path="src/components/HistorialPredicciones.jsx">
+// src/components/HistorialPredicciones.jsx  — v7 (Patch 2)
 // ─────────────────────────────────────────────────────────────
-// FIX 2: Añade sistema de reacciones con cierre automático:
-//   • El selector de emojis se cierra automáticamente al elegir.
-//   • También se cierra al clicar fuera (mousedown en document).
-//   • Botón muestra el emoji activo o "😀" como icono base.
+// CAMBIOS v7:
+//   Punto 3: Total del día calculado con fuente de verdad correcta:
+//     se usa puntosDelDia.puntos cuando existe (ya incluye bonus);
+//     si no, suma predicciones + pregunta + bonus localmente.
+//     Se elimina el doble-conteo del bonus.
+//   Punto 9: En FilaPartido, muestra "🃏 ×N" si pred.cartaId
+//     y pred.cartaConsumida, junto al multiplicador utilizado.
 // ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  collection, getDocs, query, orderBy, addDoc, serverTimestamp,
-  doc, setDoc, deleteDoc,
+  collection, getDocs, query, where, documentId, doc, getDoc,
 } from "firebase/firestore";
+
+// Trae docs por id en lotes de 30 (límite del operador "in" de Firestore),
+// en una query por lote en vez de un getDoc por id (evita N+1).
+async function traerPorIds(nombreColeccion, ids) {
+  const mapa = {};
+  const lotes = [];
+  for (let i = 0; i < ids.length; i += 30) lotes.push(ids.slice(i, i + 30));
+  await Promise.all(lotes.map(async lote => {
+    if (lote.length === 0) return;
+    const snap = await getDocs(query(collection(db, nombreColeccion), where(documentId(), "in", lote)));
+    snap.forEach(d => { mapa[d.id] = { id: d.id, ...d.data() }; });
+  }));
+  return mapa;
+}
 import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-import { hoyStr } from "../utils/helpers";
+import { CARTAS } from "../data/sampleData";
 
-const COLORES_MSG = [
-  ["#1a472a","#52b788"], ["#9b1c1c","#f4d03f"], ["#1a1a5e","#a8d8ea"],
-  ["#4a0e8f","#e0c3fc"], ["#1a3a00","#b5e48c"], ["#3d2b00","#ffd166"],
-  ["#003333","#56cfe1"], ["#3b0a0a","#ff9a76"],
-];
-const EMOJIS = ["😀","😡","😢","😂","👍","👎"];
-
-function colorMsg(idx) { return COLORES_MSG[idx % COLORES_MSG.length]; }
-
-function labelTiempo(fechaStr, horaStr) {
-  const hoy = hoyStr();
-  if (fechaStr === hoy) return `HOY · ${horaStr}`;
-  const [, m, d] = (fechaStr || "").split("-");
-  return m && d ? `${d}/${m} · ${horaStr}` : horaStr;
+// ── Helpers de texto ──────────────────────────────────────────
+function textoApuestaPartido(pred) {
+  if (pred.estaDestacado && pred.golesLocalPred !== undefined && pred.golesLocalPred !== null) {
+    return `Exacto: ${pred.golesLocalPred} - ${pred.golesVisitantePred}`;
+  }
+  if (pred.definicion === "normal") {
+    const g = pred.ganador90 === "local" ? "Local" : "Visitante";
+    return `90min: ${g}${pred.diferencia90 ? ` + dif (${pred.diferencia90} gol${pred.diferencia90==="1"?"":"es"})` : ""}`;
+  }
+  if (pred.definicion === "alargue") {
+    const g = pred.ganadorAlargue === "local" ? "Local" : "Visitante";
+    return `Alargue: ${g}${pred.diferenciaAlargue ? ` + dif (${pred.diferenciaAlargue} gol${pred.diferenciaAlargue==="1"?"":"es"})` : ""}`;
+  }
+  if (pred.definicion === "penales") {
+    const g = pred.ganadorPenales === "local" ? "Local" : "Visitante";
+    const marcador = pred.penalesLocal !== undefined ? ` (${pred.penalesLocal}-${pred.penalesVisitante})` : "";
+    return `Penales: ${g} gana${marcador}`;
+  }
+  const ganLabel = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
+  const dif = pred.diferencia ? ` + dif (${pred.diferencia} gol${pred.diferencia==="1"?"":"es"})` : "";
+  return `${ganLabel}${dif}`;
 }
 
-// ── Reacciones con cierre automático al seleccionar ───────────
-function Reacciones({ docId, miUid }) {
-  const [conteo,     setConteo]     = useState({});
-  const [miReaccion, setMiReaccion] = useState(null);
-  const [abierto,    setAbierto]    = useState(false);
-  const popRef = useRef(null);
+function textoResultadoReal(r) {
+  if (!r) return "—";
+  const base = `${r.golesLocal}-${r.golesVisitante}`;
+  if (r.definicion === "penales") return `${base} (pen ${r.penalesLocal}-${r.penalesVisitante})`;
+  if (r.definicion === "alargue") return `${base} (alargue)`;
+  return base;
+}
 
-  useEffect(() => { if (docId) cargar(); }, [docId]);
+function desgloseDesglose(puntos, estaDestacado, pred) {
+  if (puntos === 0) return "";
+  if (estaDestacado && puntos === 5) return "(3+2)";
+  if (!estaDestacado && pred.diferencia && pred.ganador !== "empate" && puntos === 3) return "(1+2)";
+  return "";
+}
 
-  // Cierre al clicar fuera
-  useEffect(() => {
-    if (!abierto) return;
-    const h = (e) => {
-      if (popRef.current && !popRef.current.contains(e.target)) setAbierto(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [abierto]);
+function diaNumDesde(fechaStr) {
+  const inicio = new Date("2026-06-11T00:00:00");
+  const [y,m,d] = fechaStr.split("-").map(Number);
+  const target = new Date(y,m-1,d); target.setHours(0,0,0,0);
+  const diff = Math.floor((target - inicio) / 86400000);
+  return diff >= 0 ? diff + 1 : null;
+}
 
-  const cargar = async () => {
-    try {
-      const snap = await getDocs(collection(db,"mensajesDia",docId,"reacciones"));
-      const c = {}; let mia = null;
-      snap.docs.forEach(d => {
-        const { emoji } = d.data();
-        c[emoji] = (c[emoji]||0) + 1;
-        if (d.id === miUid) mia = emoji;
-      });
-      setConteo(c); setMiReaccion(mia);
-    } catch(_) {}
-  };
+function labelFecha(fechaStr) {
+  const [y,m,d] = fechaStr.split("-").map(Number);
+  const meses = ["enero","febrero","marzo","abril","mayo","junio",
+    "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const nDia = diaNumDesde(fechaStr);
+  return `${d} de ${meses[m-1]} de ${y}${nDia ? ` — Día ${nDia}` : ""}`;
+}
 
-  const reaccionar = async (emoji) => {
-    if (!miUid) return;
-    // Fix 2: cerrar INMEDIATAMENTE al seleccionar
-    setAbierto(false);
+// ── Fila de un partido (punto 9: aviso de carta) ──────────────
+function FilaPartido({ pred, partido }) {
+  if (!partido?.resultado) return null;
+  const { resultado, estaDestacado, local, visitante } = partido;
+  const acertaste  = pred.esMaximo === true;
+  const pts        = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
+  // Puntos BASE (sin multiplicar) para el desglose
+  const ptsBase    = typeof pred.puntosBase === "number" ? pred.puntosBase : pts;
+  const desglose   = ptsBase ? desgloseDesglose(ptsBase, estaDestacado, pred) : "";
+  const apuesta    = textoApuestaPartido(pred);
+  const resReal    = textoResultadoReal(resultado);
+  const nombrePart = `${local?.bandera??""} ${local?.nombre??""} vs ${visitante?.nombre??""} ${visitante?.bandera??""}`;
 
-    const ref = doc(db,"mensajesDia",docId,"reacciones",miUid);
-    if (miReaccion === emoji) {
-      // Quitar reacción
-      await deleteDoc(ref);
-      setConteo(prev => {
-        const n = {...prev};
-        n[emoji] = Math.max(0,(n[emoji]||0)-1);
-        if (!n[emoji]) delete n[emoji];
-        return n;
-      });
-      setMiReaccion(null);
-    } else {
-      // Cambiar o poner
-      if (miReaccion) {
-        setConteo(prev => {
-          const n = {...prev};
-          n[miReaccion] = Math.max(0,(n[miReaccion]||0)-1);
-          if (!n[miReaccion]) delete n[miReaccion];
-          return n;
-        });
-      }
-      await setDoc(ref, { emoji, uid: miUid });
-      setConteo(prev => ({ ...prev, [emoji]: (prev[emoji]||0)+1 }));
-      setMiReaccion(emoji);
-    }
-  };
-
-  const tieneReacciones = Object.keys(conteo).some(k => conteo[k] > 0);
+  // Carta usada (punto 9)
+  const cartaUsada = pred.cartaId && pred.cartaConsumida
+    ? CARTAS.find(c => c.id === pred.cartaId)
+    : null;
 
   return (
-    <div style={{ marginTop:"5px",display:"flex",alignItems:"center",
-      gap:"4px",flexWrap:"wrap" }}>
-      <div ref={popRef} style={{ position:"relative" }}>
-        {/* Botón: emoji activo o ícono base 😀 */}
-        <button
-          onClick={() => setAbierto(v=>!v)}
-          title={miReaccion ? "Cambiar reacción" : "Reaccionar"}
-          style={{
-            fontSize:"12px", padding:"2px 5px", cursor:"pointer",
-            background: miReaccion
-              ? "rgba(255,255,255,0.22)"
-              : "rgba(255,255,255,0.07)",
-            border: miReaccion
-              ? "1px solid rgba(255,255,255,0.45)"
-              : "1px solid rgba(255,255,255,0.15)",
-            borderRadius:"3px", lineHeight:1,
-          }}>
-          {miReaccion || "😀"}
-        </button>
-
-        {/* Popover — se cierra solo al seleccionar */}
-        {abierto && (
-          <div style={{
-            position:"absolute",
-            bottom:"calc(100% + 4px)", left:0,
-            background:"var(--negro)",
-            border:"2px solid var(--verde-campo)",
-            boxShadow:"3px 3px 0 rgba(0,0,0,0.5)",
-            padding:"5px 6px",
-            display:"flex", gap:"2px",
-            zIndex:100,
-            borderRadius:"2px",
-          }}>
-            {EMOJIS.map(e => (
-              <button key={e}
-                onClick={() => reaccionar(e)}
-                style={{
-                  fontSize:"15px", padding:"3px 4px", cursor:"pointer",
-                  background: miReaccion===e
-                    ? "rgba(255,255,255,0.22)"
-                    : "transparent",
-                  border:"1px solid transparent",
-                  borderRadius:"2px",
-                }}>
-                {e}
-              </button>
-            ))}
-          </div>
+    <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
+      display:"flex",gap:"6px",alignItems:"flex-start" }}>
+      <span style={{ fontSize:"10px",lineHeight:1,flexShrink:0,marginTop:"1px" }}>
+        {acertaste ? "✅" : "❌"}
+      </span>
+      <div style={{ flex:1 }}>
+        <p style={{ fontSize:"6px",color:"var(--blanco)",lineHeight:1.8 }}>
+          {nombrePart}
+          {estaDestacado && <span style={{ color:"var(--amarillo)",marginLeft:"4px" }}>⭐</span>}
+        </p>
+        <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
+          Tu apuesta: <span style={{ color:"var(--blanco)" }}>{apuesta}</span>
+          {" · "}Real: <span style={{ color:"var(--amarillo)" }}>{resReal}</span>
+        </p>
+        {/* Aviso de carta (punto 9) */}
+        {cartaUsada && (
+          <p style={{ fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8,marginTop:"2px" }}>
+            🃏 Carta <strong>{cartaUsada.nombre}</strong> ×{cartaUsada.multiplicador} utilizada
+          </p>
         )}
       </div>
-
-      {/* Conteos */}
-      {tieneReacciones && Object.entries(conteo)
-        .filter(([,n])=>n>0)
-        .map(([e,n]) => (
-          <span key={e} style={{
-            fontSize:"9px",
-            background:"rgba(0,0,0,0.2)",
-            padding:"1px 5px",
-            border:"1px solid rgba(255,255,255,0.1)",
-            borderRadius:"2px",
-          }}>
-            {e} {n}
-          </span>
-        ))
-      }
+      <div style={{ textAlign:"right",flexShrink:0 }}>
+        {pts !== null ? (
+          <div>
+            <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
+              color:pts>0?"var(--verde-claro)":"var(--gris)" }}>
+              {pts>0?`+${pts}`:"0"}
+            </span>
+            {desglose && (
+              <span style={{ fontSize:"5px",color:"var(--gris-claro)",display:"block" }}>{desglose}</span>
+            )}
+            {cartaUsada && pts > 0 && ptsBase && pts !== ptsBase && (
+              <span style={{ fontSize:"5px",color:"var(--amarillo)",display:"block" }}>
+                ×{cartaUsada.multiplicador}
+              </span>
+            )}
+          </div>
+        ) : <span style={{ fontSize:"5px",color:"var(--gris)" }}>—</span>}
+      </div>
     </div>
   );
 }
 
-// ── Mensaje individual ────────────────────────────────────────
-function MensajeItem({ mensaje, colorIdx, miUid }) {
-  const [fondo, texto] = colorMsg(colorIdx);
-  const tieneUrl = mensaje.url && mensaje.url.startsWith("http");
-  const tiempo   = labelTiempo(mensaje.fecha, mensaje.hora);
+// ── Bloque de un día ──────────────────────────────────────────
+function BloqueDia({ fecha, predicciones, partidos, respuesta, pregunta, puntosDelDia }) {
+  const [abierto, setAbierto] = useState(true);
+
+  // Punto 3: Total del día con fuente correcta
+  // puntosDelDia.puntos ya es la suma definitiva guardada por helpers.js
+  // (incluye partidos + pregunta + bonus diario).
+  // Solo calculamos localmente si no hay ese documento.
+  const ptsParts    = predicciones.reduce((s,p) => s + (p.puntosGanados??0), 0);
+  const ptsPregunta = respuesta?.puntosGanados ?? 0;
+  const bonusGanador = puntosDelDia?.esGanador ? (puntosDelDia.bonusGanador ?? 2) : 0;
+
+  // Fuente de verdad: puntosDelDia.puntos si existe, calculado si no
+  const totalDia = puntosDelDia?.puntos !== undefined && puntosDelDia?.puntos !== null
+    ? puntosDelDia.puntos
+    : ptsParts + ptsPregunta + bonusGanador;
 
   return (
-    <div style={{ padding:"8px 10px",background:fondo,
-      border:`2px solid ${texto}44`,marginBottom:"4px" }}>
-      <div style={{ display:"flex",justifyContent:"space-between",
-        marginBottom:"3px",gap:"6px",flexWrap:"wrap" }}>
-        <span style={{ fontSize:"6px",color:texto,
-          fontFamily:"'Press Start 2P',monospace",
-          overflow:"hidden",textOverflow:"ellipsis",
-          whiteSpace:"nowrap",maxWidth:"55%" }}>
-          {mensaje.autor}
+    <div style={{ border:"2px solid var(--verde-campo)",marginBottom:"8px",background:"rgba(0,0,0,0.25)" }}>
+      <button onClick={() => setAbierto(v => !v)}
+        style={{ width:"100%",textAlign:"left",fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+          padding:"8px 10px",background:"var(--verde-oscuro)",border:"none",cursor:"pointer",
+          display:"flex",justifyContent:"space-between",alignItems:"center",color:"var(--blanco)" }}>
+        <span style={{ color:"var(--verde-claro)" }}>📅 {labelFecha(fecha)}</span>
+        <span style={{ color:"var(--amarillo)",fontSize:"8px" }}>
+          {totalDia}pts {abierto ? "▲" : "▼"}
         </span>
-        <span style={{ fontSize:"5px",color:`${texto}bb`,
-          fontFamily:"'Press Start 2P',monospace",whiteSpace:"nowrap" }}>
-          {tiempo}
-        </span>
-      </div>
-      <p style={{ fontSize:"6px",color:texto,lineHeight:1.8,
-        fontFamily:"'Press Start 2P',monospace",wordBreak:"break-word" }}>
-        {mensaje.texto}
-      </p>
-      {tieneUrl && (
-        <a href={mensaje.url} target="_blank" rel="noopener noreferrer"
-          style={{ display:"block",marginTop:"4px",fontSize:"5px",
-            color:"#56cfe1",fontFamily:"'Press Start 2P',monospace",
-            wordBreak:"break-all",textDecoration:"underline" }}>
-          🔗 {mensaje.url.length>40?mensaje.url.slice(0,40)+"…":mensaje.url}
-        </a>
+      </button>
+
+      {abierto && (
+        <div>
+          {predicciones.length > 0 && (
+            <div>
+              <p style={{ fontSize:"5px",color:"var(--gris-claro)",padding:"4px 8px",
+                background:"rgba(0,0,0,0.3)",borderBottom:"1px solid var(--verde-campo)" }}>
+                PARTIDOS
+              </p>
+              {predicciones.map(pred => {
+                const partido = partidos[pred.partidoId];
+                return partido?.resultado
+                  ? <FilaPartido key={pred.predId} pred={pred} partido={partido} />
+                  : null;
+              })}
+            </div>
+          )}
+
+          {respuesta && (
+            <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
+              display:"flex",alignItems:"center",gap:"6px" }}>
+              <span style={{ fontSize:"10px" }}>{respuesta.esCorrecta ? "✅" : "❌"}</span>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
+                  PREGUNTA DEL DÍA
+                  {pregunta && <span style={{ color:"var(--blanco)",marginLeft:"4px" }}>
+                    — {pregunta.texto?.slice(0,40)}{pregunta.texto?.length>40?"…":""}
+                  </span>}
+                </p>
+                <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
+                  Tu respuesta: <span style={{ color:"var(--blanco)" }}>{respuesta.respuesta}</span>
+                  {respuesta.esCorrecta === false && pregunta?.respuestaCorrecta &&
+                    <span style={{ color:"var(--amarillo)",marginLeft:"4px" }}>
+                      (correcta: {pregunta.respuestaCorrecta})
+                    </span>
+                  }
+                </p>
+              </div>
+              <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
+                color:ptsPregunta>0?"var(--verde-claro)":"var(--gris)" }}>
+                {ptsPregunta>0?`+${ptsPregunta}`:"0"}
+              </span>
+            </div>
+          )}
+
+          {bonusGanador > 0 && (
+            <div style={{ padding:"6px 8px",borderBottom:"1px solid rgba(82,183,136,0.2)",
+              display:"flex",alignItems:"center",gap:"6px" }}>
+              <span style={{ fontSize:"10px" }}>🏆</span>
+              <p style={{ flex:1,fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8 }}>
+                BONUS GANADOR DEL DÍA
+              </p>
+              <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",color:"var(--amarillo)" }}>
+                +{bonusGanador}
+              </span>
+            </div>
+          )}
+
+          <div style={{ padding:"6px 10px",background:"rgba(244,208,63,0.08)",
+            borderTop:"2px solid var(--verde-campo)",
+            display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+            <span style={{ fontSize:"6px",color:"var(--gris-claro)" }}>TOTAL DEL DÍA</span>
+            <span style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"10px",color:"var(--amarillo)" }}>
+              {totalDia} pts
+            </span>
+          </div>
+        </div>
       )}
-      {/* Fix 2: Reacciones con auto-cierre */}
-      <Reacciones docId={mensaje.docId} miUid={miUid} />
+    </div>
+  );
+}
+
+// ── Bloque: preguntas del EN VIVO respondidas por el usuario ──
+function BloqueEnVivo({ respuestasEnVivo }) {
+  const [abierto, setAbierto] = useState(true);
+  if (!respuestasEnVivo || respuestasEnVivo.length === 0) return null;
+
+  const totalPts = respuestasEnVivo.reduce((s, r) => s + (r.puntosGanados ?? 0), 0);
+
+  return (
+    <div style={{ border:"2px solid var(--rojo-chile)", marginBottom:"8px", background:"rgba(0,0,0,0.25)" }}>
+      <button onClick={() => setAbierto(v => !v)}
+        style={{ width:"100%", textAlign:"left", fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          padding:"8px 10px", background:"rgba(214,40,40,0.25)", border:"none", cursor:"pointer",
+          display:"flex", justifyContent:"space-between", alignItems:"center", color:"var(--blanco)" }}>
+        <span style={{ color:"var(--rojo-chile)" }}>🔴 PREGUNTAS DEL EN VIVO</span>
+        <span style={{ color:"var(--amarillo)", fontSize:"8px" }}>
+          {totalPts}pts {abierto ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {abierto && (
+        <div>
+          {respuestasEnVivo.map(r => {
+            const pendiente = r.estado !== "cerrada";
+            const pts = r.puntosGanados ?? 0;
+            return (
+              <div key={r.id} style={{ padding:"6px 8px", borderBottom:"1px solid rgba(214,40,40,0.2)",
+                display:"flex", gap:"6px", alignItems:"flex-start" }}>
+                <span style={{ fontSize:"10px", lineHeight:1, flexShrink:0, marginTop:"1px" }}>
+                  {pendiente ? "⏳" : (r.correcta ? "✅" : "❌")}
+                </span>
+                <div style={{ flex:1 }}>
+                  <p style={{ fontSize:"6px", color:"var(--blanco)", lineHeight:1.8 }}>
+                    {r.numero ? `#${r.numero} — ` : ""}{r.texto || "Pregunta del en vivo"}
+                  </p>
+                  <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:1.8 }}>
+                    Tu respuesta: <span style={{ color:"var(--blanco)" }}>{r.respuesta}</span>
+                    {!pendiente && r.respuestaCorrecta &&
+                      <span style={{ color:"var(--amarillo)", marginLeft:"4px" }}>
+                        (correcta: {r.respuestaCorrecta})
+                      </span>}
+                  </p>
+                </div>
+                <div style={{ textAlign:"right", flexShrink:0 }}>
+                  {pendiente ? (
+                    <span style={{ fontSize:"5px", color:"var(--gris)" }}>abierta</span>
+                  ) : (
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"2px" }}>
+                      <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                        color:pts>0?"var(--verde-claro)":"var(--rojo-chile)" }}>
+                        {pts>0 ? `✅ +${pts}pts` : "❌ Falló"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Componente principal ──────────────────────────────────────
-export default function VozHinchada() {
-  const { firebaseUser, userProfile } = useAuth();
-  const [mensajes,    setMensajes]    = useState([]);
-  const [cargando,    setCargando]    = useState(true);
-  const [mostrarForm, setMostrarForm] = useState(false);
-  const [texto,       setTexto]       = useState("");
-  const [url,         setUrl]         = useState("");
-  const [enviando,    setEnviando]    = useState(false);
-  const [enviado,     setEnviado]     = useState(false);
-  const hoy = hoyStr();
+const LIMITE_DIAS = 15;
 
-  useEffect(() => { cargar(); }, []);
+export default function HistorialPredicciones({ userId }) {
+  const [dias,     setDias]     = useState([]);
+  const [respuestasEnVivo, setRespuestasEnVivo] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error,    setError]    = useState(null);
+
+  useEffect(() => { if (userId) cargar(); }, [userId]);
 
   const cargar = async () => {
-    setCargando(true);
+    setCargando(true); setError(null);
     try {
-      const snap = await getDocs(
-        query(collection(db,"mensajesDia"), orderBy("timestamp","desc"))
+      const [snapPreds, snapResps, snapPDia, snapEV, snapEventoDoc] = await Promise.all([
+        getDocs(query(collection(db,"predicciones"), where("uid","==",userId))),
+        getDocs(query(collection(db,"respuestas"),   where("uid","==",userId))),
+        getDocs(query(collection(db,"puntosDelDia"), where("uid","==",userId))),
+        getDocs(query(collection(db,"eventoEnVivo","actual","respuestas"), where("uid","==",userId))),
+        getDoc(doc(db,"eventoEnVivo","actual")),
+      ]);
+
+      // ── Preguntas del EN VIVO: cruzar cada respuesta con la
+      // pregunta correspondiente (texto, número, estado) guardada
+      // en el array `preguntas` del documento del evento.
+      const preguntasEvento = snapEventoDoc.exists() ? (snapEventoDoc.data().preguntas || []) : [];
+      const respsEV = snapEV.docs
+        .map(d => {
+          const data = d.data();
+          const preg = preguntasEvento.find(p => p.id === data.preguntaId);
+          return {
+            id: d.id,
+            ...data,
+            texto: preg?.texto,
+            numero: preg?.numero,
+            estado: preg?.estado,
+            respuestaCorrecta: preg?.respuestaCorrecta,
+            // Compatibilidad con respuestas antiguas que no tenían
+            // guardado puntosGanados/correcta directamente:
+            correcta: data.correcta ?? (preg?.estado === "cerrada" ? data.respuesta === preg?.respuestaCorrecta : undefined),
+            puntosGanados: data.puntosGanados ?? (
+              preg?.estado === "cerrada"
+                ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
+                : undefined
+            ),
+          };
+        })
+        .sort((a,b) => (a.numero ?? 0) - (b.numero ?? 0));
+      setRespuestasEnVivo(respsEV);
+
+      const porFecha = {};
+
+      for (const pDoc of snapPreds.docs) {
+        const pred = pDoc.data();
+        if (!pred.fecha) continue;
+        if (!porFecha[pred.fecha]) porFecha[pred.fecha] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
+        porFecha[pred.fecha].predicciones.push({ predId:pDoc.id, ...pred });
+      }
+      for (const rDoc of snapResps.docs) {
+        const resp = rDoc.data();
+        if (!resp.preguntaId) continue;
+        const fechaInf = resp.fecha || resp.preguntaId.split("_")[0];
+        if (!fechaInf || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInf)) continue;
+        if (!porFecha[fechaInf]) porFecha[fechaInf] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
+        porFecha[fechaInf].respuesta = { respId:rDoc.id, ...resp };
+      }
+      for (const dDoc of snapPDia.docs) {
+        const pd = dDoc.data();
+        if (!pd.fecha) continue;
+        if (!porFecha[pd.fecha]) porFecha[pd.fecha] = { predicciones:[],respuesta:null,pregunta:null,puntosDelDia:null };
+        porFecha[pd.fecha].puntosDelDia = pd;
+      }
+
+      const fechas = Object.keys(porFecha).sort((a,b)=>b.localeCompare(a)).slice(0, LIMITE_DIAS);
+
+      const partidoIds  = [...new Set(fechas.flatMap(f => porFecha[f].predicciones.map(p => p.partidoId)))];
+      const preguntaIds = [...new Set(fechas.filter(f=>porFecha[f].respuesta).map(f=>porFecha[f].respuesta.preguntaId).filter(Boolean))];
+
+      const [partidosMap, preguntasMap] = await Promise.all([
+        traerPorIds("partidos", partidoIds),
+        traerPorIds("preguntas", preguntaIds),
+      ]);
+
+      for (const fecha of fechas) {
+        const d = porFecha[fecha];
+        if (d.respuesta?.preguntaId) d.pregunta = preguntasMap[d.respuesta.preguntaId] || null;
+        d.predicciones = d.predicciones.filter(p => partidosMap[p.partidoId]?.resultado);
+      }
+
+      setDias(fechas
+        .filter(f => { const d=porFecha[f]; return d.predicciones.length>0||d.respuesta||d.puntosDelDia; })
+        .map(f => ({ fecha:f, ...porFecha[f], partidos:partidosMap }))
       );
-      setMensajes(snap.docs.map(d=>({docId:d.id,...d.data()})));
-    } catch(e){ console.error(e); }
-    finally { setCargando(false); }
+    } catch(e) {
+      console.error(e); setError("No se pudo cargar el historial.");
+    } finally { setCargando(false); }
   };
 
-  const enviar = async () => {
-    if (!texto.trim()||!firebaseUser) return;
-    setEnviando(true);
-    try {
-      const ahora = new Date();
-      const msg = {
-        autor:     userProfile?.nickname||firebaseUser.displayName?.split(" ")[0]||"Anónimo",
-        texto:     texto.trim().slice(0,200),
-        url:       url.trim()||null,
-        timestamp: serverTimestamp(),
-        fecha:     hoy,
-        hora:      `${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
-        uid:       firebaseUser.uid,
-      };
-      const ref = await addDoc(collection(db,"mensajesDia"), msg);
-      setMensajes(prev=>[{docId:ref.id,...msg,timestamp:ahora},...prev]);
-      setTexto(""); setUrl(""); setEnviado(true); setMostrarForm(false);
-      setTimeout(()=>setEnviado(false),3000);
-    } catch(e){ console.error(e); }
-    finally { setEnviando(false); }
-  };
+  if (cargando) return (
+    <div style={{ padding:"16px",textAlign:"center" }}>
+      <span className="spinner">⚙</span>
+      <p style={{ fontSize:"6px",color:"var(--gris-claro)",marginTop:"6px" }}>Cargando historial...</p>
+    </div>
+  );
+  if (error) return <p style={{ fontSize:"6px",color:"var(--rojo-chile)",padding:"8px" }}>{error}</p>;
+  if (dias.length === 0 && respuestasEnVivo.length === 0) return (
+    <p style={{ fontSize:"6px",color:"var(--gris-claro)",padding:"12px",textAlign:"center",lineHeight:2 }}>
+      Sin historial todavía.
+    </p>
+  );
 
   return (
-    <div style={{ marginBottom:"16px" }}>
-      <div style={{ display:"flex",justifyContent:"space-between",
-        alignItems:"center",marginBottom:"10px" }}>
-        <div className="seccion-titulo" style={{ margin:0 }}>
-          📢 LA VOZ DE LA HINCHADA
-        </div>
-        <button className="btn-pixel btn-amarillo"
-          style={{ fontSize:"6px",padding:"5px 10px" }}
-          onClick={()=>{setMostrarForm(v=>!v);setEnviado(false);}}>
-          {mostrarForm?"✕ CERRAR":"✏ DEJAR MENSAJE"}
-        </button>
-      </div>
+    <div style={{ padding:"8px" }}>
+      <BloqueEnVivo respuestasEnVivo={respuestasEnVivo} />
 
-      {mostrarForm && (
-        <div style={{ background:"var(--negro)",border:"3px solid var(--amarillo)",
-          boxShadow:"4px 4px 0 var(--amarillo-oscuro)",padding:"14px 12px",
-          marginBottom:"10px",display:"flex",flexDirection:"column",gap:"8px" }}>
-          <p style={{ fontSize:"6px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
-          <textarea value={texto} onChange={e=>setTexto(e.target.value.slice(0,200))}
-            placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
-            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-              width:"100%",padding:"8px",border:"2px solid var(--negro)",
-              background:"var(--blanco)",color:"var(--negro)",
-              outline:"none",resize:"none",lineHeight:2 }} />
-          <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>
-            {texto.length}/200
+      {dias.length > 0 && (
+        <>
+          <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"8px",lineHeight:1.8 }}>
+            Últimos {Math.min(dias.length, LIMITE_DIAS)} días · Clic para desplegar/plegar
           </p>
-          <input value={url} onChange={e=>setUrl(e.target.value)}
-            placeholder="URL opcional"
-            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-              width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
-              background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
-          <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
-            ⚠ Sin spam. Visible para todos.
-          </p>
-          <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
-            onClick={enviar} disabled={enviando||!texto.trim()}>
-            {enviando?"⚙ ENVIANDO...":"📣 PUBLICAR"}
-          </button>
-        </div>
+          {dias.map(d => (
+            <BloqueDia key={d.fecha} fecha={d.fecha} predicciones={d.predicciones}
+              partidos={d.partidos} respuesta={d.respuesta} pregunta={d.pregunta}
+              puntosDelDia={d.puntosDelDia} />
+          ))}
+        </>
       )}
-
-      {enviado && (
-        <p style={{ fontSize:"7px",color:"var(--verde-claro)",
-          marginBottom:"8px",textAlign:"center" }}>
-          ✅ ¡Mensaje publicado!
-        </p>
-      )}
-
-      <div style={{ background:"var(--negro)",border:"3px solid var(--verde-campo)",
-        boxShadow:"4px 4px 0 var(--verde-oscuro)",padding:"8px",
-        maxHeight:"280px",overflowY:"auto" }}>
-        {cargando ? (
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)",
-            textAlign:"center",padding:"16px" }}>Cargando mensajes...</p>
-        ) : mensajes.length===0 ? (
-          <p style={{ fontSize:"6px",color:"var(--gris-claro)",
-            textAlign:"center",padding:"16px",lineHeight:2 }}>
-            Todavía no hay mensajes.<br/>¡Sé el primero!
-          </p>
-        ) : (
-          mensajes.map((m,i)=>(
-            <MensajeItem key={m.docId} mensaje={m}
-              colorIdx={i} miUid={firebaseUser?.uid} />
-          ))
-        )}
-      </div>
     </div>
   );
 }
@@ -9016,6 +8132,983 @@ function PartidoCard({ partido, onGuardado }) {
 // Memo: evita re-render de todas las cards cuando el padre cambia
 // estado no relacionado (onGuardado va memorizado con useCallback).
 export default React.memo(PartidoCard);
+</file>
+
+<file path="src/components/SuperDestacado.jsx">
+// src/components/SuperDestacado.jsx  — v7
+// ─────────────────────────────────────────────────────────────
+// Vista del USUARIO durante un partido Super Destacado.
+// • Polling cada 8 segundos (más rápido que v6).
+// • La imagen de fondo viene del campo `imagenFondo` del partido
+//   en Firestore. Ejemplo: imagenFondo = "A_PAISES_MARRUECOS.jpg"
+//   → la imagen debe estar en /public/A_PAISES_MARRUECOS.jpg
+// • Si no hay imagenFondo definida, usa gradiente por defecto.
+// • Ocupa PANTALLA COMPLETA como modal (fullscreen overlay).
+// • Muestra banderas grandes de ambos equipos.
+// • Puntaje variable (lee puntosEnVivo de cada pregunta).
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect } from "react";
+import {
+  collection, getDocs, query, where, doc,
+  setDoc, getDoc, serverTimestamp,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+
+const LS_PREFIX = "cp8b_sd_visto_";
+
+export default function SuperDestacado({ partidoId, nombrePartido }) {
+  const { firebaseUser } = useAuth();
+  const [preguntaActiva, setPreguntaActiva] = useState(null);
+  const [miRespuesta,    setMiRespuesta]    = useState(null);
+  const [enviando,       setEnviando]       = useState(false);
+  const [resultado,      setResultado]      = useState(null);
+  const [resultadoVisto, setResultadoVisto] = useState(false);
+  const [partidoData,    setPartidoData]    = useState(null);
+
+  // Cargar datos del partido una vez
+  useEffect(() => {
+    if (!partidoId) return;
+    getDoc(doc(db, "partidos", partidoId))
+      .then(snap => { if (snap.exists()) setPartidoData(snap.data()); })
+      .catch(() => {});
+  }, [partidoId]);
+
+  // Polling cada 8 segundos
+  useEffect(() => {
+    if (!partidoId) return;
+    let cancelado = false;
+
+    const poll = async () => {
+      try {
+        const ref = collection(db, "preguntasEnVivo", partidoId, "preguntas");
+
+        // 1. Buscar pregunta abierta
+        const snapA = await getDocs(query(ref, where("estado","==","abierta")));
+        if (cancelado) return;
+
+        if (!snapA.empty) {
+          const preg = { id: snapA.docs[0].id, ...snapA.docs[0].data() };
+          setPreguntaActiva(preg);
+          setResultado(null);
+
+          // ¿Ya respondí?
+          if (firebaseUser) {
+            const rSnap = await getDoc(
+              doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
+                  `${firebaseUser.uid}_${preg.id}`)
+            );
+            if (!cancelado)
+              setMiRespuesta(rSnap.exists() ? rSnap.data().respuesta : null);
+          }
+        } else {
+          // 2. Buscar la más reciente cerrada
+          setPreguntaActiva(null);
+          const snapC = await getDocs(query(ref, where("estado","==","cerrada")));
+          if (cancelado) return;
+
+          if (!snapC.empty) {
+            const cerradas = snapC.docs
+              .map(d => ({ id: d.id, ...d.data() }))
+              .sort((a,b) => (b.creadaEn?.seconds||0) - (a.creadaEn?.seconds||0));
+            const ultima = cerradas[0];
+            const clave  = `${LS_PREFIX}${partidoId}_${ultima.id}`;
+            setResultado(ultima);
+            setResultadoVisto(localStorage.getItem(clave) === "true");
+          } else {
+            setResultado(null);
+          }
+        }
+      } catch (_) {}
+    };
+
+    poll();
+    const iv = setInterval(poll, 8000);
+    return () => { cancelado = true; clearInterval(iv); };
+  }, [partidoId, firebaseUser]);
+
+  const responder = async (opcion) => {
+    if (!firebaseUser || !preguntaActiva || miRespuesta || enviando) return;
+    setEnviando(true);
+    try {
+      await setDoc(
+        doc(db, "preguntasEnVivo", partidoId, "respuestasEnVivo",
+            `${firebaseUser.uid}_${preguntaActiva.id}`),
+        {
+          uid:        firebaseUser.uid,
+          preguntaId: preguntaActiva.id,
+          respuesta:  opcion,
+          partidoId,
+          timestamp:  serverTimestamp(),
+        }
+      );
+      setMiRespuesta(opcion);
+    } catch (_) {}
+    finally { setEnviando(false); }
+  };
+
+  const ocultarResultado = () => {
+    if (!resultado) return;
+    localStorage.setItem(`${LS_PREFIX}${partidoId}_${resultado.id}`, "true");
+    setResultadoVisto(true);
+  };
+
+  if (!partidoId) return null;
+  if (!preguntaActiva && !resultado) return null;
+  if (resultado && resultadoVisto) return null;
+
+  // Datos visuales
+  const localBandera     = partidoData?.local?.bandera     || "🏳️";
+  const visitanteBandera = partidoData?.visitante?.bandera || "🏳️";
+  const localNombre      = partidoData?.local?.nombre      || "Local";
+  const visitanteNombre  = partidoData?.visitante?.nombre  || "Visitante";
+  const imagenFondo      = partidoData?.imagenFondo;
+  const pts              = preguntaActiva?.puntosEnVivo || resultado?.puntosEnVivo || 3;
+
+  // ── MODAL FULLSCREEN ────────────────────────────────────────
+  return (
+    <div style={{
+      position:"fixed", inset:0, zIndex:700,
+      display:"flex", flexDirection:"column",
+      alignItems:"center", justifyContent:"center",
+      fontFamily:"'Press Start 2P', monospace",
+    }}>
+      {/* Capa de imagen de fondo */}
+      {imagenFondo ? (
+        <div style={{
+          position:"absolute", inset:0,
+          backgroundImage:`url(/${imagenFondo})`,
+          backgroundSize:"cover", backgroundPosition:"center",
+          filter:"brightness(0.35) saturate(1.3)",
+        }} />
+      ) : (
+        <div style={{
+          position:"absolute", inset:0,
+          background:"radial-gradient(ellipse at center, #1a0a2e 0%, #0a0510 100%)",
+        }} />
+      )}
+
+      {/* Overlay oscuro degradado */}
+      <div style={{
+        position:"absolute", inset:0,
+        background:"linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.85) 100%)",
+      }} />
+
+      {/* Contenido */}
+      <div style={{
+        position:"relative", zIndex:1,
+        width:"100%", maxWidth:"440px",
+        padding:"20px 16px",
+        display:"flex", flexDirection:"column", alignItems:"center",
+      }}>
+
+        {/* Banderas grandes */}
+        <div style={{
+          display:"flex", alignItems:"center", gap:"16px",
+          marginBottom:"12px",
+        }}>
+          <span style={{ fontSize:"52px", lineHeight:1,
+            filter:"drop-shadow(0 0 8px rgba(255,255,255,0.3))" }}>
+            {localBandera}
+          </span>
+          <div style={{ textAlign:"center" }}>
+            <p style={{ fontSize:"6px", color:"rgba(255,255,255,0.6)", lineHeight:2 }}>VS</p>
+            <div style={{
+              background:"var(--rojo-chile)", color:"var(--blanco)",
+              padding:"2px 8px", fontSize:"5px",
+              border:"1px solid rgba(255,255,255,0.3)",
+              animation:"parpadeo 1s ease-in-out infinite",
+            }}>
+              🔴 EN VIVO
+            </div>
+          </div>
+          <span style={{ fontSize:"52px", lineHeight:1,
+            filter:"drop-shadow(0 0 8px rgba(255,255,255,0.3))" }}>
+            {visitanteBandera}
+          </span>
+        </div>
+
+        {/* Nombres */}
+        <p style={{ fontSize:"6px", color:"rgba(255,255,255,0.7)",
+          marginBottom:"16px", textAlign:"center", lineHeight:2 }}>
+          {localNombre} vs {visitanteNombre}
+        </p>
+
+        {/* ── PREGUNTA ACTIVA ─────────────────────────────── */}
+        {preguntaActiva && (
+          <div style={{ width:"100%" }}>
+            {/* Badge de puntos */}
+            <div style={{ textAlign:"center", marginBottom:"12px" }}>
+              <span style={{
+                background:"rgba(244,208,63,0.2)",
+                border:"2px solid var(--amarillo)",
+                color:"var(--amarillo)",
+                fontSize:"7px", padding:"4px 12px",
+                boxShadow:"0 0 12px rgba(244,208,63,0.4)",
+              }}>
+                ¡RESPONDE Y GANA +{pts} PTS!
+              </span>
+            </div>
+
+            {/* Texto de la pregunta */}
+            <div style={{
+              background:"rgba(0,0,0,0.6)",
+              border:"2px solid rgba(255,255,255,0.15)",
+              padding:"14px 12px", marginBottom:"12px",
+              backdropFilter:"blur(4px)",
+            }}>
+              <p style={{ fontSize:"8px", color:"var(--blanco)",
+                lineHeight:2, textAlign:"center",
+                textShadow:"2px 2px 4px rgba(0,0,0,0.8)" }}>
+                {preguntaActiva.texto}
+              </p>
+            </div>
+
+            {/* Opciones o confirmación */}
+            {!miRespuesta ? (
+              <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                {(preguntaActiva.opciones||[]).map((op, i) => (
+                  <button key={i}
+                    onClick={() => responder(op)}
+                    disabled={enviando}
+                    style={{
+                      fontFamily:"'Press Start 2P',monospace",
+                      fontSize:"7px", padding:"10px 12px",
+                      background:"rgba(0,0,0,0.65)",
+                      border:"2px solid rgba(255,255,255,0.25)",
+                      color:"var(--blanco)", cursor:"pointer",
+                      textAlign:"left",
+                      backdropFilter:"blur(4px)",
+                      transition:"all 0.15s",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = "var(--amarillo)";
+                      e.currentTarget.style.background  = "rgba(244,208,63,0.18)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)";
+                      e.currentTarget.style.background  = "rgba(0,0,0,0.65)";
+                    }}
+                  >
+                    {op}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                background:"rgba(82,183,136,0.15)",
+                border:"2px solid var(--verde-claro)",
+                padding:"14px", textAlign:"center",
+              }}>
+                <p style={{ fontSize:"7px", color:"var(--verde-claro)", lineHeight:2 }}>
+                  ✅ Tu respuesta:
+                </p>
+                <p style={{ fontSize:"8px", color:"var(--amarillo)",
+                  marginTop:"4px", lineHeight:2 }}>
+                  {miRespuesta}
+                </p>
+                <p style={{ fontSize:"5px", color:"var(--gris-claro)",
+                  marginTop:"6px", lineHeight:2 }}>
+                  Esperando que el admin cierre la pregunta...
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── RESULTADO ───────────────────────────────────── */}
+        {!preguntaActiva && resultado && !resultadoVisto && (
+          <div style={{ width:"100%" }}>
+            <div style={{
+              background:"rgba(0,0,0,0.7)",
+              border:`3px solid ${miRespuesta===resultado.respuestaCorrecta
+                ? "var(--verde-claro)" : "var(--gris)"}`,
+              padding:"16px 14px",
+              backdropFilter:"blur(4px)",
+            }}>
+              <p style={{ fontSize:"6px", color:"var(--gris-claro)",
+                marginBottom:"8px", textAlign:"center" }}>
+                RESULTADO DE LA PREGUNTA
+              </p>
+              <p style={{ fontSize:"7px", color:"var(--blanco)",
+                lineHeight:2, marginBottom:"10px", textAlign:"center" }}>
+                {resultado.texto}
+              </p>
+              <p style={{ fontSize:"7px", color:"var(--amarillo)",
+                marginBottom:"8px", textAlign:"center" }}>
+                ✅ Correcta: <strong>{resultado.respuestaCorrecta}</strong>
+              </p>
+              {miRespuesta ? (
+                <p style={{ fontSize:"8px", textAlign:"center",
+                  color: miRespuesta===resultado.respuestaCorrecta
+                    ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
+                  {miRespuesta===resultado.respuestaCorrecta
+                    ? `🎉 ¡ACERTASTE! +${resultado.puntosEnVivo||3} PTS`
+                    : `❌ Respondiste: ${miRespuesta}`}
+                </p>
+              ) : (
+                <p style={{ fontSize:"6px", color:"var(--gris-claro)",
+                  textAlign:"center" }}>
+                  No respondiste esta pregunta.
+                </p>
+              )}
+              <button
+                onClick={ocultarResultado}
+                className="btn-pixel btn-gris w-full"
+                style={{ fontSize:"7px", marginTop:"14px" }}>
+                CERRAR ✕
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes parpadeo {
+          0%,100% { opacity:1; }
+          50%      { opacity:0.6; }
+        }
+      `}</style>
+    </div>
+  );
+}
+</file>
+
+<file path="src/utils/helpers.js">
+// src/utils/helpers.js  — v6 (Fase 3)
+// CAMBIO v6: procesarResultadoPartido consume carta (decrement -1)
+// usando flag cartaConsumida para evitar doble descuento en recálculo.
+// Todo lo demás idéntico a v5.
+import {
+  collection, getDocs, query, where, doc,
+  updateDoc, setDoc, increment, getDoc, addDoc, serverTimestamp,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+import {
+  calcularPuntosPartido, calcularPuntosPregunta,
+  aplicarMultiplicadorCarta, cartaSeAplica,
+} from "./scoring";
+
+// Re-export para compatibilidad con quien importe desde helpers.
+export { calcularPuntosPartido, calcularPuntosPregunta, aplicarMultiplicadorCarta };
+
+export function hoyStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+export function ayerStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+export function formatHora(h) { return `${h} hrs`; }
+export function formatFecha(fechaStr) {
+  const [y,m,d] = fechaStr.split("-").map(Number);
+  return new Date(y,m-1,d).toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long"});
+}
+export function diaNumero() {
+  const inicio = new Date("2026-06-11T00:00:00");
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diff = Math.floor((hoy - inicio) / 86400000);
+  return diff < 0 ? 0 : diff + 1;
+}
+export function partidoAbierto(partido) {
+  if (!partido || !partido.cierre) return true;
+  let cd;
+  if (typeof partido.cierre.toDate === "function") cd = partido.cierre.toDate();
+  else if (partido.cierre._seconds !== undefined)  cd = new Date(partido.cierre._seconds * 1000);
+  else if (typeof partido.cierre === "number")     cd = new Date(partido.cierre * 1000);
+  else if (typeof partido.cierre === "string")     cd = new Date(partido.cierre);
+  else return true;
+  return new Date() < cd;
+}
+
+// ── Notificación interna ─────────────────────────────────────
+async function _notif(uid, datos) {
+  try {
+    await addDoc(collection(db,"usuarios",uid,"notificaciones"),
+      { ...datos, leido: false, timestamp: serverTimestamp() });
+  } catch(e) { console.error("notif error", e); }
+}
+function _txtPred(pred, dest) {
+  if (dest) return `${pred.golesLocalPred??'?'} - ${pred.golesVisitantePred??'?'}`;
+  const g = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
+  return g + (pred.diferencia ? ` (dif. ${pred.diferencia})` : "");
+}
+function _txtRes(res) {
+  const b = `${res.golesLocal}-${res.golesVisitante}`;
+  if (res.definicion === "penales") return `${b} (pen. ${res.penalesLocal}-${res.penalesVisitante})`;
+  if (res.definicion === "alargue") return `${b} (alg.)`;
+  return b;
+}
+
+// ── procesarResultadoPartido v6 (consume carta) ──────────────
+export async function procesarResultadoPartido(partidoId, resultado, fase, estaDestacado, fecha) {
+  let procesados = 0, errores = 0;
+  try {
+    let nombrePartido = partidoId;
+    try {
+      const ps = await getDoc(doc(db,"partidos",partidoId));
+      if (ps.exists()) {
+        const pd = ps.data();
+        nombrePartido = `${pd.local?.bandera??''}${pd.local?.nombre??''} vs ${pd.visitante?.nombre??''}${pd.visitante?.bandera??''}`;
+      }
+    } catch(_) {}
+
+    const snap = await getDocs(query(collection(db,"predicciones"),where("partidoId","==",partidoId)));
+    if (snap.empty) return { procesados:0, errores:0 };
+
+    const deltasPorUid = {}, notifsPorUid = {};
+
+    // Cache de inventario de cartas por uid: la carta solo multiplica si el
+    // usuario tiene stock al momento de procesar (evita que una misma carta
+    // multiplique varios partidos y que el contador quede negativo).
+    const stockCartas = {};
+    async function stockDisponible(uid, cartaId) {
+      if (!(uid in stockCartas)) {
+        try {
+          const us = await getDoc(doc(db,"usuarios",uid));
+          stockCartas[uid] = us.exists() ? (us.data().cartas || {}) : {};
+        } catch { stockCartas[uid] = {}; }
+      }
+      return (stockCartas[uid][cartaId] || 0) > 0;
+    }
+
+    for (const pDoc of snap.docs) {
+      try {
+        const pred = pDoc.data();
+        const uid  = pred.uid;
+        const puntosViejos = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
+        const yaConsumio   = pred.cartaConsumida === true;
+
+        // ¿La carta se aplica? (lógica pura en scoring.cartaSeAplica)
+        const stock = pred.cartaId && !yaConsumio ? (await stockDisponible(uid, pred.cartaId) ? 1 : 0) : 0;
+        const cartaAplica = cartaSeAplica(!!pred.cartaId, yaConsumio, stock);
+
+        const { puntos: base, esMaximo } = calcularPuntosPartido(pred, resultado, fase, estaDestacado);
+        const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, cartaAplica ? pred.cartaId : null);
+        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
+
+        // Actualizar predicción
+        const upd = { puntosGanados: puntosNuevos, puntosBase: base, esMaximo, calculadoEn: new Date().toISOString() };
+        if (cartaAplica && !yaConsumio) upd.cartaConsumida = true;
+        await updateDoc(doc(db,"predicciones",pDoc.id), upd);
+
+        // Consumir carta (solo primera vez y si había stock; descuenta del cache local)
+        if (cartaAplica && !yaConsumio) {
+          try {
+            await updateDoc(doc(db,"usuarios",uid), { [`cartas.${pred.cartaId}`]: increment(-1) });
+            stockCartas[uid][pred.cartaId] = (stockCartas[uid][pred.cartaId] || 0) - 1;
+          } catch(e) { console.error("Error consumiendo carta:", e); }
+        }
+
+        if (delta !== 0) {
+          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
+          deltasPorUid[uid] = (deltasPorUid[uid] || 0) + delta;
+        }
+
+        // Notificar solo en el primer procesamiento o si el puntaje cambió
+        // (evita spam de notificaciones al re-guardar un resultado sin cambios).
+        if (puntosViejos === null || delta !== 0) {
+          notifsPorUid[uid] = {
+            tipo:"resultado_partido", partidoId, nombrePartido,
+            tuApuesta: _txtPred(pred, estaDestacado), resultado: _txtRes(resultado),
+            acertaste: esMaximo, puntosGanados: puntosNuevos, fecha,
+          };
+        }
+        procesados++;
+      } catch(e) { console.error("Error pred:", pDoc.id, e); errores++; }
+    }
+
+    for (const [uid, delta] of Object.entries(deltasPorUid)) {
+      if (delta === 0) continue;
+      try {
+        const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
+        const diaSnap = await getDoc(diaRef);
+        if (diaSnap.exists()) {
+          await updateDoc(diaRef, { puntos: increment(delta) });
+        } else {
+          const uSnap = await getDoc(doc(db,"usuarios",uid));
+          const ud = uSnap.exists() ? uSnap.data() : {};
+          await setDoc(diaRef, { uid, fecha, puntos: delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
+        }
+      } catch(e) { console.error("puntosDelDia error:", uid, e); }
+    }
+
+    for (const [uid, datos] of Object.entries(notifsPorUid)) await _notif(uid, datos);
+    return { procesados, errores };
+  } catch(e) {
+    console.error("Error general procesarResultadoPartido:", e);
+    return { procesados:0, errores:1 };
+  }
+}
+
+// ── procesarPreguntaDelDia ────────────────────────────────────
+export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha) {
+  let procesados = 0;
+  try {
+    let textoPregunta = "Pregunta del día";
+    try {
+      const ps = await getDoc(doc(db,"preguntas",preguntaId));
+      if (ps.exists()) textoPregunta = ps.data().texto || textoPregunta;
+    } catch(_) {}
+
+    const snap = await getDocs(query(collection(db,"respuestas"),where("preguntaId","==",preguntaId)));
+    for (const rDoc of snap.docs) {
+      try {
+        const data = rDoc.data(); const uid = data.uid;
+        const puntosViejos = typeof data.puntosGanados === "number" ? data.puntosGanados : null;
+        const esCorrecta   = data.respuesta === respuestaCorrecta;
+        const puntosNuevos = esCorrecta ? 2 : 0;
+        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
+
+        await updateDoc(doc(db,"respuestas",rDoc.id), { esCorrecta, puntosGanados: puntosNuevos });
+
+        if (delta !== 0) {
+          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
+          const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
+          const diaSnap = await getDoc(diaRef);
+          if (diaSnap.exists()) {
+            await updateDoc(diaRef, { puntos: increment(delta) });
+          } else {
+            const uSnap = await getDoc(doc(db,"usuarios",uid));
+            const ud = uSnap.exists() ? uSnap.data() : {};
+            await setDoc(diaRef, { uid, fecha, puntos:delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
+          }
+        }
+
+        await _notif(uid, {
+          tipo:"resultado_pregunta", preguntaId, textoPregunta,
+          tuRespuesta:data.respuesta, respuestaCorrecta,
+          acertaste:esCorrecta, puntosGanados:puntosNuevos, fecha,
+        });
+        if (esCorrecta) procesados++;
+      } catch(e) { console.error("Error resp:", rDoc.id, e); }
+    }
+    return { ok:true, procesados };
+  } catch(e) {
+    console.error("Error procesarPreguntaDelDia:", e);
+    return { ok:false, error:e.message };
+  }
+}
+
+// ── calcularGanadorDelDia ─────────────────────────────────────
+export async function calcularGanadorDelDia(fecha) {
+  try {
+    const snap = await getDocs(query(collection(db,"puntosDelDia"),where("fecha","==",fecha)));
+    if (snap.empty) return { ok:false, mensaje:"Sin datos de puntosDelDia para ese día." };
+
+    // Cargar puntos de EN VIVO del día: sumar respuestas correctas del evento
+    const ptsEnVivo = {};
+    try {
+      const evSnap = await getDoc(doc(db,"eventoEnVivo","actual"));
+      if (evSnap.exists() && evSnap.data().activo !== false) {
+        const evData   = evSnap.data();
+        const preguntas = evData.preguntas || [];
+        const cerradas  = preguntas.filter(p => p.estado === "cerrada");
+        if (cerradas.length > 0) {
+          const respSnap = await getDocs(collection(db,"eventoEnVivo","actual","respuestas"));
+          respSnap.docs.forEach(d => {
+            const r = d.data();
+            const preg = cerradas.find(p => p.id === r.preguntaId);
+            if (preg && r.respuesta === preg.respuestaCorrecta) {
+              ptsEnVivo[r.uid] = (ptsEnVivo[r.uid] || 0) + (preg.puntosEnVivo || 3);
+            }
+          });
+        }
+      }
+    } catch(evErr) { console.warn("calcularGanadorDelDia: no se pudo leer EN VIVO", evErr); }
+
+    // Combinar: puntos del día (partidos + preguntas) + puntos EN VIVO
+    const jug = snap.docs.map(d => {
+      const base = { docId:d.id, ...d.data() };
+      const extra = ptsEnVivo[base.uid] || 0;
+      return { ...base, puntos: (base.puntos || 0) + extra, ptsEnVivo: extra };
+    }).sort((a,b) => b.puntos - a.puntos);
+
+    // ── Protección: si ya se entregaron bonus y cartas, no repetir ────
+    if (jug.some(j => j.esGanador === true)) {
+      return {
+        ok: false,
+        yaEntregado: true,
+        mensaje: `Las cartas y bonus del día ${fecha} ya fueron entregados. Para revertir, elimina el campo esGanador desde Firebase Console.`,
+      };
+    }
+    const maxPts = jug[0].puntos;
+    // No premiar si nadie sumó puntos ese día (evita carta x4 + bonus a un "líder" con 0 pts).
+    if (maxPts <= 0) return { ok:false, mensaje:`Nadie sumó puntos el día ${fecha}; no se entregan cartas ni bonus.` };
+    const l1 = jug.filter(j=>j.puntos===maxPts);
+    const r1 = jug.filter(j=>j.puntos<maxPts);
+    const p2 = r1[0]?.puntos;
+    const l2 = p2!==undefined ? r1.filter(j=>j.puntos===p2) : [];
+    const r2 = r1.filter(j=>j.puntos<(p2??-Infinity));
+    const p3 = r2[0]?.puntos;
+    const l3 = p3!==undefined ? r2.filter(j=>j.puntos===p3) : [];
+
+    for (const j of l1) {
+      await updateDoc(doc(db,"puntosDelDia",j.docId),{esGanador:true,bonusGanador:2});
+      await updateDoc(doc(db,"usuarios",j.uid),{puntosTotal:increment(2)});
+      await _asignarCarta(j.uid,4,fecha);
+      await _notif(j.uid,{tipo:"bonus_ganador",lugar:1,bonus:2,fecha,mensaje:`🥇 ¡Ganaste el día ${fecha}! +2 pts bonus y una carta x4.`});
+    }
+    for (const j of l2) { await _asignarCarta(j.uid,3,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:2,bonus:0,fecha,mensaje:`🥈 Quedaste 2° el día ${fecha}. ¡Carta x3!`}); }
+    for (const j of l3) { await _asignarCarta(j.uid,2,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:3,bonus:0,fecha,mensaje:`🥉 Quedaste 3° el día ${fecha}. ¡Carta x2!`}); }
+
+    return { ok:true, ganador:l1.map(j=>j.nickname).join(", "), totalJugadores:jug.length,
+      lugar1:l1.map(j=>j.nickname), lugar2:l2.map(j=>j.nickname), lugar3:l3.map(j=>j.nickname) };
+  } catch(e) {
+    console.error("Error calcularGanadorDelDia:", e);
+    return { ok:false, error:e.message };
+  }
+}
+
+async function _asignarCarta(uid, mult, fecha) {
+  const carta = cartaAleatoriaPorMultiplicador(mult);
+  if (!carta) return;
+  await setDoc(doc(db,"cartasDelUsuario",`${uid}_${carta.id}_${fecha}`),{
+    uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
+    multiplicador:carta.multiplicador, rareza:carta.rareza, fecha, visto:false,
+  });
+  await updateDoc(doc(db,"usuarios",uid),{[`cartas.${carta.id}`]:increment(1)});
+}
+
+export async function publicarAvisoAdmin(texto) {
+  await setDoc(doc(db,"config","avisoAdmin"),{texto,fecha:new Date().toISOString(),activo:true});
+}
+export async function cerrarAvisoAdmin() {
+  await updateDoc(doc(db,"config","avisoAdmin"),{activo:false});
+}
+</file>
+
+<file path="src/components/VozHinchada.jsx">
+// src/components/VozHinchada.jsx  — v7 (Bugfix 3)
+// ─────────────────────────────────────────────────────────────
+// FIX 2: Añade sistema de reacciones con cierre automático:
+//   • El selector de emojis se cierra automáticamente al elegir.
+//   • También se cierra al clicar fuera (mousedown en document).
+//   • Botón muestra el emoji activo o "😀" como icono base.
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useRef } from "react";
+import {
+  collection, getDocs, query, orderBy, addDoc, serverTimestamp,
+  doc, setDoc, deleteDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { hoyStr } from "../utils/helpers";
+
+const COLORES_MSG = [
+  ["#1a472a","#52b788"], ["#9b1c1c","#f4d03f"], ["#1a1a5e","#a8d8ea"],
+  ["#4a0e8f","#e0c3fc"], ["#1a3a00","#b5e48c"], ["#3d2b00","#ffd166"],
+  ["#003333","#56cfe1"], ["#3b0a0a","#ff9a76"],
+];
+const EMOJIS = ["😀","😡","😢","😂","👍","👎"];
+
+function colorMsg(idx) { return COLORES_MSG[idx % COLORES_MSG.length]; }
+
+function labelTiempo(fechaStr, horaStr) {
+  const hoy = hoyStr();
+  if (fechaStr === hoy) return `HOY · ${horaStr}`;
+  const [, m, d] = (fechaStr || "").split("-");
+  return m && d ? `${d}/${m} · ${horaStr}` : horaStr;
+}
+
+// ── Reacciones con cierre automático al seleccionar ───────────
+function Reacciones({ docId, miUid }) {
+  const [conteo,     setConteo]     = useState({});
+  const [miReaccion, setMiReaccion] = useState(null);
+  const [abierto,    setAbierto]    = useState(false);
+  const popRef = useRef(null);
+
+  useEffect(() => { if (docId) cargar(); }, [docId]);
+
+  // Cierre al clicar fuera
+  useEffect(() => {
+    if (!abierto) return;
+    const h = (e) => {
+      if (popRef.current && !popRef.current.contains(e.target)) setAbierto(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [abierto]);
+
+  const cargar = async () => {
+    try {
+      const snap = await getDocs(collection(db,"mensajesDia",docId,"reacciones"));
+      const c = {}; let mia = null;
+      snap.docs.forEach(d => {
+        const { emoji } = d.data();
+        c[emoji] = (c[emoji]||0) + 1;
+        if (d.id === miUid) mia = emoji;
+      });
+      setConteo(c); setMiReaccion(mia);
+    } catch(_) {}
+  };
+
+  const reaccionar = async (emoji) => {
+    if (!miUid) return;
+    // Fix 2: cerrar INMEDIATAMENTE al seleccionar
+    setAbierto(false);
+
+    const ref = doc(db,"mensajesDia",docId,"reacciones",miUid);
+    if (miReaccion === emoji) {
+      // Quitar reacción
+      await deleteDoc(ref);
+      setConteo(prev => {
+        const n = {...prev};
+        n[emoji] = Math.max(0,(n[emoji]||0)-1);
+        if (!n[emoji]) delete n[emoji];
+        return n;
+      });
+      setMiReaccion(null);
+    } else {
+      // Cambiar o poner
+      if (miReaccion) {
+        setConteo(prev => {
+          const n = {...prev};
+          n[miReaccion] = Math.max(0,(n[miReaccion]||0)-1);
+          if (!n[miReaccion]) delete n[miReaccion];
+          return n;
+        });
+      }
+      await setDoc(ref, { emoji, uid: miUid });
+      setConteo(prev => ({ ...prev, [emoji]: (prev[emoji]||0)+1 }));
+      setMiReaccion(emoji);
+    }
+  };
+
+  const tieneReacciones = Object.keys(conteo).some(k => conteo[k] > 0);
+
+  return (
+    <div style={{ marginTop:"5px",display:"flex",alignItems:"center",
+      gap:"4px",flexWrap:"wrap" }}>
+      <div ref={popRef} style={{ position:"relative" }}>
+        {/* Botón: emoji activo o ícono base 😀 */}
+        <button
+          onClick={() => setAbierto(v=>!v)}
+          title={miReaccion ? "Cambiar reacción" : "Reaccionar"}
+          style={{
+            fontSize:"12px", padding:"2px 5px", cursor:"pointer",
+            background: miReaccion
+              ? "rgba(255,255,255,0.22)"
+              : "rgba(255,255,255,0.07)",
+            border: miReaccion
+              ? "1px solid rgba(255,255,255,0.45)"
+              : "1px solid rgba(255,255,255,0.15)",
+            borderRadius:"3px", lineHeight:1,
+          }}>
+          {miReaccion || "😀"}
+        </button>
+
+        {/* Popover — se cierra solo al seleccionar */}
+        {abierto && (
+          <div style={{
+            position:"absolute",
+            bottom:"calc(100% + 4px)", left:0,
+            background:"var(--negro)",
+            border:"2px solid var(--verde-campo)",
+            boxShadow:"3px 3px 0 rgba(0,0,0,0.5)",
+            padding:"5px 6px",
+            display:"flex", gap:"2px",
+            zIndex:100,
+            borderRadius:"2px",
+          }}>
+            {EMOJIS.map(e => (
+              <button key={e}
+                onClick={() => reaccionar(e)}
+                style={{
+                  fontSize:"15px", padding:"3px 4px", cursor:"pointer",
+                  background: miReaccion===e
+                    ? "rgba(255,255,255,0.22)"
+                    : "transparent",
+                  border:"1px solid transparent",
+                  borderRadius:"2px",
+                }}>
+                {e}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Conteos */}
+      {tieneReacciones && Object.entries(conteo)
+        .filter(([,n])=>n>0)
+        .map(([e,n]) => (
+          <span key={e} style={{
+            fontSize:"9px",
+            background:"rgba(0,0,0,0.2)",
+            padding:"1px 5px",
+            border:"1px solid rgba(255,255,255,0.1)",
+            borderRadius:"2px",
+          }}>
+            {e} {n}
+          </span>
+        ))
+      }
+    </div>
+  );
+}
+
+// ── Mensaje individual ────────────────────────────────────────
+function MensajeItem({ mensaje, colorIdx, miUid }) {
+  const [fondo, texto] = colorMsg(colorIdx);
+  const tieneUrl = mensaje.url && mensaje.url.startsWith("http");
+  const tiempo   = labelTiempo(mensaje.fecha, mensaje.hora);
+
+  return (
+    <div style={{ padding:"8px 10px",background:fondo,
+      border:`2px solid ${texto}44`,marginBottom:"4px" }}>
+      <div style={{ display:"flex",justifyContent:"space-between",
+        marginBottom:"3px",gap:"6px",flexWrap:"wrap" }}>
+        <span style={{ fontSize:"6px",color:texto,
+          fontFamily:"'Press Start 2P',monospace",
+          overflow:"hidden",textOverflow:"ellipsis",
+          whiteSpace:"nowrap",maxWidth:"55%" }}>
+          {mensaje.autor}
+        </span>
+        <span style={{ fontSize:"5px",color:`${texto}bb`,
+          fontFamily:"'Press Start 2P',monospace",whiteSpace:"nowrap" }}>
+          {tiempo}
+        </span>
+      </div>
+      <p style={{ fontSize:"6px",color:texto,lineHeight:1.8,
+        fontFamily:"'Press Start 2P',monospace",wordBreak:"break-word" }}>
+        {mensaje.texto}
+      </p>
+      {tieneUrl && (
+        <a href={mensaje.url} target="_blank" rel="noopener noreferrer"
+          style={{ display:"block",marginTop:"4px",fontSize:"5px",
+            color:"#56cfe1",fontFamily:"'Press Start 2P',monospace",
+            wordBreak:"break-all",textDecoration:"underline" }}>
+          🔗 {mensaje.url.length>40?mensaje.url.slice(0,40)+"…":mensaje.url}
+        </a>
+      )}
+      {/* Fix 2: Reacciones con auto-cierre */}
+      <Reacciones docId={mensaje.docId} miUid={miUid} />
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+export default function VozHinchada() {
+  const { firebaseUser, userProfile } = useAuth();
+  const [mensajes,    setMensajes]    = useState([]);
+  const [cargando,    setCargando]    = useState(true);
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [texto,       setTexto]       = useState("");
+  const [url,         setUrl]         = useState("");
+  const [enviando,    setEnviando]    = useState(false);
+  const [enviado,     setEnviado]     = useState(false);
+  const hoy = hoyStr();
+
+  useEffect(() => { cargar(); }, []);
+
+  const cargar = async () => {
+    setCargando(true);
+    try {
+      const snap = await getDocs(
+        query(collection(db,"mensajesDia"), orderBy("timestamp","desc"))
+      );
+      setMensajes(snap.docs.map(d=>({docId:d.id,...d.data()})));
+    } catch(e){ console.error(e); }
+    finally { setCargando(false); }
+  };
+
+  const enviar = async () => {
+    if (!texto.trim()||!firebaseUser) return;
+    setEnviando(true);
+    try {
+      const ahora = new Date();
+      const msg = {
+        autor:     userProfile?.nickname||firebaseUser.displayName?.split(" ")[0]||"Anónimo",
+        texto:     texto.trim().slice(0,200),
+        url:       url.trim()||null,
+        timestamp: serverTimestamp(),
+        fecha:     hoy,
+        hora:      `${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
+        uid:       firebaseUser.uid,
+      };
+      const ref = await addDoc(collection(db,"mensajesDia"), msg);
+      setMensajes(prev=>[{docId:ref.id,...msg,timestamp:ahora},...prev]);
+      setTexto(""); setUrl(""); setEnviado(true); setMostrarForm(false);
+      setTimeout(()=>setEnviado(false),3000);
+    } catch(e){ console.error(e); }
+    finally { setEnviando(false); }
+  };
+
+  return (
+    <div style={{ marginBottom:"16px" }}>
+      <div style={{ display:"flex",justifyContent:"space-between",
+        alignItems:"center",marginBottom:"10px" }}>
+        <div className="seccion-titulo" style={{ margin:0 }}>
+          📢 LA VOZ DE LA HINCHADA
+        </div>
+        <button className="btn-pixel btn-amarillo"
+          style={{ fontSize:"6px",padding:"5px 10px" }}
+          onClick={()=>{setMostrarForm(v=>!v);setEnviado(false);}}>
+          {mostrarForm?"✕ CERRAR":"✏ DEJAR MENSAJE"}
+        </button>
+      </div>
+
+      {mostrarForm && (
+        <div style={{ background:"var(--negro)",border:"3px solid var(--amarillo)",
+          boxShadow:"4px 4px 0 var(--amarillo-oscuro)",padding:"14px 12px",
+          marginBottom:"10px",display:"flex",flexDirection:"column",gap:"8px" }}>
+          <p style={{ fontSize:"6px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
+          <textarea value={texto} onChange={e=>setTexto(e.target.value.slice(0,200))}
+            placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
+            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
+              width:"100%",padding:"8px",border:"2px solid var(--negro)",
+              background:"var(--blanco)",color:"var(--negro)",
+              outline:"none",resize:"none",lineHeight:2 }} />
+          <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>
+            {texto.length}/200
+          </p>
+          <input value={url} onChange={e=>setUrl(e.target.value)}
+            placeholder="URL opcional"
+            style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+              width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
+              background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
+          <p style={{ fontSize:"5px",color:"var(--gris-claro)",lineHeight:1.8 }}>
+            ⚠ Sin spam. Visible para todos.
+          </p>
+          <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
+            onClick={enviar} disabled={enviando||!texto.trim()}>
+            {enviando?"⚙ ENVIANDO...":"📣 PUBLICAR"}
+          </button>
+        </div>
+      )}
+
+      {enviado && (
+        <p style={{ fontSize:"7px",color:"var(--verde-claro)",
+          marginBottom:"8px",textAlign:"center" }}>
+          ✅ ¡Mensaje publicado!
+        </p>
+      )}
+
+      <div style={{ background:"var(--negro)",border:"3px solid var(--verde-campo)",
+        boxShadow:"4px 4px 0 var(--verde-oscuro)",padding:"8px",
+        maxHeight:"280px",overflowY:"auto" }}>
+        {cargando ? (
+          <p style={{ fontSize:"6px",color:"var(--gris-claro)",
+            textAlign:"center",padding:"16px" }}>Cargando mensajes...</p>
+        ) : mensajes.length===0 ? (
+          <p style={{ fontSize:"6px",color:"var(--gris-claro)",
+            textAlign:"center",padding:"16px",lineHeight:2 }}>
+            Todavía no hay mensajes.<br/>¡Sé el primero!
+          </p>
+        ) : (
+          mensajes.map((m,i)=>(
+            <MensajeItem key={m.docId} mensaje={m}
+              colorIdx={i} miUid={firebaseUser?.uid} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 </file>
 
 <file path="firestore.rules">
@@ -10676,7 +10769,8 @@ import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
 import { composicionPorPuesto, generarSobre, gastarDuplicados, cartaImg, recompensasPendientes } from "../utils/sobre";
 
 const CARDS_URL = "https://kvtral.github.io/laminas_16_bits/cards.json";
-const LAMINAS_POR_SOBRE = 4;
+const LS_IMAGEN_TAPA = "cp8b_imagen_tapa"; // localStorage key para caché de imagen de tapa
+const LAMINAS_POR_SOBRE = 7;
 
 function hoyStr() {
   const d = new Date();
@@ -10907,7 +11001,7 @@ function SobreAnimado({ onAbrir }) {
 }
 
 // ── Lámina con flip ───────────────────────────────────────
-function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick }) {
+function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick, imagenTapa }) {
   const [volteada, setVolteada] = useState(yaVolteada);
 
   const dar = () => {
@@ -10934,12 +11028,12 @@ function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick }) {
         border: volteada ? "3px solid var(--verde-claro)" : "3px solid var(--amarillo)",
         boxShadow:"3px 3px 0 var(--negro)",
         overflow:"hidden",
-        background: volteada ? "transparent" : "linear-gradient(135deg,#1a1a5e,#4a0e8f)",
+        background: volteada ? "transparent" : imagenTapa ? `url(/${imagenTapa}) center/cover` : "linear-gradient(135deg,#1a1a5e,#4a0e8f)",
         display:"flex", alignItems:"center", justifyContent:"center",
         transition:"border-color 0.3s",
       }}>
         {!volteada
-          ? <span style={{ fontSize:"32px" }}>🃏</span>
+          ? null
           : <img
               src={lamina.url}
               alt={lamina.nombre}
@@ -11451,6 +11545,9 @@ export default function SeccionLaminas() {
   const [todasLaminas, setTodasLaminas] = useState([]);
   const [cargandoCat,  setCargandoCat]  = useState(true);
   const [errorCat,     setErrorCat]     = useState(null);
+  const [imagenTapa,   setImagenTapa]   = useState(
+    () => localStorage.getItem(LS_IMAGEN_TAPA) || null
+  );
 
   const [lightboxLamina,   setLightboxLamina]   = useState(null);
   const [lightboxCantidad, setLightboxCantidad] = useState(0);
@@ -11492,6 +11589,16 @@ export default function SeccionLaminas() {
         setErrorCat("No se pudo cargar el catálogo. Verifica la conexión.");
       })
       .finally(() => setCargandoCat(false));
+    // Cargar imagen de tapa configurable desde Firestore
+    getDoc(doc(db,"config","laminaConfig"))
+      .then(snap => {
+        if (snap.exists() && snap.data().imagenTapa) {
+          const img = snap.data().imagenTapa;
+          setImagenTapa(img);
+          localStorage.setItem(LS_IMAGEN_TAPA, img);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // 2. Cargar/crear el sobre del día (fuente de verdad: Firestore sobresDelDia)
@@ -11515,7 +11622,7 @@ export default function SeccionLaminas() {
       // 2) No existe -> generar por puesto y FIJAR en Firestore antes del reveal
       const { posicion } = await obtenerPosicionTotal(uid);
       const comp = composicionPorPuesto(posicion);
-      const generado = generarSobre(todasLaminas, comp);
+      const generado = generarSobre(todasLaminas, comp, Math.random, laminasLocal);
       await setDoc(ref, {
         uid, fecha: hoy, guardado: false,
         laminas: generado.laminas, cartas: generado.cartas,
@@ -11714,6 +11821,7 @@ export default function SeccionLaminas() {
                     yaVolteada={sobreGuardado}
                     onVoltear={() => setVolteadas(v => v+1)}
                     onClick={(l) => handleClickLamina(l, laminasLocal[l.file]||1)}
+                    imagenTapa={imagenTapa}
                   />
                 ))}
               </div>
