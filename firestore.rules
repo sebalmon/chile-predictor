@@ -109,7 +109,10 @@ service cloud.firestore {
     match /eventoEnVivo/{docId}/respuestas/{respId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if false;
+      // Se permite update para que, al cerrar una pregunta, se pueda
+      // guardar en cada respuesta si fue correcta y cuántos puntos ganó
+      // ese usuario (usado luego en el historial de pronósticos).
+      allow update: if request.auth != null;
       allow delete: if false;
     }
 

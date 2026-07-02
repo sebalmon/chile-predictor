@@ -10,7 +10,7 @@
 // ─────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 import {
-  collection, getDocs, query, where, documentId,
+  collection, getDocs, query, where, documentId, doc, getDoc,
 } from "firebase/firestore";
 
 // Trae docs por id en lotes de 30 (límite del operador "in" de Firestore),
@@ -245,11 +245,73 @@ function BloqueDia({ fecha, predicciones, partidos, respuesta, pregunta, puntosD
   );
 }
 
+// ── Bloque: preguntas del EN VIVO respondidas por el usuario ──
+function BloqueEnVivo({ respuestasEnVivo }) {
+  const [abierto, setAbierto] = useState(true);
+  if (!respuestasEnVivo || respuestasEnVivo.length === 0) return null;
+
+  const totalPts = respuestasEnVivo.reduce((s, r) => s + (r.puntosGanados ?? 0), 0);
+
+  return (
+    <div style={{ border:"2px solid var(--rojo-chile)", marginBottom:"8px", background:"rgba(0,0,0,0.25)" }}>
+      <button onClick={() => setAbierto(v => !v)}
+        style={{ width:"100%", textAlign:"left", fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          padding:"8px 10px", background:"rgba(214,40,40,0.25)", border:"none", cursor:"pointer",
+          display:"flex", justifyContent:"space-between", alignItems:"center", color:"var(--blanco)" }}>
+        <span style={{ color:"var(--rojo-chile)" }}>🔴 PREGUNTAS DEL EN VIVO</span>
+        <span style={{ color:"var(--amarillo)", fontSize:"8px" }}>
+          {totalPts}pts {abierto ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {abierto && (
+        <div>
+          {respuestasEnVivo.map(r => {
+            const pendiente = r.estado !== "cerrada";
+            const pts = r.puntosGanados ?? 0;
+            return (
+              <div key={r.id} style={{ padding:"6px 8px", borderBottom:"1px solid rgba(214,40,40,0.2)",
+                display:"flex", gap:"6px", alignItems:"flex-start" }}>
+                <span style={{ fontSize:"10px", lineHeight:1, flexShrink:0, marginTop:"1px" }}>
+                  {pendiente ? "⏳" : (r.correcta ? "✅" : "❌")}
+                </span>
+                <div style={{ flex:1 }}>
+                  <p style={{ fontSize:"6px", color:"var(--blanco)", lineHeight:1.8 }}>
+                    {r.numero ? `#${r.numero} — ` : ""}{r.texto || "Pregunta del en vivo"}
+                  </p>
+                  <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:1.8 }}>
+                    Tu respuesta: <span style={{ color:"var(--blanco)" }}>{r.respuesta}</span>
+                    {!pendiente && r.respuestaCorrecta &&
+                      <span style={{ color:"var(--amarillo)", marginLeft:"4px" }}>
+                        (correcta: {r.respuestaCorrecta})
+                      </span>}
+                  </p>
+                </div>
+                <div style={{ textAlign:"right", flexShrink:0 }}>
+                  {pendiente ? (
+                    <span style={{ fontSize:"5px", color:"var(--gris)" }}>pendiente</span>
+                  ) : (
+                    <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                      color:pts>0?"var(--verde-claro)":"var(--gris)" }}>
+                      {pts>0?`+${pts}`:"0"}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────
 const LIMITE_DIAS = 15;
 
 export default function HistorialPredicciones({ userId }) {
   const [dias,     setDias]     = useState([]);
+  const [respuestasEnVivo, setRespuestasEnVivo] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error,    setError]    = useState(null);
 
@@ -258,11 +320,41 @@ export default function HistorialPredicciones({ userId }) {
   const cargar = async () => {
     setCargando(true); setError(null);
     try {
-      const [snapPreds, snapResps, snapPDia] = await Promise.all([
+      const [snapPreds, snapResps, snapPDia, snapEV, snapEventoDoc] = await Promise.all([
         getDocs(query(collection(db,"predicciones"), where("uid","==",userId))),
         getDocs(query(collection(db,"respuestas"),   where("uid","==",userId))),
         getDocs(query(collection(db,"puntosDelDia"), where("uid","==",userId))),
+        getDocs(query(collection(db,"eventoEnVivo","actual","respuestas"), where("uid","==",userId))),
+        getDoc(doc(db,"eventoEnVivo","actual")),
       ]);
+
+      // ── Preguntas del EN VIVO: cruzar cada respuesta con la
+      // pregunta correspondiente (texto, número, estado) guardada
+      // en el array `preguntas` del documento del evento.
+      const preguntasEvento = snapEventoDoc.exists() ? (snapEventoDoc.data().preguntas || []) : [];
+      const respsEV = snapEV.docs
+        .map(d => {
+          const data = d.data();
+          const preg = preguntasEvento.find(p => p.id === data.preguntaId);
+          return {
+            id: d.id,
+            ...data,
+            texto: preg?.texto,
+            numero: preg?.numero,
+            estado: preg?.estado,
+            respuestaCorrecta: preg?.respuestaCorrecta,
+            // Compatibilidad con respuestas antiguas que no tenían
+            // guardado puntosGanados/correcta directamente:
+            correcta: data.correcta ?? (preg?.estado === "cerrada" ? data.respuesta === preg?.respuestaCorrecta : undefined),
+            puntosGanados: data.puntosGanados ?? (
+              preg?.estado === "cerrada"
+                ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
+                : undefined
+            ),
+          };
+        })
+        .sort((a,b) => (a.numero ?? 0) - (b.numero ?? 0));
+      setRespuestasEnVivo(respsEV);
 
       const porFecha = {};
 
@@ -319,7 +411,7 @@ export default function HistorialPredicciones({ userId }) {
     </div>
   );
   if (error) return <p style={{ fontSize:"6px",color:"var(--rojo-chile)",padding:"8px" }}>{error}</p>;
-  if (dias.length === 0) return (
+  if (dias.length === 0 && respuestasEnVivo.length === 0) return (
     <p style={{ fontSize:"6px",color:"var(--gris-claro)",padding:"12px",textAlign:"center",lineHeight:2 }}>
       Sin historial todavía.
     </p>
@@ -327,14 +419,20 @@ export default function HistorialPredicciones({ userId }) {
 
   return (
     <div style={{ padding:"8px" }}>
-      <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"8px",lineHeight:1.8 }}>
-        Últimos {Math.min(dias.length, LIMITE_DIAS)} días · Clic para desplegar/plegar
-      </p>
-      {dias.map(d => (
-        <BloqueDia key={d.fecha} fecha={d.fecha} predicciones={d.predicciones}
-          partidos={d.partidos} respuesta={d.respuesta} pregunta={d.pregunta}
-          puntosDelDia={d.puntosDelDia} />
-      ))}
+      <BloqueEnVivo respuestasEnVivo={respuestasEnVivo} />
+
+      {dias.length > 0 && (
+        <>
+          <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"8px",lineHeight:1.8 }}>
+            Últimos {Math.min(dias.length, LIMITE_DIAS)} días · Clic para desplegar/plegar
+          </p>
+          {dias.map(d => (
+            <BloqueDia key={d.fecha} fecha={d.fecha} predicciones={d.predicciones}
+              partidos={d.partidos} respuesta={d.respuesta} pregunta={d.pregunta}
+              puntosDelDia={d.puntosDelDia} />
+          ))}
+        </>
+      )}
     </div>
   );
 }

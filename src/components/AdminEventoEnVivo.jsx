@@ -170,12 +170,20 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       const batch = writeBatch(db);
       let acertaron = 0;
       snapR.docs.forEach(d => {
-        if (d.data().respuesta === respCorrecta) {
+        const esCorrecta = d.data().respuesta === respCorrecta;
+        if (esCorrecta) {
           batch.update(doc(db, "usuarios", d.data().uid), {
             puntosTotal: increment(pts),
           });
           acertaron++;
         }
+        // Guardamos en la propia respuesta si fue correcta y cuántos
+        // puntos ganó ese usuario, para poder mostrarlo luego en su
+        // historial de pronósticos.
+        batch.update(d.ref, {
+          correcta: esCorrecta,
+          puntosGanados: esCorrecta ? pts : 0,
+        });
       });
       await batch.commit();
 

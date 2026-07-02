@@ -59,6 +59,9 @@ function ModalPerfilConHistorial({ jugador, onCerrar }) {
             onError={e => (e.target.style.display="none")}
           />
           <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{jugador.nickname}</p>
+          {jugador.nombreReal && (
+            <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>👤 {jugador.nombreReal}</p>
+          )}
           <span className="puntos-badge" style={{ fontSize:"11px" }}>{jugador.puntosTotal ?? 0} pts</span>
         </div>
 
