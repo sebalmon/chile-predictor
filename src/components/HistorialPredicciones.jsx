@@ -246,11 +246,13 @@ function BloqueDia({ fecha, predicciones, partidos, respuesta, pregunta, puntosD
 }
 
 // ── Bloque: preguntas del EN VIVO respondidas por el usuario ──
-function BloqueEnVivo({ respuestasEnVivo }) {
+function BloqueEnVivo({ respuestasEnVivo, ptsEnVivo }) {
   const [abierto, setAbierto] = useState(true);
   if (!respuestasEnVivo || respuestasEnVivo.length === 0) return null;
 
-  const totalPts = respuestasEnVivo.reduce((s, r) => s + (r.puntosGanados ?? 0), 0);
+  // Usar ptsEnVivo calculado desde puntosTotal cuando no hay puntosGanados en respuestas
+  const totalPtsGuardados = respuestasEnVivo.reduce((s, r) => s + (r.puntosGanados ?? 0), 0);
+  const totalPts = totalPtsGuardados > 0 ? totalPtsGuardados : (ptsEnVivo || 0);
 
   return (
     <div style={{ border:"2px solid var(--rojo-chile)", marginBottom:"8px", background:"rgba(0,0,0,0.25)" }}>
@@ -267,17 +269,16 @@ function BloqueEnVivo({ respuestasEnVivo }) {
       {abierto && (
         <div>
           {respuestasEnVivo.map(r => {
-            // Resuelta si tiene correcta O si tiene puntosGanados guardado
-            const resuelta  = r.correcta !== undefined || r.puntosGanados !== undefined;
+            // Fix: usar correcta/puntosGanados guardados en la respuesta
+            // (no depender de estado que requiere que el evento siga activo)
+            const resuelta  = r.correcta !== undefined;
             const pendiente = !resuelta;
-            const pts       = r.puntosGanados ?? 0;
-            // Si no tiene correcta pero sí puntosGanados, deducir si acertó
-            const acerto    = r.correcta !== undefined ? r.correcta : (r.puntosGanados > 0);
+            const pts = r.puntosGanados ?? 0;
             return (
               <div key={r.id} style={{ padding:"6px 8px", borderBottom:"1px solid rgba(214,40,40,0.2)",
                 display:"flex", gap:"6px", alignItems:"flex-start" }}>
                 <span style={{ fontSize:"10px", lineHeight:1, flexShrink:0, marginTop:"1px" }}>
-                  {pendiente ? "⏳" : (acerto ? "✅" : "❌")}
+                  {pendiente ? "⏳" : (r.correcta ? "✅" : "❌")}
                 </span>
                 <div style={{ flex:1 }}>
                   <p style={{ fontSize:"6px", color:"var(--blanco)", lineHeight:1.8 }}>
@@ -293,12 +294,12 @@ function BloqueEnVivo({ respuestasEnVivo }) {
                 </div>
                 <div style={{ textAlign:"right", flexShrink:0 }}>
                   {pendiente ? (
-                    <span style={{ fontSize:"5px", color:"var(--gris)" }}>abierta</span>
+                    <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>participó</span>
                   ) : (
                     <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"2px" }}>
                       <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
                         color:pts>0?"var(--verde-claro)":"var(--rojo-chile)" }}>
-                        {acerto ? `✅ +${pts}pts` : "❌ Falló"}
+                        {pts>0 ? `✅ +${pts}pts` : "❌ Falló"}
                       </span>
                     </div>
                   )}
@@ -315,7 +316,7 @@ function BloqueEnVivo({ respuestasEnVivo }) {
 // ── Componente principal ──────────────────────────────────────
 const LIMITE_DIAS = 15;
 
-export default function HistorialPredicciones({ userId }) {
+export default function HistorialPredicciones({ userId, puntosTotal }) {
   const [dias,     setDias]     = useState([]);
   const [respuestasEnVivo, setRespuestasEnVivo] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -434,9 +435,20 @@ export default function HistorialPredicciones({ userId }) {
     </p>
   );
 
+  // Puntos EN VIVO = puntosTotal - puntos de partidos - puntos de preguntas del día
+  const ptsTodosPartidos  = dias.reduce((s,d) =>
+    s + d.predicciones.reduce((ss,p) => ss + (p.puntosGanados||0), 0), 0);
+  const ptsTodosPreguntas = dias.reduce((s,d) =>
+    s + (d.respuesta?.puntosGanados||0), 0);
+  const ptsTodosBonos     = dias.reduce((s,d) =>
+    s + (d.puntosDelDia?.esGanador ? (d.puntosDelDia.bonusGanador||2) : 0), 0);
+  const ptsEnVivo = Math.max(0,
+    (puntosTotal||0) - ptsTodosPartidos - ptsTodosPreguntas - ptsTodosBonos
+  );
+
   return (
     <div style={{ padding:"8px" }}>
-      <BloqueEnVivo respuestasEnVivo={respuestasEnVivo} />
+      <BloqueEnVivo respuestasEnVivo={respuestasEnVivo} ptsEnVivo={ptsEnVivo} />
 
       {dias.length > 0 && (
         <>

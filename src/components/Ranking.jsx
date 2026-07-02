@@ -77,7 +77,7 @@ function ModalPerfilConHistorial({ jugador, onCerrar }) {
         </div>
 
         <div style={{ flex:1,overflowY:"auto" }}>
-          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} />}
+          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} puntosTotal={jugador.puntosTotal} />}
           {tab === "perfil" && (
             <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
               <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntosTotal ?? 0}</span></p>
