@@ -49,6 +49,8 @@ export default function AdminEventoEnVivo({ onMensaje }) {
 
   // Cierre — ahora un mapa por pregunta
   const [respSels,  setRespSels]  = useState({}); // { preguntaId: opcion }
+  const [editandoId, setEditandoId] = useState(null); // preguntaId en edición
+  const [editForm,   setEditForm]   = useState({}); // { texto, opciones, puntosEnVivo }
   const [cerrando,  setCerrando]  = useState(null); // preguntaId siendo cerrada
   const [reparando, setReparando] = useState(false);
 
@@ -152,20 +154,18 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   const repararRespuestas = async () => {
     setReparando(true);
     try {
-      // 1. Leer el evento desde Firestore directamente (no desde estado)
-      //    para tener las preguntas aunque no haya evento activo en pantalla
-      const { getDoc: _getDoc, doc: _doc } = await import("firebase/firestore");
-      const eventoSnap = await _getDoc(_doc(db, "eventoEnVivo", "actual"));
-      const preguntasEvento = eventoSnap.exists()
-        ? (eventoSnap.data().preguntas || [])
-        : [];
-      const cerradasEvento = preguntasEvento.filter(p => p.estado === "cerrada");
-
-      // 2. Leer TODAS las respuestas
+      // Leer TODAS las respuestas (de cualquier evento, activo o pasado)
       const snapR = await getDocs(REF_RESPS());
       if (snapR.empty) {
-        onMensaje("error", "No hay respuestas en Firestore (eventoEnVivo/actual/respuestas)."); return;
+        onMensaje("error", "No hay respuestas guardadas en Firestore."); return;
       }
+
+      // Agrupar por preguntaId para poder buscar la respuesta correcta
+      // Las respuestas que YA tienen campo correcta se saltan.
+      // Para las que no tienen correcta, intentar deducir desde:
+      //   1. respuestaCorrecta guardada en la propia respuesta (campo heredado)
+      //   2. El evento activo actual (si la pregunta sigue ahí)
+      const preguntasActuales = evento?.preguntas || [];
 
       const batch = writeBatch(db);
       let reparadas = 0;
@@ -173,25 +173,26 @@ export default function AdminEventoEnVivo({ onMensaje }) {
 
       snapR.docs.forEach(d => {
         const r = d.data();
-        if (r.correcta !== undefined) return; // ya reparada, saltar
+        if (r.correcta !== undefined) return; // ya tiene resultado, saltar
 
-        // Buscar en preguntas cerradas del evento
-        const preg = cerradasEvento.find(p => p.id === r.preguntaId);
+        // Buscar la pregunta en el evento actual
+        const preg = preguntasActuales.find(p => p.id === r.preguntaId);
 
-        if (preg && preg.respuestaCorrecta) {
+        // Si la pregunta está en el evento actual y está cerrada
+        if (preg && preg.estado === "cerrada" && preg.respuestaCorrecta) {
           const esCorrecta = r.respuesta === preg.respuestaCorrecta;
           batch.update(d.ref, {
-            correcta:         esCorrecta,
-            puntosGanados:    esCorrecta ? (preg.puntosEnVivo || 3) : 0,
-            texto:            preg.texto  || "Pregunta EN VIVO",
-            numero:           preg.numero || 0,
+            correcta:      esCorrecta,
+            puntosGanados: esCorrecta ? (preg.puntosEnVivo || 3) : 0,
+            texto:         preg.texto   || r.texto   || "Pregunta EN VIVO",
+            numero:        preg.numero  || r.numero  || 0,
             respuestaCorrecta: preg.respuestaCorrecta,
           });
           reparadas++;
           return;
         }
 
-        // Fallback: usar respuestaCorrecta guardada en la respuesta misma
+        // Si la respuesta tiene respuestaCorrecta guardada (de versiones anteriores)
         if (r.respuestaCorrecta) {
           const esCorrecta = r.respuesta === r.respuestaCorrecta;
           batch.update(d.ref, {
@@ -202,21 +203,45 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           return;
         }
 
+        // Sin información suficiente para reparar esta respuesta
         sinInfo++;
       });
 
       if (reparadas === 0 && sinInfo === 0) {
-        onMensaje("ok", "✅ Todas las respuestas ya tienen resultado. Nada que reparar."); return;
+        onMensaje("ok", "✅ Nada que reparar — todas las respuestas ya tienen resultado.");
+        return;
       }
+
       if (reparadas > 0) await batch.commit();
 
-      onMensaje(
-        reparadas > 0 ? "ok" : "error",
-        `${reparadas > 0 ? `✅ ${reparadas} respuesta(s) reparadas.` : ""}` +
-        `${sinInfo > 0 ? ` ⚠ ${sinInfo} sin info suficiente (pregunta ya no existe).` : ""}`
-      );
+      const msg = reparadas > 0
+        ? `✅ ${reparadas} respuesta(s) reparadas.`
+        : "";
+      const msg2 = sinInfo > 0
+        ? ` ${sinInfo} respuesta(s) no se pudieron reparar (evento ya no disponible).`
+        : "";
+      onMensaje(reparadas > 0 ? "ok" : "error", msg + msg2);
     } catch (e) { onMensaje("error", e.message); }
     finally { setReparando(false); }
+  };
+
+  // ── Editar una pregunta abierta ────────────────────────────
+  const guardarEdicion = async (pregunta) => {
+    const nuevasPreguntas = preguntas.map(p =>
+      p.id === pregunta.id
+        ? {
+            ...p,
+            texto:        editForm.texto?.trim() || p.texto,
+            opciones:     (editForm.opciones || p.opciones).filter(o => o.trim()),
+            puntosEnVivo: Number(editForm.puntosEnVivo) || p.puntosEnVivo,
+          }
+        : p
+    );
+    try {
+      await updateDoc(REF_EVENTO(), { preguntas: nuevasPreguntas });
+      setEditandoId(null);
+      onMensaje("ok", `✅ Pregunta #${pregunta.numero} actualizada.`);
+    } catch(e) { onMensaje("error", e.message); }
   };
 
   // ── Cerrar UNA pregunta específica y dar sus puntos ─────────
@@ -411,41 +436,145 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                 <div key={preg.id} style={{ padding:"12px",
                   background:"rgba(214,40,40,0.06)", border:"2px solid var(--rojo-chile)",
                   boxShadow:"0 0 16px rgba(214,40,40,0.2)" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"10px" }}>
+                  {/* Cabecera con botón editar */}
+                  <div style={{ display:"flex", justifyContent:"space-between",
+                    alignItems:"center", marginBottom:"10px" }}>
                     <span style={{ fontSize:"6px", color:"var(--rojo-chile)" }}>
                       🔴 PREGUNTA #{preg.numero} — ABIERTA
                     </span>
-                    <span style={{ fontSize:"5px", color:"var(--amarillo)",
-                      border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
-                      +{preg.puntosEnVivo} PTS
-                    </span>
-                  </div>
-                  <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
-                    {preg.texto}
-                  </p>
-                  <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
-                    MARCA LA RESPUESTA CORRECTA:
-                  </p>
-                  <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"12px" }}>
-                    {(preg.opciones||[]).map((op,i) => (
-                      <button key={i} onClick={() =>
-                          setRespSels(prev => ({ ...prev, [preg.id]: op }))}
-                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                          padding:"8px 10px", cursor:"pointer", textAlign:"left",
-                          border:`2px solid ${respSels[preg.id]===op?"var(--verde-claro)":"var(--gris)"}`,
-                          background:respSels[preg.id]===op?"rgba(82,183,136,0.15)":"transparent",
-                          color:"var(--blanco)" }}>
-                        {respSels[preg.id]===op ? "✅ " : ""}{op}
+                    <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+                      <span style={{ fontSize:"5px", color:"var(--amarillo)",
+                        border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
+                        +{preg.puntosEnVivo} PTS
+                      </span>
+                      <button
+                        onClick={() => {
+                          if (editandoId === preg.id) { setEditandoId(null); return; }
+                          setEditandoId(preg.id);
+                          setEditForm({
+                            texto: preg.texto,
+                            opciones: [...(preg.opciones||[])],
+                            puntosEnVivo: preg.puntosEnVivo,
+                          });
+                        }}
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                          padding:"3px 7px", cursor:"pointer",
+                          border:`1px solid ${editandoId===preg.id?"var(--amarillo)":"var(--gris)"}`,
+                          background: editandoId===preg.id?"rgba(244,208,63,0.15)":"transparent",
+                          color: editandoId===preg.id?"var(--amarillo)":"var(--gris-claro)" }}>
+                        ✏ EDITAR
                       </button>
-                    ))}
+                    </div>
                   </div>
-                  <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
-                    onClick={() => cerrarPregunta(preg)}
-                    disabled={!respSels[preg.id] || cerrando===preg.id}>
-                    {cerrando===preg.id
-                      ? "⚙ PROCESANDO..."
-                      : `🔒 CERRAR PREGUNTA #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
-                  </button>
+
+                  {/* Modo edición */}
+                  {editandoId === preg.id ? (
+                    <div style={{ marginBottom:"12px" }}>
+                      <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
+                        TEXTO:
+                      </p>
+                      <textarea
+                        value={editForm.texto}
+                        onChange={e => setEditForm(f => ({ ...f, texto: e.target.value }))}
+                        rows={2}
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                          width:"100%", padding:"6px", border:"2px solid var(--negro)",
+                          background:"var(--blanco)", color:"var(--negro)",
+                          outline:"none", resize:"none", lineHeight:2, marginBottom:"8px" }}
+                      />
+                      <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
+                        OPCIONES:
+                      </p>
+                      {(editForm.opciones||[]).map((op,oi) => (
+                        <div key={oi} style={{ display:"flex", gap:"4px", marginBottom:"4px" }}>
+                          <input value={op}
+                            onChange={e => setEditForm(f => ({
+                              ...f,
+                              opciones: f.opciones.map((o,idx) => idx===oi ? e.target.value : o)
+                            }))}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                              flex:1, padding:"4px 6px", border:"2px solid var(--negro)",
+                              background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
+                          {(editForm.opciones||[]).length > 2 && (
+                            <button onClick={() => setEditForm(f => ({
+                                ...f, opciones: f.opciones.filter((_,idx) => idx!==oi)
+                              }))}
+                              style={{ background:"var(--rojo-chile)", color:"var(--blanco)",
+                                border:"none", cursor:"pointer", padding:"3px 7px",
+                                fontFamily:"'Press Start 2P',monospace", fontSize:"8px" }}>
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {(editForm.opciones||[]).length < 5 && (
+                        <button onClick={() => setEditForm(f => ({
+                            ...f, opciones: [...(f.opciones||[]), ""]
+                          }))}
+                          style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                            width:"100%", padding:"4px", marginBottom:"8px", cursor:"pointer",
+                            border:"1px solid var(--gris)", background:"transparent",
+                            color:"var(--gris-claro)" }}>
+                          + OPCIÓN
+                        </button>
+                      )}
+                      <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"10px" }}>
+                        <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>PUNTOS:</span>
+                        <input type="number" min="1" max="99"
+                          value={editForm.puntosEnVivo}
+                          onChange={e => setEditForm(f => ({
+                            ...f, puntosEnVivo: Math.max(1, Math.min(99, Number(e.target.value)||1))
+                          }))}
+                          style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                            width:"50px", padding:"4px", textAlign:"center",
+                            border:"2px solid var(--amarillo)", background:"var(--negro)",
+                            color:"var(--amarillo)", outline:"none" }} />
+                      </div>
+                      <div style={{ display:"flex", gap:"6px" }}>
+                        <button className="btn-pixel btn-amarillo" style={{ flex:2, fontSize:"6px" }}
+                          onClick={() => guardarEdicion(preg)}>
+                          💾 GUARDAR CAMBIOS
+                        </button>
+                        <button className="btn-pixel btn-gris" style={{ flex:1, fontSize:"6px" }}
+                          onClick={() => setEditandoId(null)}>
+                          CANCELAR
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
+                      {preg.texto}
+                    </p>
+                  )}
+
+                  {/* Selección de respuesta correcta y cierre */}
+                  {editandoId !== preg.id && (
+                    <>
+                      <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
+                        MARCA LA RESPUESTA CORRECTA:
+                      </p>
+                      <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"12px" }}>
+                        {(preg.opciones||[]).map((op,i) => (
+                          <button key={i} onClick={() =>
+                              setRespSels(prev => ({ ...prev, [preg.id]: op }))}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                              padding:"8px 10px", cursor:"pointer", textAlign:"left",
+                              border:`2px solid ${respSels[preg.id]===op?"var(--verde-claro)":"var(--gris)"}`,
+                              background:respSels[preg.id]===op?"rgba(82,183,136,0.15)":"transparent",
+                              color:"var(--blanco)" }}>
+                            {respSels[preg.id]===op ? "✅ " : ""}{op}
+                          </button>
+                        ))}
+                      </div>
+                      <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
+                        onClick={() => cerrarPregunta(preg)}
+                        disabled={!respSels[preg.id] || cerrando===preg.id}>
+                        {cerrando===preg.id
+                          ? "⚙ PROCESANDO..."
+                          : `🔒 CERRAR PREGUNTA #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -535,6 +664,24 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           </div>
 
           {/* Historial de preguntas cerradas */}
+          {/* Botón reparar historial */}
+          {cerradas.length > 0 && (
+            <div style={{ marginBottom:"10px" }}>
+              <button
+                className="btn-pixel btn-gris w-full"
+                style={{ fontSize:"6px" }}
+                onClick={repararRespuestas}
+                disabled={reparando}>
+                {reparando
+                  ? "⚙ REPARANDO..."
+                  : `🔧 REPARAR RESPUESTAS SIN RESULTADO (${cerradas.length} preg. cerradas)`}
+              </button>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)",
+                marginTop:"4px", lineHeight:2 }}>
+                Pulsa si en el historial de algún usuario aparece "abierta" en preguntas ya cerradas.
+              </p>
+            </div>
+          )}
 
           {cerradas.length > 0 && (
             <div>
@@ -561,22 +708,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           )}
         </div>
       )}
-      {/* ── Botón REPARAR: fuera de estaActivo, siempre visible ── */}
-      <div style={{ marginTop:"16px", paddingTop:"12px",
-        borderTop:"1px solid rgba(255,255,255,0.1)" }}>
-        <button
-          className="btn-pixel btn-gris w-full"
-          style={{ fontSize:"6px" }}
-          onClick={repararRespuestas}
-          disabled={reparando}>
-          {reparando ? "⚙ REPARANDO..." : "🔧 REPARAR HISTORIAL EN VIVO"}
-        </button>
-        <p style={{ fontSize:"5px", color:"var(--gris-claro)",
-          marginTop:"4px", lineHeight:2 }}>
-          Si el historial muestra "abierta" en preguntas ya cerradas, apreta aquí.
-          Funciona aunque no haya evento activo.
-        </p>
-      </div>
     </div>
   );
 }
