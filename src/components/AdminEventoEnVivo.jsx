@@ -150,42 +150,75 @@ export default function AdminEventoEnVivo({ onMensaje }) {
 
   // ── Reparar respuestas sin campo correcta (historial roto) ───
   const repararRespuestas = async () => {
-    const cerradas = preguntas.filter(p => p.estado === "cerrada");
-    if (cerradas.length === 0) {
-      onMensaje("error", "No hay preguntas cerradas en este evento."); return;
-    }
     setReparando(true);
     try {
-      // Leer TODAS las respuestas del evento
+      // Leer TODAS las respuestas (de cualquier evento, activo o pasado)
       const snapR = await getDocs(REF_RESPS());
+      if (snapR.empty) {
+        onMensaje("error", "No hay respuestas guardadas en Firestore."); return;
+      }
+
+      // Agrupar por preguntaId para poder buscar la respuesta correcta
+      // Las respuestas que YA tienen campo correcta se saltan.
+      // Para las que no tienen correcta, intentar deducir desde:
+      //   1. respuestaCorrecta guardada en la propia respuesta (campo heredado)
+      //   2. El evento activo actual (si la pregunta sigue ahí)
+      const preguntasActuales = evento?.preguntas || [];
+
       const batch = writeBatch(db);
       let reparadas = 0;
+      let sinInfo   = 0;
 
       snapR.docs.forEach(d => {
         const r = d.data();
-        // Solo reparar las que no tienen campo correcta
-        if (r.correcta !== undefined) return;
-        const preg = cerradas.find(p => p.id === r.preguntaId);
-        if (!preg) return; // respuesta de pregunta que no está cerrada, ignorar
-        const esCorrecta = r.respuesta === preg.respuestaCorrecta;
-        batch.update(d.ref, {
-          correcta:     esCorrecta,
-          puntosGanados: esCorrecta ? (preg.puntosEnVivo || 3) : 0,
-          texto:        preg.texto,
-          numero:       preg.numero,
-        });
-        reparadas++;
+        if (r.correcta !== undefined) return; // ya tiene resultado, saltar
+
+        // Buscar la pregunta en el evento actual
+        const preg = preguntasActuales.find(p => p.id === r.preguntaId);
+
+        // Si la pregunta está en el evento actual y está cerrada
+        if (preg && preg.estado === "cerrada" && preg.respuestaCorrecta) {
+          const esCorrecta = r.respuesta === preg.respuestaCorrecta;
+          batch.update(d.ref, {
+            correcta:      esCorrecta,
+            puntosGanados: esCorrecta ? (preg.puntosEnVivo || 3) : 0,
+            texto:         preg.texto   || r.texto   || "Pregunta EN VIVO",
+            numero:        preg.numero  || r.numero  || 0,
+            respuestaCorrecta: preg.respuestaCorrecta,
+          });
+          reparadas++;
+          return;
+        }
+
+        // Si la respuesta tiene respuestaCorrecta guardada (de versiones anteriores)
+        if (r.respuestaCorrecta) {
+          const esCorrecta = r.respuesta === r.respuestaCorrecta;
+          batch.update(d.ref, {
+            correcta:      esCorrecta,
+            puntosGanados: esCorrecta ? (r.puntosEnVivo || 3) : 0,
+          });
+          reparadas++;
+          return;
+        }
+
+        // Sin información suficiente para reparar esta respuesta
+        sinInfo++;
       });
 
-      if (reparadas === 0) {
-        onMensaje("ok", "✅ Todas las respuestas ya tienen resultado guardado. Nada que reparar.");
+      if (reparadas === 0 && sinInfo === 0) {
+        onMensaje("ok", "✅ Nada que reparar — todas las respuestas ya tienen resultado.");
         return;
       }
 
-      await batch.commit();
-      onMensaje("ok",
-        `✅ ${reparadas} respuesta(s) reparadas. Los usuarios ya verán Acertó/Falló correctamente.`
-      );
+      if (reparadas > 0) await batch.commit();
+
+      const msg = reparadas > 0
+        ? `✅ ${reparadas} respuesta(s) reparadas.`
+        : "";
+      const msg2 = sinInfo > 0
+        ? ` ${sinInfo} respuesta(s) no se pudieron reparar (evento ya no disponible).`
+        : "";
+      onMensaje(reparadas > 0 ? "ok" : "error", msg + msg2);
     } catch (e) { onMensaje("error", e.message); }
     finally { setReparando(false); }
   };
@@ -550,17 +583,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           )}
         </div>
       )}
-      {/* ── Botón REPARAR — siempre visible, fuera del evento activo ── */}
-      <div style={{ marginTop:"16px", borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:"12px" }}>
-        <button className="btn-pixel btn-gris w-full" style={{ fontSize:"6px" }}
-          onClick={repararRespuestas} disabled={reparando}>
-          {reparando ? "⚙ REPARANDO..." : "🔧 REPARAR HISTORIAL DE PREGUNTAS EN VIVO"}
-        </button>
-        <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"6px", lineHeight:2 }}>
-          Si en el historial de un usuario aparece "abierta" en preguntas ya cerradas, apreta aquí.
-          Funciona aunque no haya un evento activo ahora mismo.
-        </p>
-      </div>
     </div>
   );
 }
