@@ -280,7 +280,7 @@ function LaminaFlip({ lamina, idx, onVoltear, yaVolteada, onClick, imagenTapa })
         transition:"border-color 0.3s",
       }}>
         {!volteada
-          ? <span style={{ fontSize:"32px" }}>🃏</span>
+          ? null
           : <img
               src={lamina.url}
               alt={lamina.nombre}
