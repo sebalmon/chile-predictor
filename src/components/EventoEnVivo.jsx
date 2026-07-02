@@ -49,8 +49,10 @@ export default function EventoEnVivo() {
   const preguntas = evento?.preguntas || [];
   // Pueden convivir varias preguntas abiertas a la vez.
   // Se invierte el orden: la pregunta más reciente aparece arriba.
-  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
-  const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
+  const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
+  const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
+  // Suma de puntos de TODAS las preguntas del evento (abiertas + cerradas)
+  const ptsJugados = preguntas.reduce((s, p) => s + (p.puntosEnVivo || 0), 0);
 
   // Cuando aparece una pregunta nueva abierta, des-minimizar
   const idsAbiertas = abiertas.map(p => p.id).join(",");
@@ -177,6 +179,28 @@ export default function EventoEnVivo() {
           padding:"0 16px 14px",
           display:"flex", flexDirection:"column", alignItems:"center",
         }}>
+          {/* Puntos jugados en el EN VIVO */}
+          {ptsJugados > 0 && (
+            <div style={{
+              marginBottom:"10px",
+              background:"rgba(0,0,0,0.55)",
+              border:"2px solid var(--amarillo)",
+              padding:"6px 16px",
+              textAlign:"center",
+              boxShadow:"0 0 12px rgba(244,208,63,0.3)",
+            }}>
+              <p style={{
+                fontFamily:"'Press Start 2P',monospace",
+                fontSize:"7px",
+                color:"var(--amarillo)",
+                lineHeight:1.8,
+                textShadow:"0 0 8px rgba(244,208,63,0.6)",
+              }}>
+                🏆 {ptsJugados} PTS EN JUEGO
+              </p>
+            </div>
+          )}
+
           <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
             <span style={{ fontSize:"40px", lineHeight:1,
               filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
