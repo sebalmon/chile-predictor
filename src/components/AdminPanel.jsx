@@ -27,38 +27,25 @@ import AdminEventoEnVivo from "./AdminEventoEnVivo";
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
 export default function AdminPanel({ onVolver }) {
-  const { firebaseUser } = useAuth();
-  const [esAdmin,     setEsAdmin]     = useState(false);
-  const [verificando, setVerificando] = useState(true);
+  const { firebaseUser, loadingProfile } = useAuth();
 
-  useEffect(() => {
-    if (firebaseUser === null) {
-      const t = setTimeout(() => setVerificando(false), 4000);
-      return () => clearTimeout(t);
-    }
-    setEsAdmin(ADMIN_EMAILS.includes(firebaseUser.email));
-    setVerificando(false);
-  }, [firebaseUser]);
-
-  if (verificando) {
+  // Esperar a que Firebase Auth resuelva completamente
+  if (loadingProfile) {
     return (
       <div style={{ padding:"40px", textAlign:"center" }}>
         <span className="spinner" style={{ fontSize:"24px" }}>⚙</span>
         <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
           color:"var(--verde-claro)", marginTop:"16px" }}>
-          Verificando acceso...
+          Cargando...
         </p>
       </div>
     );
   }
-  if (!esAdmin) {
+
+  if (!ADMIN_EMAILS.includes(firebaseUser?.email)) {
     return (
       <div style={{ padding:"20px", textAlign:"center" }}>
         <p style={{ color:"var(--rojo-chile)", fontSize:"8px" }}>🔒 ACCESO DENEGADO</p>
-        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-          color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
-          Email: {firebaseUser?.email || "no autenticado"}
-        </p>
         <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop:"16px" }}>
           ← VOLVER
         </button>
