@@ -52,6 +52,8 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   const [respSels,  setRespSels]  = useState({}); // { preguntaId: opcion }
   const [cerrando,  setCerrando]  = useState(null); // preguntaId siendo cerrada
   const [reparando, setReparando] = useState(false);
+  const [editandoId, setEditandoId] = useState(null); // id de pregunta en edición
+  const [editForm,   setEditForm]   = useState({}); // datos del formulario de edición
 
   useEffect(() => {
     unsubRef.current = onSnapshot(REF_EVENTO(), snap => {
@@ -225,11 +227,10 @@ export default function AdminEventoEnVivo({ onMensaje }) {
     finally { setReparando(false); }
   };
 
-  // ── Guardar edición de pregunta abierta ─────────────────────
   const guardarEdicion = async (pregunta) => {
     const optsValidas = (editForm.opciones || []).filter(o => o.trim());
-    if (!editForm.texto?.trim()) { onMensaje("error","El texto no puede estar vacío."); return; }
-    if (optsValidas.length < 2)  { onMensaje("error","Necesitas al menos 2 opciones."); return; }
+    if (!editForm.texto?.trim()) { onMensaje("error","Texto vacío."); return; }
+    if (optsValidas.length < 2)  { onMensaje("error","Mínimo 2 opciones."); return; }
     try {
       const nuevas = preguntas.map(p => p.id !== pregunta.id ? p : {
         ...p,
