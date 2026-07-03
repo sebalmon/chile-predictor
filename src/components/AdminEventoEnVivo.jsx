@@ -49,9 +49,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   const [timerMin, setTimerMin] = useState(0); // 0 = sin límite
 
   // Cierre — ahora un mapa por pregunta
-  const [respSels,   setRespSels]  = useState({});
-  const [editandoId, setEditandoId] = useState(null);
-  const [editForm,   setEditForm]   = useState({}); // { preguntaId: opcion }
+  const [respSels,  setRespSels]  = useState({}); // { preguntaId: opcion }
   const [cerrando,  setCerrando]  = useState(null); // preguntaId siendo cerrada
   const [reparando, setReparando] = useState(false);
 
@@ -225,6 +223,26 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       onMensaje(reparadas > 0 ? "ok" : "error", msg + msg2);
     } catch (e) { onMensaje("error", e.message); }
     finally { setReparando(false); }
+  };
+
+  // ── Guardar edición de pregunta abierta ─────────────────────
+  const guardarEdicion = async (pregunta) => {
+    const optsValidas = (editForm.opciones || []).filter(o => o.trim());
+    if (!editForm.texto?.trim()) { onMensaje("error","El texto no puede estar vacío."); return; }
+    if (optsValidas.length < 2)  { onMensaje("error","Necesitas al menos 2 opciones."); return; }
+    try {
+      const nuevas = preguntas.map(p => p.id !== pregunta.id ? p : {
+        ...p,
+        texto:        editForm.texto.trim(),
+        opciones:     optsValidas,
+        puntosEnVivo: Number(editForm.puntosEnVivo) || p.puntosEnVivo,
+        timerMinutos: Number(editForm.timerMinutos ?? p.timerMinutos ?? 0),
+        creadaEn:     new Date().toISOString(),
+      });
+      await updateDoc(REF_EVENTO(), { preguntas: nuevas });
+      setEditandoId(null);
+      onMensaje("ok", `✅ Pregunta #${pregunta.numero} actualizada.`);
+    } catch(e) { onMensaje("error", e.message); }
   };
 
   // ── Cerrar UNA pregunta específica y dar sus puntos ─────────

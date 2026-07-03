@@ -350,6 +350,25 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
         </p>
       </div>
 
+      {/* Cronómetro regresivo */}
+      {secsLeft !== null && (
+        <div style={{ textAlign:"center", padding:"10px 12px 4px" }}>
+          <span style={{
+            fontFamily:"'Press Start 2P',monospace",
+            fontSize:"16px",
+            color: tiempoAgotado   ? "var(--rojo-chile)"
+                 : secsLeft <= 30 ? "#f87171"
+                 : secsLeft <= 60 ? "#fb923c"
+                 : "var(--verde-claro)",
+            textShadow: tiempoAgotado
+              ? "0 0 10px rgba(214,40,40,0.8)"
+              : "0 0 6px rgba(52,211,153,0.4)",
+          }}>
+            {tiempoAgotado ? "⏰ TIEMPO AGOTADO" : `⏱ ${fmtTime(secsLeft)}`}
+          </span>
+        </div>
+      )}
+
       {/* Opciones o confirmación */}
       <div style={{ padding:"0 12px 14px" }}>
         {!miRespuesta && !tiempoAgotado ? (
