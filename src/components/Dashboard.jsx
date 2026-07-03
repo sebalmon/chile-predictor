@@ -159,8 +159,10 @@ function DashboardInterno() {
     setMostrarPromo(false);
   };
 
-  // esAdmin: calculado directamente, loadingProfile garantiza que firebaseUser ya resolvió
-  const esAdmin = !loadingProfile && firebaseUser?.email === "xtokesu@gmail.com";
+  const [esAdmin, setEsAdmin] = useState(false);
+  useEffect(() => {
+    setEsAdmin(firebaseUser?.email === "xtokesu@gmail.com");
+  }, [firebaseUser]);
   const diaNum   = diaNumero();
   const diaLabel = diaNum > 0 ? `DÍA ${diaNum}` : "MUNDIAL 2026";
 
@@ -283,25 +285,13 @@ function DashboardInterno() {
         </WithShell>
       )}
 
-      {pantalla === PANTALLAS.ADMIN && (
-        loadingProfile
-          ? <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
-              height:"100vh", background:"var(--verde-oscuro)" }}>
-              <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                color:"var(--verde-claro)" }}>⚙ Cargando...</span>
-            </div>
-          : esAdmin
-            ? <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
-                onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
-                esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
-                mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
-                <AdminPanel onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
-              </WithShell>
-            : <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
-                height:"100vh", background:"var(--verde-oscuro)" }}>
-                <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                  color:"var(--rojo-chile)" }}>🔒 ACCESO DENEGADO</p>
-              </div>
+      {pantalla === PANTALLAS.ADMIN && esAdmin && (
+        <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
+          onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
+          esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
+          mostrarTutorial={mostrarTutorial} setMostrarTutorial={setMostrarTutorial}>
+          <AdminPanel onVolver={() => cambiarPantalla(PANTALLAS.INICIO)} />
+        </WithShell>
       )}
 
       {pantalla === PANTALLAS.LAMINAS && (
