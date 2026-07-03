@@ -49,7 +49,9 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   const [timerMin, setTimerMin] = useState(0); // 0 = sin límite
 
   // Cierre — ahora un mapa por pregunta
-  const [respSels,  setRespSels]  = useState({}); // { preguntaId: opcion }
+  const [respSels,   setRespSels]  = useState({});
+  const [editandoId, setEditandoId] = useState(null);
+  const [editForm,   setEditForm]   = useState({}); // { preguntaId: opcion }
   const [cerrando,  setCerrando]  = useState(null); // preguntaId siendo cerrada
   const [reparando, setReparando] = useState(false);
 
