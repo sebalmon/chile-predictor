@@ -1,14 +1,4 @@
 // src/components/EventoEnVivo.jsx  — v4
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v4:
-//   • La imagen ahora ocupa 42% de la altura de pantalla (40vh-45vh)
-//     en vez de un alto fijo pequeño — se ve grande y completa.
-//   • Banderas y nombres se superponen SOBRE la imagen (parte
-//     inferior, con degradado para legibilidad), no debajo de ella
-//     compitiendo por espacio.
-//   • Todo el contenido de preguntas va en una zona inferior con
-//     scroll propio, dejando la imagen siempre visible y fija.
-// ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect } from "react";
 import {
   doc, onSnapshot, setDoc, serverTimestamp,
@@ -46,13 +36,11 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, []);
 
-  const preguntas = evento?.preguntas || [];
-  // Pueden convivir varias preguntas abiertas a la vez.
-  // Se invierte el orden: la pregunta más reciente aparece arriba.
-  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
-  const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
+  const preguntas  = evento?.preguntas || [];
+  const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
+  const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
+  const ptsJugados = preguntas.reduce((s, p) => s + (p.puntosEnVivo || 0), 0);
 
-  // Cuando aparece una pregunta nueva abierta, des-minimizar
   const idsAbiertas = abiertas.map(p => p.id).join(",");
   useEffect(() => {
     if (abiertas.length > 0) setMinimizado(false);
@@ -86,7 +74,6 @@ export default function EventoEnVivo() {
   const visitanteNombre  = evento.equipoVisitante?.nombre  || "Visitante";
   const imagenFondo      = evento.imagenFondo;
 
-  // ── BURBUJA MINIMIZADA ──────────────────────────────────────
   if (minimizado) {
     return (
       <button
@@ -109,7 +96,6 @@ export default function EventoEnVivo() {
     );
   }
 
-  // ── MODAL FULLSCREEN ─────────────────────────────────────────
   return (
     <div style={{
       position:"fixed", inset:0, zIndex:700,
@@ -117,7 +103,7 @@ export default function EventoEnVivo() {
       fontFamily:"'Press Start 2P', monospace",
       background:"#0a0510",
     }}>
-      {/* ═══ IMAGEN PROTAGONISTA (fija, 42% de la pantalla) ═══ */}
+      {/* IMAGEN PROTAGONISTA */}
       <div style={{
         position:"relative", width:"100%", height:"42vh",
         minHeight:"260px", flexShrink:0, overflow:"hidden",
@@ -136,13 +122,11 @@ export default function EventoEnVivo() {
           }} />
         )}
 
-        {/* Degradado solo en la franja inferior, para legibilidad de banderas */}
         <div style={{
           position:"absolute", left:0, right:0, bottom:0, height:"50%",
           background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
         }} />
 
-        {/* Botón minimizar */}
         <button
           onClick={() => setMinimizado(true)}
           style={{
@@ -154,12 +138,8 @@ export default function EventoEnVivo() {
             cursor:"pointer", display:"flex",
             alignItems:"center", justifyContent:"center",
           }}
-          title="Minimizar"
-        >
-          ✕
-        </button>
+        >✕</button>
 
-        {/* Aviso si imagen no carga */}
         {imagenFondo && imgError && (
           <div style={{
             position:"absolute", top:"14px", left:"14px", zIndex:2,
@@ -171,12 +151,31 @@ export default function EventoEnVivo() {
           </div>
         )}
 
-        {/* Banderas y nombres SUPERPUESTOS sobre la franja inferior */}
+        {/* Banderas superpuestas */}
         <div style={{
           position:"absolute", left:0, right:0, bottom:0, zIndex:1,
           padding:"0 16px 14px",
           display:"flex", flexDirection:"column", alignItems:"center",
         }}>
+          {/* Puntos en juego */}
+          {ptsJugados > 0 && (
+            <div style={{
+              marginBottom:"8px",
+              background:"rgba(0,0,0,0.6)",
+              border:"2px solid var(--amarillo)",
+              padding:"4px 14px",
+              boxShadow:"0 0 12px rgba(244,208,63,0.3)",
+            }}>
+              <p style={{
+                fontFamily:"'Press Start 2P',monospace",
+                fontSize:"7px", color:"var(--amarillo)",
+                lineHeight:1.8,
+              }}>
+                🏆 {ptsJugados} PTS EN JUEGO
+              </p>
+            </div>
+          )}
+
           <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
             <span style={{ fontSize:"40px", lineHeight:1,
               filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
@@ -206,14 +205,13 @@ export default function EventoEnVivo() {
         </div>
       </div>
 
-      {/* ═══ ZONA INFERIOR: preguntas, con scroll propio ═══════ */}
+      {/* ZONA INFERIOR: preguntas */}
       <div style={{
         flex:1, overflowY:"auto",
         width:"100%", maxWidth:"440px", margin:"0 auto",
         padding:"16px 16px 24px",
         display:"flex", flexDirection:"column", gap:"10px",
       }}>
-
         {abiertas.length > 0 && (
           <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
             {abiertas.map(preg => (
@@ -267,52 +265,41 @@ export default function EventoEnVivo() {
   );
 }
 
-// ── Pregunta abierta (vista grande) ──────────────────────────
-// Paleta de colores por número de pregunta (para diferenciarlas visualmente)
+// ── Paleta de colores por pregunta ────────────────────────────
 const PALETA = [
-  { borde:"#f59e0b", fondo:"rgba(245,158,11,0.12)", texto:"#f59e0b" }, // ámbar
-  { borde:"#60a5fa", fondo:"rgba(96,165,250,0.12)", texto:"#60a5fa" }, // azul
-  { borde:"#a78bfa", fondo:"rgba(167,139,250,0.12)", texto:"#a78bfa" }, // violeta
-  { borde:"#34d399", fondo:"rgba(52,211,153,0.12)", texto:"#34d399" }, // verde
-  { borde:"#f87171", fondo:"rgba(248,113,113,0.12)", texto:"#f87171" }, // rojo
-  { borde:"#fb923c", fondo:"rgba(251,146,60,0.12)", texto:"#fb923c" }, // naranja
+  { borde:"#f59e0b", fondo:"rgba(245,158,11,0.12)", texto:"#f59e0b" },
+  { borde:"#60a5fa", fondo:"rgba(96,165,250,0.12)", texto:"#60a5fa" },
+  { borde:"#a78bfa", fondo:"rgba(167,139,250,0.12)", texto:"#a78bfa" },
+  { borde:"#34d399", fondo:"rgba(52,211,153,0.12)", texto:"#34d399" },
+  { borde:"#f87171", fondo:"rgba(248,113,113,0.12)", texto:"#f87171" },
+  { borde:"#fb923c", fondo:"rgba(251,146,60,0.12)", texto:"#fb923c" },
 ];
 function colorPregunta(n) { return PALETA[((n||1)-1) % PALETA.length]; }
 
 function useCountdown(pregunta) {
   const [secsLeft, setSecsLeft] = React.useState(null);
-
   React.useEffect(() => {
     const mins = pregunta.timerMinutos || 0;
     if (!mins || !pregunta.creadaEn) { setSecsLeft(null); return; }
-
     const inicio   = new Date(pregunta.creadaEn).getTime();
     const duracion = mins * 60 * 1000;
-
     const tick = () => {
-      const restante = Math.max(0, Math.ceil((inicio + duracion - Date.now()) / 1000));
-      setSecsLeft(restante);
+      setSecsLeft(Math.max(0, Math.ceil((inicio + duracion - Date.now()) / 1000)));
     };
     tick();
     const iv = setInterval(tick, 1000);
     return () => clearInterval(iv);
   }, [pregunta.id, pregunta.timerMinutos, pregunta.creadaEn]);
-
   return secsLeft;
 }
 
 function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
-  const pts      = pregunta.puntosEnVivo || 3;
-  const color    = colorPregunta(pregunta.numero);
-  const letras   = ["A","B","C","D","E"];
-  const secsLeft = useCountdown(pregunta);
+  const pts           = pregunta.puntosEnVivo || 3;
+  const color         = colorPregunta(pregunta.numero);
+  const letras        = ["A","B","C","D","E"];
+  const secsLeft      = useCountdown(pregunta);
   const tiempoAgotado = secsLeft !== null && secsLeft <= 0;
-
-  const fmtTime = (s) => {
-    const m = Math.floor(s / 60);
-    const ss = s % 60;
-    return `${m}:${String(ss).padStart(2,"0")}`;
-  };
+  const fmtTime = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
 
   return (
     <div style={{
@@ -321,7 +308,6 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
       backdropFilter:"blur(8px)",
       overflow:"hidden",
     }}>
-      {/* Cabecera de la pregunta */}
       <div style={{
         display:"flex", justifyContent:"space-between", alignItems:"center",
         padding:"8px 12px",
@@ -341,7 +327,6 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
         </span>
       </div>
 
-      {/* Texto de la pregunta */}
       <div style={{ padding:"14px 12px 10px" }}>
         <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
           color:"var(--blanco)", lineHeight:2.2, textAlign:"center",
@@ -350,26 +335,22 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
         </p>
       </div>
 
-      {/* Cronómetro regresivo */}
       {secsLeft !== null && (
-        <div style={{ textAlign:"center", padding:"10px 12px 4px" }}>
+        <div style={{ textAlign:"center", padding:"6px 12px 2px" }}>
           <span style={{
-            fontFamily:"'Press Start 2P',monospace",
-            fontSize:"10px",
+            fontFamily:"'Press Start 2P',monospace", fontSize:"9px",
             color: tiempoAgotado   ? "var(--rojo-chile)"
                  : secsLeft <= 30 ? "#f87171"
                  : secsLeft <= 60 ? "#fb923c"
                  : "var(--verde-claro)",
-            textShadow: tiempoAgotado
-              ? "0 0 10px rgba(214,40,40,0.8)"
-              : "0 0 6px rgba(52,211,153,0.4)",
           }}>
-            {tiempoAgotado ? "⏰ TIEMPO AGOTADO" : `⏱ Te quedan ${fmtTime(secsLeft)} para responder`}
+            {tiempoAgotado
+              ? "⏰ TIEMPO AGOTADO"
+              : `⏱ Te quedan ${fmtTime(secsLeft)} para responder`}
           </span>
         </div>
       )}
 
-      {/* Opciones o confirmación */}
       <div style={{ padding:"0 12px 14px" }}>
         {!miRespuesta && !tiempoAgotado ? (
           <div style={{ display:"flex", flexDirection:"column", gap:"7px" }}>
@@ -404,17 +385,25 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
             background:"rgba(0,0,0,0.35)", border:`1px solid ${color.borde}88`,
             padding:"12px", textAlign:"center",
           }}>
-            <p style={{ fontSize:"6px", color: color.texto, lineHeight:2 }}>
-              ✅ Respondiste:
-            </p>
-            <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-              color:"var(--blanco)", marginTop:"4px", lineHeight:2 }}>
-              {miRespuesta}
-            </p>
-            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
-              marginTop:"6px", lineHeight:2 }}>
-              El admin cerrará la pregunta en breve...
-            </p>
+            {miRespuesta ? (
+              <>
+                <p style={{ fontSize:"6px", color: color.texto, lineHeight:2 }}>
+                  ✅ Respondiste:
+                </p>
+                <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                  color:"var(--blanco)", marginTop:"4px", lineHeight:2 }}>
+                  {miRespuesta}
+                </p>
+                <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
+                  marginTop:"6px", lineHeight:2 }}>
+                  El admin cerrará la pregunta en breve...
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize:"6px", color:"var(--rojo-chile)", lineHeight:2 }}>
+                ⏰ Tiempo agotado — no respondiste a tiempo
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -422,7 +411,6 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
   );
 }
 
-// ── Pregunta cerrada (vista minimizada/plegable) ─────────────
 function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
   const correcta = pregunta.respuestaCorrecta;
   const acerte   = miRespuesta && miRespuesta === correcta;
@@ -433,8 +421,7 @@ function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
       background:"rgba(255,255,255,0.03)",
       border:`1px solid ${acerte ? "rgba(82,183,136,0.4)" : "rgba(255,255,255,0.1)"}`,
     }}>
-      <button
-        onClick={onToggle}
+      <button onClick={onToggle}
         style={{
           width:"100%", display:"flex", justifyContent:"space-between",
           alignItems:"center", padding:"8px 10px",
@@ -444,7 +431,6 @@ function PreguntaMinimizada({ pregunta, miRespuesta, expandida, onToggle }) {
           color:"rgba(255,255,255,0.6)", textAlign:"left" }}>
           PREGUNTA #{pregunta.numero}
         </span>
-
         {miRespuesta ? (
           <span style={{
             fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
