@@ -355,7 +355,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
         <div style={{ textAlign:"center", padding:"10px 12px 4px" }}>
           <span style={{
             fontFamily:"'Press Start 2P',monospace",
-            fontSize:"16px",
+            fontSize:"10px",
             color: tiempoAgotado   ? "var(--rojo-chile)"
                  : secsLeft <= 30 ? "#f87171"
                  : secsLeft <= 60 ? "#fb923c"
