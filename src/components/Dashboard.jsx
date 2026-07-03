@@ -285,7 +285,7 @@ function DashboardInterno() {
         </WithShell>
       )}
 
-      {pantalla === PANTALLAS.ADMIN && esAdmin && (
+      {pantalla === PANTALLAS.ADMIN && (
         <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
           onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
           esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
