@@ -285,7 +285,12 @@ function DashboardInterno() {
         </WithShell>
       )}
 
-      {pantalla === PANTALLAS.ADMIN && esAdmin && (
+      {pantalla === PANTALLAS.ADMIN && loadingProfile && (
+        <div style={{ padding:"40px", textAlign:"center" }}>
+          <span className="spinner" style={{ fontSize:"24px" }}>⚙</span>
+        </div>
+      )}
+      {pantalla === PANTALLAS.ADMIN && !loadingProfile && esAdmin && (
         <WithShell userProfile={userProfile} onPerfil={() => cambiarPantalla(PANTALLAS.PERFIL)}
           onLogout={handleLogout} pantalla={pantalla} setPantalla={cambiarPantalla}
           esAdmin={esAdmin} diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos}
