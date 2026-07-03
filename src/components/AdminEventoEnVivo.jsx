@@ -417,18 +417,117 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                 <div key={preg.id} style={{ padding:"12px",
                   background:"rgba(214,40,40,0.06)", border:"2px solid var(--rojo-chile)",
                   boxShadow:"0 0 16px rgba(214,40,40,0.2)" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"10px" }}>
+                  {/* Cabecera */}
+                  <div style={{ display:"flex", justifyContent:"space-between",
+                    alignItems:"center", marginBottom:"10px", flexWrap:"wrap", gap:"6px" }}>
                     <span style={{ fontSize:"6px", color:"var(--rojo-chile)" }}>
-                      🔴 PREGUNTA #{preg.numero} — ABIERTA
+                      🔴 PREGUNTA #{preg.numero}
+                      {preg.timerMinutos > 0 && (
+                        <span style={{ color:"var(--gris-claro)", marginLeft:"6px" }}>
+                          ⏱{preg.timerMinutos}min
+                        </span>
+                      )}
                     </span>
-                    <span style={{ fontSize:"5px", color:"var(--amarillo)",
-                      border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
-                      +{preg.puntosEnVivo} PTS
-                    </span>
+                    <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+                      <span style={{ fontSize:"5px", color:"var(--amarillo)",
+                        border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
+                        +{preg.puntosEnVivo} PTS
+                      </span>
+                      <button
+                        onClick={() => {
+                          if (editandoId === preg.id) { setEditandoId(null); return; }
+                          setEditandoId(preg.id);
+                          setEditForm({
+                            texto:        preg.texto,
+                            opciones:     [...(preg.opciones||[])],
+                            puntosEnVivo: preg.puntosEnVivo,
+                            timerMinutos: preg.timerMinutos || 0,
+                          });
+                        }}
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                          padding:"3px 7px", cursor:"pointer",
+                          border:`1px solid ${editandoId===preg.id?"var(--amarillo)":"var(--gris)"}`,
+                          background: editandoId===preg.id?"rgba(244,208,63,0.15)":"transparent",
+                          color: editandoId===preg.id?"var(--amarillo)":"var(--gris-claro)" }}>
+                        {editandoId===preg.id ? "✕ CERRAR" : "✏ EDITAR"}
+                      </button>
+                    </div>
                   </div>
-                  <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
-                    {preg.texto}
-                  </p>
+
+                  {/* Formulario edición inline */}
+                  {editandoId === preg.id && (
+                    <div style={{ marginBottom:"12px", padding:"10px",
+                      border:"1px solid var(--amarillo)", background:"rgba(0,0,0,0.3)" }}>
+                      <textarea value={editForm.texto}
+                        onChange={e => setEditForm(f => ({ ...f, texto: e.target.value }))}
+                        rows={2}
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                          width:"100%", padding:"6px", border:"2px solid var(--negro)",
+                          background:"var(--blanco)", color:"var(--negro)",
+                          outline:"none", resize:"none", lineHeight:2, marginBottom:"8px" }} />
+                      {(editForm.opciones||[]).map((op,oi) => (
+                        <div key={oi} style={{ display:"flex", gap:"4px", marginBottom:"4px" }}>
+                          <input value={op}
+                            onChange={e => setEditForm(f => ({
+                              ...f, opciones: f.opciones.map((o,idx) => idx===oi ? e.target.value : o)
+                            }))}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                              flex:1, padding:"4px 6px", border:"2px solid var(--negro)",
+                              background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
+                          {(editForm.opciones||[]).length > 2 && (
+                            <button onClick={() => setEditForm(f => ({
+                                ...f, opciones: f.opciones.filter((_,idx) => idx!==oi)
+                              }))}
+                              style={{ background:"var(--rojo-chile)", color:"var(--blanco)",
+                                border:"none", cursor:"pointer", padding:"3px 7px",
+                                fontFamily:"'Press Start 2P',monospace", fontSize:"8px" }}>✕</button>
+                          )}
+                        </div>
+                      ))}
+                      {(editForm.opciones||[]).length < 5 && (
+                        <button onClick={() => setEditForm(f => ({ ...f, opciones:[...(f.opciones||[]),""] }))}
+                          style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                            width:"100%", padding:"4px", marginBottom:"8px", cursor:"pointer",
+                            border:"1px solid var(--gris)", background:"transparent",
+                            color:"var(--gris-claro)" }}>+ OPCIÓN</button>
+                      )}
+                      <div style={{ display:"flex", gap:"10px", marginBottom:"10px", flexWrap:"wrap" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+                          <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>PTS:</span>
+                          <input type="number" min="1" max="99" value={editForm.puntosEnVivo}
+                            onChange={e => setEditForm(f => ({ ...f, puntosEnVivo: Math.max(1,Math.min(99,Number(e.target.value)||1)) }))}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                              width:"44px", padding:"4px", textAlign:"center",
+                              border:"2px solid var(--amarillo)", background:"var(--negro)",
+                              color:"var(--amarillo)", outline:"none" }} />
+                        </div>
+                        <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+                          <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>⏱ MINS (0=∞):</span>
+                          <input type="number" min="0" max="99" value={editForm.timerMinutos ?? 0}
+                            onChange={e => setEditForm(f => ({ ...f, timerMinutos: Math.max(0,Math.min(99,Number(e.target.value)||0)) }))}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                              width:"44px", padding:"4px", textAlign:"center",
+                              border:"2px solid var(--rojo-chile)", background:"var(--negro)",
+                              color:"var(--rojo-chile)", outline:"none" }} />
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", gap:"6px" }}>
+                        <button className="btn-pixel btn-amarillo" style={{ flex:2, fontSize:"6px" }}
+                          onClick={() => guardarEdicion(preg)}>💾 GUARDAR</button>
+                        <button className="btn-pixel btn-gris" style={{ flex:1, fontSize:"6px" }}
+                          onClick={() => setEditandoId(null)}>CANCELAR</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Texto de la pregunta (cuando no se edita) */}
+                  {editandoId !== preg.id && (
+                    <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
+                      {preg.texto}
+                    </p>
+                  )}
+
+                  {/* Selección respuesta correcta y cierre */}
                   <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
                     MARCA LA RESPUESTA CORRECTA:
                   </p>
@@ -450,7 +549,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                     disabled={!respSels[preg.id] || cerrando===preg.id}>
                     {cerrando===preg.id
                       ? "⚙ PROCESANDO..."
-                      : `🔒 CERRAR PREGUNTA #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
+                      : `🔒 CERRAR #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
                   </button>
                 </div>
               ))}
@@ -532,6 +631,29 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                   width:"44px", height:"33px", textAlign:"center",
                   border:"2px solid var(--amarillo)",
                   background:"var(--negro)", color:"var(--amarillo)", outline:"none" }} />
+            </div>
+
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
+              ⏱ CRONÓMETRO (minutos, 0 = sin límite):
+            </p>
+            <div style={{ display:"flex", alignItems:"center", gap:"5px",
+              marginBottom:"12px", flexWrap:"wrap" }}>
+              {[0,1,2,3,5,10].map(n => (
+                <button key={n} onClick={() => setTimerMin(n)}
+                  style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                    width:"33px", height:"33px", cursor:"pointer",
+                    border:`2px solid ${timerMin===n?"var(--rojo-chile)":"var(--gris)"}`,
+                    background:timerMin===n?"rgba(214,40,40,0.2)":"transparent",
+                    color:timerMin===n?"var(--rojo-chile)":"var(--gris-claro)" }}>
+                  {n===0?"∞":n}
+                </button>
+              ))}
+              <input type="number" min="0" max="99" value={timerMin}
+                onChange={e => setTimerMin(Math.max(0, Math.min(99, Number(e.target.value)||0)))}
+                style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                  width:"44px", height:"33px", textAlign:"center",
+                  border:"2px solid var(--rojo-chile)",
+                  background:"var(--negro)", color:"var(--rojo-chile)", outline:"none" }} />
             </div>
 
             <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
