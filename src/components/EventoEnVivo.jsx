@@ -177,24 +177,6 @@ export default function EventoEnVivo() {
           padding:"0 16px 14px",
           display:"flex", flexDirection:"column", alignItems:"center",
         }}>
-          {ptsJugados > 0 && (
-            <div style={{
-              marginBottom:"10px",
-              background:"rgba(0,0,0,0.6)",
-              border:"2px solid var(--amarillo)",
-              padding:"5px 14px",
-              boxShadow:"0 0 12px rgba(244,208,63,0.3)",
-            }}>
-              <p style={{
-                fontFamily:"'Press Start 2P',monospace",
-                fontSize:"7px", color:"var(--amarillo)",
-                lineHeight:1.8,
-                textShadow:"0 0 8px rgba(244,208,63,0.5)",
-              }}>
-                🏆 {ptsJugados} PTS EN JUEGO
-              </p>
-            </div>
-          )}
           <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
             <span style={{ fontSize:"40px", lineHeight:1,
               filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
@@ -367,6 +349,25 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
           {pregunta.texto}
         </p>
       </div>
+
+      {/* Cronómetro regresivo */}
+      {secsLeft !== null && (
+        <div style={{ textAlign:"center", padding:"10px 12px 4px" }}>
+          <span style={{
+            fontFamily:"'Press Start 2P',monospace",
+            fontSize:"10px",
+            color: tiempoAgotado   ? "var(--rojo-chile)"
+                 : secsLeft <= 30 ? "#f87171"
+                 : secsLeft <= 60 ? "#fb923c"
+                 : "var(--verde-claro)",
+            textShadow: tiempoAgotado
+              ? "0 0 10px rgba(214,40,40,0.8)"
+              : "0 0 6px rgba(52,211,153,0.4)",
+          }}>
+            {tiempoAgotado ? "⏰ TIEMPO AGOTADO" : `⏱ Te quedan ${fmtTime(secsLeft)} para responder`}
+          </span>
+        </div>
+      )}
 
       {/* Opciones o confirmación */}
       <div style={{ padding:"0 12px 14px" }}>
