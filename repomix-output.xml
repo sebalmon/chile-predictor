@@ -116,6 +116,7 @@ public/pvivo_1.jpg
 public/pvivo_2.jpg
 public/pvivo_3.jpg
 public/pvivo_4.jpg
+public/pvivo_5.jpg
 public/sobre/sobre-abierto.png
 public/sobre/sobre-cerrado.png
 public/sounds/ale.mp3
@@ -4863,6 +4864,313 @@ export default function OnboardingModal({ isOpen, onClose }) {
 }
 </file>
 
+<file path="src/utils/helpers.js">
+// src/utils/helpers.js  — v6 (Fase 3)
+// CAMBIO v6: procesarResultadoPartido consume carta (decrement -1)
+// usando flag cartaConsumida para evitar doble descuento en recálculo.
+// Todo lo demás idéntico a v5.
+import {
+  collection, getDocs, query, where, doc,
+  updateDoc, setDoc, increment, getDoc, addDoc, serverTimestamp,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
+import {
+  calcularPuntosPartido, calcularPuntosPregunta,
+  aplicarMultiplicadorCarta, cartaSeAplica,
+} from "./scoring";
+
+// Re-export para compatibilidad con quien importe desde helpers.
+export { calcularPuntosPartido, calcularPuntosPregunta, aplicarMultiplicadorCarta };
+
+export function hoyStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+export function ayerStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+export function formatHora(h) { return `${h} hrs`; }
+export function formatFecha(fechaStr) {
+  const [y,m,d] = fechaStr.split("-").map(Number);
+  return new Date(y,m-1,d).toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long"});
+}
+export function diaNumero() {
+  const inicio = new Date("2026-06-11T00:00:00");
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diff = Math.floor((hoy - inicio) / 86400000);
+  return diff < 0 ? 0 : diff + 1;
+}
+export function partidoAbierto(partido) {
+  if (!partido || !partido.cierre) return true;
+  let cd;
+  if (typeof partido.cierre.toDate === "function") cd = partido.cierre.toDate();
+  else if (partido.cierre._seconds !== undefined)  cd = new Date(partido.cierre._seconds * 1000);
+  else if (typeof partido.cierre === "number")     cd = new Date(partido.cierre * 1000);
+  else if (typeof partido.cierre === "string")     cd = new Date(partido.cierre);
+  else return true;
+  return new Date() < cd;
+}
+
+// ── Notificación interna ─────────────────────────────────────
+async function _notif(uid, datos) {
+  try {
+    await addDoc(collection(db,"usuarios",uid,"notificaciones"),
+      { ...datos, leido: false, timestamp: serverTimestamp() });
+  } catch(e) { console.error("notif error", e); }
+}
+function _txtPred(pred, dest) {
+  if (dest) return `${pred.golesLocalPred??'?'} - ${pred.golesVisitantePred??'?'}`;
+  const g = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
+  return g + (pred.diferencia ? ` (dif. ${pred.diferencia})` : "");
+}
+function _txtRes(res) {
+  const b = `${res.golesLocal}-${res.golesVisitante}`;
+  if (res.definicion === "penales") return `${b} (pen. ${res.penalesLocal}-${res.penalesVisitante})`;
+  if (res.definicion === "alargue") return `${b} (alg.)`;
+  return b;
+}
+
+// ── procesarResultadoPartido v6 (consume carta) ──────────────
+export async function procesarResultadoPartido(partidoId, resultado, fase, estaDestacado, fecha) {
+  let procesados = 0, errores = 0;
+  try {
+    let nombrePartido = partidoId;
+    try {
+      const ps = await getDoc(doc(db,"partidos",partidoId));
+      if (ps.exists()) {
+        const pd = ps.data();
+        nombrePartido = `${pd.local?.bandera??''}${pd.local?.nombre??''} vs ${pd.visitante?.nombre??''}${pd.visitante?.bandera??''}`;
+      }
+    } catch(_) {}
+
+    const snap = await getDocs(query(collection(db,"predicciones"),where("partidoId","==",partidoId)));
+    if (snap.empty) return { procesados:0, errores:0 };
+
+    const deltasPorUid = {}, notifsPorUid = {};
+
+    // Cache de inventario de cartas por uid: la carta solo multiplica si el
+    // usuario tiene stock al momento de procesar (evita que una misma carta
+    // multiplique varios partidos y que el contador quede negativo).
+    const stockCartas = {};
+    async function stockDisponible(uid, cartaId) {
+      if (!(uid in stockCartas)) {
+        try {
+          const us = await getDoc(doc(db,"usuarios",uid));
+          stockCartas[uid] = us.exists() ? (us.data().cartas || {}) : {};
+        } catch { stockCartas[uid] = {}; }
+      }
+      return (stockCartas[uid][cartaId] || 0) > 0;
+    }
+
+    for (const pDoc of snap.docs) {
+      try {
+        const pred = pDoc.data();
+        const uid  = pred.uid;
+        const puntosViejos = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
+        const yaConsumio   = pred.cartaConsumida === true;
+
+        // ¿La carta se aplica? (lógica pura en scoring.cartaSeAplica)
+        const stock = pred.cartaId && !yaConsumio ? (await stockDisponible(uid, pred.cartaId) ? 1 : 0) : 0;
+        const cartaAplica = cartaSeAplica(!!pred.cartaId, yaConsumio, stock);
+
+        const { puntos: base, esMaximo } = calcularPuntosPartido(pred, resultado, fase, estaDestacado);
+        const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, cartaAplica ? pred.cartaId : null);
+        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
+
+        // Actualizar predicción
+        const upd = { puntosGanados: puntosNuevos, puntosBase: base, esMaximo, calculadoEn: new Date().toISOString() };
+        if (cartaAplica && !yaConsumio) upd.cartaConsumida = true;
+        await updateDoc(doc(db,"predicciones",pDoc.id), upd);
+
+        // Consumir carta (solo primera vez y si había stock; descuenta del cache local)
+        if (cartaAplica && !yaConsumio) {
+          try {
+            await updateDoc(doc(db,"usuarios",uid), { [`cartas.${pred.cartaId}`]: increment(-1) });
+            stockCartas[uid][pred.cartaId] = (stockCartas[uid][pred.cartaId] || 0) - 1;
+          } catch(e) { console.error("Error consumiendo carta:", e); }
+        }
+
+        if (delta !== 0) {
+          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
+          deltasPorUid[uid] = (deltasPorUid[uid] || 0) + delta;
+        }
+
+        // Notificar solo en el primer procesamiento o si el puntaje cambió
+        // (evita spam de notificaciones al re-guardar un resultado sin cambios).
+        if (puntosViejos === null || delta !== 0) {
+          notifsPorUid[uid] = {
+            tipo:"resultado_partido", partidoId, nombrePartido,
+            tuApuesta: _txtPred(pred, estaDestacado), resultado: _txtRes(resultado),
+            acertaste: esMaximo, puntosGanados: puntosNuevos, fecha,
+          };
+        }
+        procesados++;
+      } catch(e) { console.error("Error pred:", pDoc.id, e); errores++; }
+    }
+
+    for (const [uid, delta] of Object.entries(deltasPorUid)) {
+      if (delta === 0) continue;
+      try {
+        const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
+        const diaSnap = await getDoc(diaRef);
+        if (diaSnap.exists()) {
+          await updateDoc(diaRef, { puntos: increment(delta) });
+        } else {
+          const uSnap = await getDoc(doc(db,"usuarios",uid));
+          const ud = uSnap.exists() ? uSnap.data() : {};
+          await setDoc(diaRef, { uid, fecha, puntos: delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
+        }
+      } catch(e) { console.error("puntosDelDia error:", uid, e); }
+    }
+
+    for (const [uid, datos] of Object.entries(notifsPorUid)) await _notif(uid, datos);
+    return { procesados, errores };
+  } catch(e) {
+    console.error("Error general procesarResultadoPartido:", e);
+    return { procesados:0, errores:1 };
+  }
+}
+
+// ── procesarPreguntaDelDia ────────────────────────────────────
+export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha) {
+  let procesados = 0;
+  try {
+    let textoPregunta = "Pregunta del día";
+    try {
+      const ps = await getDoc(doc(db,"preguntas",preguntaId));
+      if (ps.exists()) textoPregunta = ps.data().texto || textoPregunta;
+    } catch(_) {}
+
+    const snap = await getDocs(query(collection(db,"respuestas"),where("preguntaId","==",preguntaId)));
+    for (const rDoc of snap.docs) {
+      try {
+        const data = rDoc.data(); const uid = data.uid;
+        const puntosViejos = typeof data.puntosGanados === "number" ? data.puntosGanados : null;
+        const esCorrecta   = data.respuesta === respuestaCorrecta;
+        const puntosNuevos = esCorrecta ? 2 : 0;
+        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
+
+        await updateDoc(doc(db,"respuestas",rDoc.id), { esCorrecta, puntosGanados: puntosNuevos });
+
+        if (delta !== 0) {
+          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
+          const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
+          const diaSnap = await getDoc(diaRef);
+          if (diaSnap.exists()) {
+            await updateDoc(diaRef, { puntos: increment(delta) });
+          } else {
+            const uSnap = await getDoc(doc(db,"usuarios",uid));
+            const ud = uSnap.exists() ? uSnap.data() : {};
+            await setDoc(diaRef, { uid, fecha, puntos:delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
+          }
+        }
+
+        await _notif(uid, {
+          tipo:"resultado_pregunta", preguntaId, textoPregunta,
+          tuRespuesta:data.respuesta, respuestaCorrecta,
+          acertaste:esCorrecta, puntosGanados:puntosNuevos, fecha,
+        });
+        if (esCorrecta) procesados++;
+      } catch(e) { console.error("Error resp:", rDoc.id, e); }
+    }
+    return { ok:true, procesados };
+  } catch(e) {
+    console.error("Error procesarPreguntaDelDia:", e);
+    return { ok:false, error:e.message };
+  }
+}
+
+// ── calcularGanadorDelDia ─────────────────────────────────────
+export async function calcularGanadorDelDia(fecha) {
+  try {
+    const snap = await getDocs(query(collection(db,"puntosDelDia"),where("fecha","==",fecha)));
+    if (snap.empty) return { ok:false, mensaje:"Sin datos de puntosDelDia para ese día." };
+
+    // Cargar puntos de EN VIVO del día: sumar respuestas correctas del evento
+    const ptsEnVivo = {};
+    try {
+      const evSnap = await getDoc(doc(db,"eventoEnVivo","actual"));
+      if (evSnap.exists() && evSnap.data().activo !== false) {
+        const evData   = evSnap.data();
+        const preguntas = evData.preguntas || [];
+        const cerradas  = preguntas.filter(p => p.estado === "cerrada");
+        if (cerradas.length > 0) {
+          const respSnap = await getDocs(collection(db,"eventoEnVivo","actual","respuestas"));
+          respSnap.docs.forEach(d => {
+            const r = d.data();
+            const preg = cerradas.find(p => p.id === r.preguntaId);
+            if (preg && r.respuesta === preg.respuestaCorrecta) {
+              ptsEnVivo[r.uid] = (ptsEnVivo[r.uid] || 0) + (preg.puntosEnVivo || 3);
+            }
+          });
+        }
+      }
+    } catch(evErr) { console.warn("calcularGanadorDelDia: no se pudo leer EN VIVO", evErr); }
+
+    // Combinar: puntos del día (partidos + preguntas) + puntos EN VIVO
+    const jug = snap.docs.map(d => {
+      const base = { docId:d.id, ...d.data() };
+      const extra = ptsEnVivo[base.uid] || 0;
+      return { ...base, puntos: (base.puntos || 0) + extra, ptsEnVivo: extra };
+    }).sort((a,b) => b.puntos - a.puntos);
+
+    // ── Protección: si ya se entregaron bonus y cartas, no repetir ────
+    if (jug.some(j => j.esGanador === true)) {
+      return {
+        ok: false,
+        yaEntregado: true,
+        mensaje: `Las cartas y bonus del día ${fecha} ya fueron entregados. Para revertir, elimina el campo esGanador desde Firebase Console.`,
+      };
+    }
+    const maxPts = jug[0].puntos;
+    // No premiar si nadie sumó puntos ese día (evita carta x4 + bonus a un "líder" con 0 pts).
+    if (maxPts <= 0) return { ok:false, mensaje:`Nadie sumó puntos el día ${fecha}; no se entregan cartas ni bonus.` };
+    const l1 = jug.filter(j=>j.puntos===maxPts);
+    const r1 = jug.filter(j=>j.puntos<maxPts);
+    const p2 = r1[0]?.puntos;
+    const l2 = p2!==undefined ? r1.filter(j=>j.puntos===p2) : [];
+    const r2 = r1.filter(j=>j.puntos<(p2??-Infinity));
+    const p3 = r2[0]?.puntos;
+    const l3 = p3!==undefined ? r2.filter(j=>j.puntos===p3) : [];
+
+    for (const j of l1) {
+      await updateDoc(doc(db,"puntosDelDia",j.docId),{esGanador:true,bonusGanador:2});
+      await updateDoc(doc(db,"usuarios",j.uid),{puntosTotal:increment(2)});
+      await _asignarCarta(j.uid,4,fecha);
+      await _notif(j.uid,{tipo:"bonus_ganador",lugar:1,bonus:2,fecha,mensaje:`🥇 ¡Ganaste el día ${fecha}! +2 pts bonus y una carta x4.`});
+    }
+    for (const j of l2) { await _asignarCarta(j.uid,3,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:2,bonus:0,fecha,mensaje:`🥈 Quedaste 2° el día ${fecha}. ¡Carta x3!`}); }
+    for (const j of l3) { await _asignarCarta(j.uid,2,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:3,bonus:0,fecha,mensaje:`🥉 Quedaste 3° el día ${fecha}. ¡Carta x2!`}); }
+
+    return { ok:true, ganador:l1.map(j=>j.nickname).join(", "), totalJugadores:jug.length,
+      lugar1:l1.map(j=>j.nickname), lugar2:l2.map(j=>j.nickname), lugar3:l3.map(j=>j.nickname) };
+  } catch(e) {
+    console.error("Error calcularGanadorDelDia:", e);
+    return { ok:false, error:e.message };
+  }
+}
+
+async function _asignarCarta(uid, mult, fecha) {
+  const carta = cartaAleatoriaPorMultiplicador(mult);
+  if (!carta) return;
+  await setDoc(doc(db,"cartasDelUsuario",`${uid}_${carta.id}_${fecha}`),{
+    uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
+    multiplicador:carta.multiplicador, rareza:carta.rareza, fecha, visto:false,
+  });
+  await updateDoc(doc(db,"usuarios",uid),{[`cartas.${carta.id}`]:increment(1)});
+}
+
+export async function publicarAvisoAdmin(texto) {
+  await setDoc(doc(db,"config","avisoAdmin"),{texto,fecha:new Date().toISOString(),activo:true});
+}
+export async function cerrarAvisoAdmin() {
+  await updateDoc(doc(db,"config","avisoAdmin"),{activo:false});
+}
+</file>
+
 <file path="src/utils/scoring.js">
 // src/utils/scoring.js — lógica pura de puntaje (SIN firebase; testeable)
 // Movida desde helpers.js para poder testearla sin inicializar firebase.
@@ -6037,313 +6345,6 @@ export default function PodioF1({ datos }) {
       </div>
     </>
   );
-}
-</file>
-
-<file path="src/utils/helpers.js">
-// src/utils/helpers.js  — v6 (Fase 3)
-// CAMBIO v6: procesarResultadoPartido consume carta (decrement -1)
-// usando flag cartaConsumida para evitar doble descuento en recálculo.
-// Todo lo demás idéntico a v5.
-import {
-  collection, getDocs, query, where, doc,
-  updateDoc, setDoc, increment, getDoc, addDoc, serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { cartaAleatoriaPorMultiplicador } from "../data/sampleData";
-import {
-  calcularPuntosPartido, calcularPuntosPregunta,
-  aplicarMultiplicadorCarta, cartaSeAplica,
-} from "./scoring";
-
-// Re-export para compatibilidad con quien importe desde helpers.
-export { calcularPuntosPartido, calcularPuntosPregunta, aplicarMultiplicadorCarta };
-
-export function hoyStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-export function ayerStr() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-export function formatHora(h) { return `${h} hrs`; }
-export function formatFecha(fechaStr) {
-  const [y,m,d] = fechaStr.split("-").map(Number);
-  return new Date(y,m-1,d).toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long"});
-}
-export function diaNumero() {
-  const inicio = new Date("2026-06-11T00:00:00");
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const diff = Math.floor((hoy - inicio) / 86400000);
-  return diff < 0 ? 0 : diff + 1;
-}
-export function partidoAbierto(partido) {
-  if (!partido || !partido.cierre) return true;
-  let cd;
-  if (typeof partido.cierre.toDate === "function") cd = partido.cierre.toDate();
-  else if (partido.cierre._seconds !== undefined)  cd = new Date(partido.cierre._seconds * 1000);
-  else if (typeof partido.cierre === "number")     cd = new Date(partido.cierre * 1000);
-  else if (typeof partido.cierre === "string")     cd = new Date(partido.cierre);
-  else return true;
-  return new Date() < cd;
-}
-
-// ── Notificación interna ─────────────────────────────────────
-async function _notif(uid, datos) {
-  try {
-    await addDoc(collection(db,"usuarios",uid,"notificaciones"),
-      { ...datos, leido: false, timestamp: serverTimestamp() });
-  } catch(e) { console.error("notif error", e); }
-}
-function _txtPred(pred, dest) {
-  if (dest) return `${pred.golesLocalPred??'?'} - ${pred.golesVisitantePred??'?'}`;
-  const g = pred.ganador === "local" ? "Local" : pred.ganador === "visitante" ? "Visitante" : "Empate";
-  return g + (pred.diferencia ? ` (dif. ${pred.diferencia})` : "");
-}
-function _txtRes(res) {
-  const b = `${res.golesLocal}-${res.golesVisitante}`;
-  if (res.definicion === "penales") return `${b} (pen. ${res.penalesLocal}-${res.penalesVisitante})`;
-  if (res.definicion === "alargue") return `${b} (alg.)`;
-  return b;
-}
-
-// ── procesarResultadoPartido v6 (consume carta) ──────────────
-export async function procesarResultadoPartido(partidoId, resultado, fase, estaDestacado, fecha) {
-  let procesados = 0, errores = 0;
-  try {
-    let nombrePartido = partidoId;
-    try {
-      const ps = await getDoc(doc(db,"partidos",partidoId));
-      if (ps.exists()) {
-        const pd = ps.data();
-        nombrePartido = `${pd.local?.bandera??''}${pd.local?.nombre??''} vs ${pd.visitante?.nombre??''}${pd.visitante?.bandera??''}`;
-      }
-    } catch(_) {}
-
-    const snap = await getDocs(query(collection(db,"predicciones"),where("partidoId","==",partidoId)));
-    if (snap.empty) return { procesados:0, errores:0 };
-
-    const deltasPorUid = {}, notifsPorUid = {};
-
-    // Cache de inventario de cartas por uid: la carta solo multiplica si el
-    // usuario tiene stock al momento de procesar (evita que una misma carta
-    // multiplique varios partidos y que el contador quede negativo).
-    const stockCartas = {};
-    async function stockDisponible(uid, cartaId) {
-      if (!(uid in stockCartas)) {
-        try {
-          const us = await getDoc(doc(db,"usuarios",uid));
-          stockCartas[uid] = us.exists() ? (us.data().cartas || {}) : {};
-        } catch { stockCartas[uid] = {}; }
-      }
-      return (stockCartas[uid][cartaId] || 0) > 0;
-    }
-
-    for (const pDoc of snap.docs) {
-      try {
-        const pred = pDoc.data();
-        const uid  = pred.uid;
-        const puntosViejos = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
-        const yaConsumio   = pred.cartaConsumida === true;
-
-        // ¿La carta se aplica? (lógica pura en scoring.cartaSeAplica)
-        const stock = pred.cartaId && !yaConsumio ? (await stockDisponible(uid, pred.cartaId) ? 1 : 0) : 0;
-        const cartaAplica = cartaSeAplica(!!pred.cartaId, yaConsumio, stock);
-
-        const { puntos: base, esMaximo } = calcularPuntosPartido(pred, resultado, fase, estaDestacado);
-        const puntosNuevos = aplicarMultiplicadorCarta(base, esMaximo, cartaAplica ? pred.cartaId : null);
-        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
-
-        // Actualizar predicción
-        const upd = { puntosGanados: puntosNuevos, puntosBase: base, esMaximo, calculadoEn: new Date().toISOString() };
-        if (cartaAplica && !yaConsumio) upd.cartaConsumida = true;
-        await updateDoc(doc(db,"predicciones",pDoc.id), upd);
-
-        // Consumir carta (solo primera vez y si había stock; descuenta del cache local)
-        if (cartaAplica && !yaConsumio) {
-          try {
-            await updateDoc(doc(db,"usuarios",uid), { [`cartas.${pred.cartaId}`]: increment(-1) });
-            stockCartas[uid][pred.cartaId] = (stockCartas[uid][pred.cartaId] || 0) - 1;
-          } catch(e) { console.error("Error consumiendo carta:", e); }
-        }
-
-        if (delta !== 0) {
-          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
-          deltasPorUid[uid] = (deltasPorUid[uid] || 0) + delta;
-        }
-
-        // Notificar solo en el primer procesamiento o si el puntaje cambió
-        // (evita spam de notificaciones al re-guardar un resultado sin cambios).
-        if (puntosViejos === null || delta !== 0) {
-          notifsPorUid[uid] = {
-            tipo:"resultado_partido", partidoId, nombrePartido,
-            tuApuesta: _txtPred(pred, estaDestacado), resultado: _txtRes(resultado),
-            acertaste: esMaximo, puntosGanados: puntosNuevos, fecha,
-          };
-        }
-        procesados++;
-      } catch(e) { console.error("Error pred:", pDoc.id, e); errores++; }
-    }
-
-    for (const [uid, delta] of Object.entries(deltasPorUid)) {
-      if (delta === 0) continue;
-      try {
-        const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
-        const diaSnap = await getDoc(diaRef);
-        if (diaSnap.exists()) {
-          await updateDoc(diaRef, { puntos: increment(delta) });
-        } else {
-          const uSnap = await getDoc(doc(db,"usuarios",uid));
-          const ud = uSnap.exists() ? uSnap.data() : {};
-          await setDoc(diaRef, { uid, fecha, puntos: delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
-        }
-      } catch(e) { console.error("puntosDelDia error:", uid, e); }
-    }
-
-    for (const [uid, datos] of Object.entries(notifsPorUid)) await _notif(uid, datos);
-    return { procesados, errores };
-  } catch(e) {
-    console.error("Error general procesarResultadoPartido:", e);
-    return { procesados:0, errores:1 };
-  }
-}
-
-// ── procesarPreguntaDelDia ────────────────────────────────────
-export async function procesarPreguntaDelDia(preguntaId, respuestaCorrecta, fecha) {
-  let procesados = 0;
-  try {
-    let textoPregunta = "Pregunta del día";
-    try {
-      const ps = await getDoc(doc(db,"preguntas",preguntaId));
-      if (ps.exists()) textoPregunta = ps.data().texto || textoPregunta;
-    } catch(_) {}
-
-    const snap = await getDocs(query(collection(db,"respuestas"),where("preguntaId","==",preguntaId)));
-    for (const rDoc of snap.docs) {
-      try {
-        const data = rDoc.data(); const uid = data.uid;
-        const puntosViejos = typeof data.puntosGanados === "number" ? data.puntosGanados : null;
-        const esCorrecta   = data.respuesta === respuestaCorrecta;
-        const puntosNuevos = esCorrecta ? 2 : 0;
-        const delta = puntosViejos !== null ? puntosNuevos - puntosViejos : puntosNuevos;
-
-        await updateDoc(doc(db,"respuestas",rDoc.id), { esCorrecta, puntosGanados: puntosNuevos });
-
-        if (delta !== 0) {
-          await updateDoc(doc(db,"usuarios",uid), { puntosTotal: increment(delta) });
-          const diaRef  = doc(db,"puntosDelDia",`${uid}_${fecha}`);
-          const diaSnap = await getDoc(diaRef);
-          if (diaSnap.exists()) {
-            await updateDoc(diaRef, { puntos: increment(delta) });
-          } else {
-            const uSnap = await getDoc(doc(db,"usuarios",uid));
-            const ud = uSnap.exists() ? uSnap.data() : {};
-            await setDoc(diaRef, { uid, fecha, puntos:delta>0?delta:0, nickname:ud.nickname||"", avatarId:ud.avatarId||"" });
-          }
-        }
-
-        await _notif(uid, {
-          tipo:"resultado_pregunta", preguntaId, textoPregunta,
-          tuRespuesta:data.respuesta, respuestaCorrecta,
-          acertaste:esCorrecta, puntosGanados:puntosNuevos, fecha,
-        });
-        if (esCorrecta) procesados++;
-      } catch(e) { console.error("Error resp:", rDoc.id, e); }
-    }
-    return { ok:true, procesados };
-  } catch(e) {
-    console.error("Error procesarPreguntaDelDia:", e);
-    return { ok:false, error:e.message };
-  }
-}
-
-// ── calcularGanadorDelDia ─────────────────────────────────────
-export async function calcularGanadorDelDia(fecha) {
-  try {
-    const snap = await getDocs(query(collection(db,"puntosDelDia"),where("fecha","==",fecha)));
-    if (snap.empty) return { ok:false, mensaje:"Sin datos de puntosDelDia para ese día." };
-
-    // Cargar puntos de EN VIVO del día: sumar respuestas correctas del evento
-    const ptsEnVivo = {};
-    try {
-      const evSnap = await getDoc(doc(db,"eventoEnVivo","actual"));
-      if (evSnap.exists() && evSnap.data().activo !== false) {
-        const evData   = evSnap.data();
-        const preguntas = evData.preguntas || [];
-        const cerradas  = preguntas.filter(p => p.estado === "cerrada");
-        if (cerradas.length > 0) {
-          const respSnap = await getDocs(collection(db,"eventoEnVivo","actual","respuestas"));
-          respSnap.docs.forEach(d => {
-            const r = d.data();
-            const preg = cerradas.find(p => p.id === r.preguntaId);
-            if (preg && r.respuesta === preg.respuestaCorrecta) {
-              ptsEnVivo[r.uid] = (ptsEnVivo[r.uid] || 0) + (preg.puntosEnVivo || 3);
-            }
-          });
-        }
-      }
-    } catch(evErr) { console.warn("calcularGanadorDelDia: no se pudo leer EN VIVO", evErr); }
-
-    // Combinar: puntos del día (partidos + preguntas) + puntos EN VIVO
-    const jug = snap.docs.map(d => {
-      const base = { docId:d.id, ...d.data() };
-      const extra = ptsEnVivo[base.uid] || 0;
-      return { ...base, puntos: (base.puntos || 0) + extra, ptsEnVivo: extra };
-    }).sort((a,b) => b.puntos - a.puntos);
-
-    // ── Protección: si ya se entregaron bonus y cartas, no repetir ────
-    if (jug.some(j => j.esGanador === true)) {
-      return {
-        ok: false,
-        yaEntregado: true,
-        mensaje: `Las cartas y bonus del día ${fecha} ya fueron entregados. Para revertir, elimina el campo esGanador desde Firebase Console.`,
-      };
-    }
-    const maxPts = jug[0].puntos;
-    // No premiar si nadie sumó puntos ese día (evita carta x4 + bonus a un "líder" con 0 pts).
-    if (maxPts <= 0) return { ok:false, mensaje:`Nadie sumó puntos el día ${fecha}; no se entregan cartas ni bonus.` };
-    const l1 = jug.filter(j=>j.puntos===maxPts);
-    const r1 = jug.filter(j=>j.puntos<maxPts);
-    const p2 = r1[0]?.puntos;
-    const l2 = p2!==undefined ? r1.filter(j=>j.puntos===p2) : [];
-    const r2 = r1.filter(j=>j.puntos<(p2??-Infinity));
-    const p3 = r2[0]?.puntos;
-    const l3 = p3!==undefined ? r2.filter(j=>j.puntos===p3) : [];
-
-    for (const j of l1) {
-      await updateDoc(doc(db,"puntosDelDia",j.docId),{esGanador:true,bonusGanador:2});
-      await updateDoc(doc(db,"usuarios",j.uid),{puntosTotal:increment(2)});
-      await _asignarCarta(j.uid,4,fecha);
-      await _notif(j.uid,{tipo:"bonus_ganador",lugar:1,bonus:2,fecha,mensaje:`🥇 ¡Ganaste el día ${fecha}! +2 pts bonus y una carta x4.`});
-    }
-    for (const j of l2) { await _asignarCarta(j.uid,3,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:2,bonus:0,fecha,mensaje:`🥈 Quedaste 2° el día ${fecha}. ¡Carta x3!`}); }
-    for (const j of l3) { await _asignarCarta(j.uid,2,fecha); await _notif(j.uid,{tipo:"bonus_ganador",lugar:3,bonus:0,fecha,mensaje:`🥉 Quedaste 3° el día ${fecha}. ¡Carta x2!`}); }
-
-    return { ok:true, ganador:l1.map(j=>j.nickname).join(", "), totalJugadores:jug.length,
-      lugar1:l1.map(j=>j.nickname), lugar2:l2.map(j=>j.nickname), lugar3:l3.map(j=>j.nickname) };
-  } catch(e) {
-    console.error("Error calcularGanadorDelDia:", e);
-    return { ok:false, error:e.message };
-  }
-}
-
-async function _asignarCarta(uid, mult, fecha) {
-  const carta = cartaAleatoriaPorMultiplicador(mult);
-  if (!carta) return;
-  await setDoc(doc(db,"cartasDelUsuario",`${uid}_${carta.id}_${fecha}`),{
-    uid, cartaId:carta.id, cartaNombre:carta.nombre, cartaSlug:carta.slug,
-    multiplicador:carta.multiplicador, rareza:carta.rareza, fecha, visto:false,
-  });
-  await updateDoc(doc(db,"usuarios",uid),{[`cartas.${carta.id}`]:increment(1)});
-}
-
-export async function publicarAvisoAdmin(texto) {
-  await setDoc(doc(db,"config","avisoAdmin"),{texto,fecha:new Date().toISOString(),activo:true});
-}
-export async function cerrarAvisoAdmin() {
-  await updateDoc(doc(db,"config","avisoAdmin"),{activo:false});
 }
 </file>
 
@@ -7855,6 +7856,300 @@ export default function SuperDestacado({ partidoId, nombrePartido }) {
 }
 </file>
 
+<file path="src/components/TabPartidos.jsx">
+// src/components/TabPartidos.jsx  — v8 (Fase 4)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v8:
+//   Punto 10: Integra <SuperDestacado> para partidos con
+//             esSuperDestacado:true. El componente escucha en
+//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
+//   Todo lo demás idéntico a v7.
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  collection, getDocs, query, where, doc, getDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { hoyStr, partidoAbierto } from "../utils/helpers";
+import PartidoCard from "./PartidoCard";
+import PreguntaCard from "./PreguntaCard";
+import SuperDestacado from "./SuperDestacado";
+
+const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
+
+// ── Hook: sonido ambiental ────────────────────────────────────
+function useSonidoAmbiental(activado) {
+  const audioRef = useRef(null);
+  useEffect(() => {
+    let activo = true;
+    const iniciar = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "sonidoDia"));
+        if (!snap.exists() || !activo) return;
+        const { archivo, volumen = 0.4 } = snap.data();
+        if (!archivo || !activado) return;
+        const audio = new Audio(`/sounds/${archivo}`);
+        audio.loop = true; audio.volume = 0;
+        audioRef.current = audio;
+        await audio.play().catch(() => {});
+        let vol = 0;
+        const target = Math.min(1, Math.max(0, Number(volumen)));
+        const fade = setInterval(() => {
+          if (!activo) { clearInterval(fade); return; }
+          vol = Math.min(target, vol + 0.02);
+          if (audioRef.current) audioRef.current.volume = vol;
+          if (vol >= target) clearInterval(fade);
+        }, 80);
+      } catch(_) {}
+    };
+    iniciar();
+    return () => {
+      activo = false;
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    };
+  }, [activado]);
+  useEffect(() => {
+    if (!audioRef.current) return;
+    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
+  }, [activado]);
+}
+
+export default function TabPartidos({ onGuardado }) {
+  const { firebaseUser } = useAuth();
+  const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
+  useSonidoAmbiental(sonidosActivados);
+
+  const [partidos,    setPartidos]    = useState([]);
+  const [pregunta,    setPregunta]    = useState(null);
+  const [cargando,    setCargando]    = useState(true);
+  const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
+  const [respuestaUsuario, setRespuestaUsuario] = useState(null);
+
+  // Partido super destacado activo (para preguntas en vivo)
+  const [superDestacado, setSuperDestacado] = useState(null);
+
+  const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
+  const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
+  const [textoMensaje, setTextoMensaje] = useState("");
+  const [urlMensaje,   setUrlMensaje]   = useState("");
+  const [enviandoMsg,  setEnviandoMsg]  = useState(false);
+  const [msgEnviado,   setMsgEnviado]   = useState(false);
+  const hoy = hoyStr();
+
+  useEffect(() => { cargarDatos(); }, []);
+  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
+  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
+
+  const cargarDatos = async () => {
+    setCargando(true);
+    try {
+      let lista = [];
+      try {
+        // Partidos de hoy
+        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
+        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
+
+        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
+        let d16Lista = [];
+        try {
+          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
+          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
+        } catch(_) {}
+
+        // Combinar sin duplicados
+        const idsHoy = new Set(hoyLista.map(p => p.id));
+        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
+      } catch(_) {}
+      setPartidos(lista);
+
+      // Detectar partido super destacado — búsqueda separada (sin filtro de fecha)
+      // para que funcione aunque el partido no sea de hoy
+            let sd = lista.find(p => p.esSuperDestacado && !p.resultado);
+      if (!sd) {
+        try {
+          const snapSD = await getDocs(query(
+            collection(db,"partidos"), where("esSuperDestacado","==",true)
+          ));
+          sd = snapSD.docs
+            .map(d => ({ id:d.id, ...d.data() }))
+            .find(p => !p.resultado) || null;
+        } catch(_) {}
+      }
+      setSuperDestacado(sd || null);
+
+      try {
+        const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
+        if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
+      } catch(_) {}
+    } finally { setCargando(false); }
+  };
+
+  const verificarPredicciones = async () => {
+    if (!firebaseUser) return;
+    const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
+    if (abiertos.length === 0) return;
+    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
+    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
+    const idsAbiertos = new Set(abiertos.map(p => p.id));
+    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
+    const nuevas = new Set();
+    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
+    setPrediccionesGuardadas(nuevas);
+  };
+
+  const verificarRespuestaPregunta = async () => {
+    if (!firebaseUser || !pregunta) return;
+    try {
+      const snap = await getDoc(doc(db,"respuestas",`${firebaseUser.uid}_${pregunta.id}`));
+      if (snap.exists()) setRespuestaUsuario(snap.data().respuesta || "✓");
+    } catch(_) {}
+  };
+
+  const handlePrediccionGuardada = useCallback(() => {
+    setTimeout(verificarPredicciones, 500);
+    if (onGuardado) onGuardado();
+    const lsKey = LS_HINCHADA_KEY + hoy;
+    if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
+  }, [partidos, firebaseUser, hoy]);
+
+  const cerrarModalHinchada = () => {
+    localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
+    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
+    setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
+  };
+
+  const enviarMensajeHinchada = async () => {
+    if (!textoMensaje.trim() || !firebaseUser) return;
+    setEnviandoMsg(true);
+    try {
+      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
+      const ahora = new Date();
+      await addDoc(col(db,"mensajesDia"), {
+        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
+        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
+        timestamp:serverTimestamp(), fecha:hoy,
+        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
+        uid:firebaseUser.uid,
+      });
+      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
+    } catch(e) { console.error(e); }
+    finally { setEnviandoMsg(false); }
+  };
+
+  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
+  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
+
+  if (cargando) return (
+    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
+      <span className="spinner">⚙</span><p>CARGANDO...</p>
+    </div>
+  );
+
+  return (
+    <div style={{ paddingBottom:"80px" }}>
+      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
+      {superDestacado && (
+  <SuperDestacado
+    partidoId={superDestacado.id}
+    nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
+  />
+)}
+
+      {/* Modal hinchada */}
+      {mostrarModalHinchada && (
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
+          <div style={{ background:"var(--negro)",border:"4px solid var(--amarillo)",
+            boxShadow:"6px 6px 0 var(--amarillo-oscuro)",
+            padding:"24px 20px",maxWidth:"360px",width:"100%",
+            display:"flex",flexDirection:"column",gap:"14px" }}>
+            {!mostrarFormHinchada ? (
+              <>
+                <p style={{ fontSize:"24px",textAlign:"center" }}>📢</p>
+                <p style={{ fontSize:"8px",color:"var(--blanco)",textAlign:"center",lineHeight:2 }}>
+                  ¿Algún mensaje<br/>para la hinchada?
+                </p>
+                <div style={{ display:"flex",gap:"8px" }}>
+                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
+                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
+                  <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
+                    onClick={cerrarModalHinchada}>NO</button>
+                </div>
+              </>
+            ) : msgEnviado ? (
+              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
+            ) : (
+              <>
+                <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
+                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
+                  placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
+                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
+                    width:"100%",padding:"8px",border:"2px solid var(--negro)",
+                    background:"var(--blanco)",color:"var(--negro)",
+                    outline:"none",resize:"none",lineHeight:2 }} />
+                <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
+                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
+                  placeholder="URL opcional"
+                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+                    width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
+                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
+                <div style={{ display:"flex",gap:"8px" }}>
+                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
+                    onClick={enviarMensajeHinchada}
+                    disabled={enviandoMsg||!textoMensaje.trim()}>
+                    {enviandoMsg?"⚙...":"✅ ENVIAR"}
+                  </button>
+                  <button className="btn-pixel btn-gris" style={{ fontSize:"7px" }}
+                    onClick={cerrarModalHinchada}>✕</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="contenedor">
+        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
+        {partidos.length>0 ? (
+          partidos.map(p => (
+            <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
+          ))
+        ) : (
+          <div className="caja-pixel mb-16 text-center">
+            <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
+          </div>
+        )}
+        {abiertos.length>0 && (
+          <div style={{ padding:"8px 12px",marginBottom:"12px",
+            border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
+            fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
+            color:"var(--verde-claro)",textAlign:"center" }}>
+            {todosPredecidos
+              ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
+              : `📝 ${prediccionesGuardadas.size} / ${abiertos.length} PRONÓSTICOS GUARDADOS`
+            }
+          </div>
+        )}
+        {pregunta && (
+          <>
+            <div className="seccion-titulo">
+              ❓ PREGUNTA DEL DÍA
+              {respuestaUsuario && (
+                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
+                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
+                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
+              )}
+            </div>
+            <PreguntaCard pregunta={pregunta} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="src/components/HistorialPredicciones.jsx">
 // src/components/HistorialPredicciones.jsx  — v7 (Patch 2)
 // ─────────────────────────────────────────────────────────────
@@ -8320,300 +8615,6 @@ export default function HistorialPredicciones({ userId, puntosTotal }) {
           ))}
         </>
       )}
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/TabPartidos.jsx">
-// src/components/TabPartidos.jsx  — v8 (Fase 4)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v8:
-//   Punto 10: Integra <SuperDestacado> para partidos con
-//             esSuperDestacado:true. El componente escucha en
-//             tiempo real (onSnapshot) y muestra la pregunta en vivo.
-//   Todo lo demás idéntico a v7.
-// ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  collection, getDocs, query, where, doc, getDoc,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-import { hoyStr, partidoAbierto } from "../utils/helpers";
-import PartidoCard from "./PartidoCard";
-import PreguntaCard from "./PreguntaCard";
-import SuperDestacado from "./SuperDestacado";
-
-const LS_HINCHADA_KEY = "cp8b_hinchada_preguntado_";
-
-// ── Hook: sonido ambiental ────────────────────────────────────
-function useSonidoAmbiental(activado) {
-  const audioRef = useRef(null);
-  useEffect(() => {
-    let activo = true;
-    const iniciar = async () => {
-      try {
-        const snap = await getDoc(doc(db, "config", "sonidoDia"));
-        if (!snap.exists() || !activo) return;
-        const { archivo, volumen = 0.4 } = snap.data();
-        if (!archivo || !activado) return;
-        const audio = new Audio(`/sounds/${archivo}`);
-        audio.loop = true; audio.volume = 0;
-        audioRef.current = audio;
-        await audio.play().catch(() => {});
-        let vol = 0;
-        const target = Math.min(1, Math.max(0, Number(volumen)));
-        const fade = setInterval(() => {
-          if (!activo) { clearInterval(fade); return; }
-          vol = Math.min(target, vol + 0.02);
-          if (audioRef.current) audioRef.current.volume = vol;
-          if (vol >= target) clearInterval(fade);
-        }, 80);
-      } catch(_) {}
-    };
-    iniciar();
-    return () => {
-      activo = false;
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    };
-  }, [activado]);
-  useEffect(() => {
-    if (!audioRef.current) return;
-    activado ? audioRef.current.play().catch(()=>{}) : audioRef.current.pause();
-  }, [activado]);
-}
-
-export default function TabPartidos({ onGuardado }) {
-  const { firebaseUser } = useAuth();
-  const sonidosActivados = localStorage.getItem("cp8b_sonidos_activados") !== "0";
-  useSonidoAmbiental(sonidosActivados);
-
-  const [partidos,    setPartidos]    = useState([]);
-  const [pregunta,    setPregunta]    = useState(null);
-  const [cargando,    setCargando]    = useState(true);
-  const [prediccionesGuardadas, setPrediccionesGuardadas] = useState(new Set());
-  const [respuestaUsuario, setRespuestaUsuario] = useState(null);
-
-  // Partido super destacado activo (para preguntas en vivo)
-  const [superDestacado, setSuperDestacado] = useState(null);
-
-  const [mostrarModalHinchada, setMostrarModalHinchada] = useState(false);
-  const [mostrarFormHinchada,  setMostrarFormHinchada]  = useState(false);
-  const [textoMensaje, setTextoMensaje] = useState("");
-  const [urlMensaje,   setUrlMensaje]   = useState("");
-  const [enviandoMsg,  setEnviandoMsg]  = useState(false);
-  const [msgEnviado,   setMsgEnviado]   = useState(false);
-  const hoy = hoyStr();
-
-  useEffect(() => { cargarDatos(); }, []);
-  useEffect(() => { if (firebaseUser && partidos.length>0) verificarPredicciones(); }, [partidos, firebaseUser]);
-  useEffect(() => { if (firebaseUser && pregunta) verificarRespuestaPregunta(); }, [pregunta, firebaseUser]);
-
-  const cargarDatos = async () => {
-    setCargando(true);
-    try {
-      let lista = [];
-      try {
-        // Partidos de hoy
-        const snapHoy = await getDocs(query(collection(db,"partidos"), where("fecha","==",hoy)));
-        const hoyLista = snapHoy.docs.map(d => ({ id:d.id, ...d.data() }));
-
-        // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
-        let d16Lista = [];
-        try {
-          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
-          d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
-        } catch(_) {}
-
-        // Combinar sin duplicados
-        const idsHoy = new Set(hoyLista.map(p => p.id));
-        lista = [...hoyLista, ...d16Lista.filter(p => !idsHoy.has(p.id))];
-      } catch(_) {}
-      setPartidos(lista);
-
-      // Detectar partido super destacado — búsqueda separada (sin filtro de fecha)
-      // para que funcione aunque el partido no sea de hoy
-            let sd = lista.find(p => p.esSuperDestacado && !p.resultado);
-      if (!sd) {
-        try {
-          const snapSD = await getDocs(query(
-            collection(db,"partidos"), where("esSuperDestacado","==",true)
-          ));
-          sd = snapSD.docs
-            .map(d => ({ id:d.id, ...d.data() }))
-            .find(p => !p.resultado) || null;
-        } catch(_) {}
-      }
-      setSuperDestacado(sd || null);
-
-      try {
-        const snapP = await getDocs(query(collection(db,"preguntas"), where("fecha","==",hoy)));
-        if (!snapP.empty) setPregunta({ id:snapP.docs[0].id, ...snapP.docs[0].data() });
-      } catch(_) {}
-    } finally { setCargando(false); }
-  };
-
-  const verificarPredicciones = async () => {
-    if (!firebaseUser) return;
-    const abiertos = partidos.filter(p => !p.resultado && partidoAbierto(p));
-    if (abiertos.length === 0) return;
-    // Una sola query por uid en vez de un getDoc por partido (evita N+1).
-    // Se filtra a los partidos abiertos en cliente; índice de campo único (uid) basta.
-    const idsAbiertos = new Set(abiertos.map(p => p.id));
-    const snap = await getDocs(query(collection(db,"predicciones"), where("uid","==",firebaseUser.uid)));
-    const nuevas = new Set();
-    snap.forEach(d => { if (idsAbiertos.has(d.data().partidoId)) nuevas.add(d.data().partidoId); });
-    setPrediccionesGuardadas(nuevas);
-  };
-
-  const verificarRespuestaPregunta = async () => {
-    if (!firebaseUser || !pregunta) return;
-    try {
-      const snap = await getDoc(doc(db,"respuestas",`${firebaseUser.uid}_${pregunta.id}`));
-      if (snap.exists()) setRespuestaUsuario(snap.data().respuesta || "✓");
-    } catch(_) {}
-  };
-
-  const handlePrediccionGuardada = useCallback(() => {
-    setTimeout(verificarPredicciones, 500);
-    if (onGuardado) onGuardado();
-    const lsKey = LS_HINCHADA_KEY + hoy;
-    if (!localStorage.getItem(lsKey)) setMostrarModalHinchada(true);
-  }, [partidos, firebaseUser, hoy]);
-
-  const cerrarModalHinchada = () => {
-    localStorage.setItem(LS_HINCHADA_KEY + hoy, "1");
-    setMostrarModalHinchada(false); setMostrarFormHinchada(false);
-    setTextoMensaje(""); setUrlMensaje(""); setMsgEnviado(false);
-  };
-
-  const enviarMensajeHinchada = async () => {
-    if (!textoMensaje.trim() || !firebaseUser) return;
-    setEnviandoMsg(true);
-    try {
-      const { addDoc, collection:col, serverTimestamp } = await import("firebase/firestore");
-      const ahora = new Date();
-      await addDoc(col(db,"mensajesDia"), {
-        autor:firebaseUser.displayName?.split(" ")[0]||"Anónimo",
-        texto:textoMensaje.trim().slice(0,200), url:urlMensaje.trim()||null,
-        timestamp:serverTimestamp(), fecha:hoy,
-        hora:`${String(ahora.getHours()).padStart(2,"0")}:${String(ahora.getMinutes()).padStart(2,"0")}`,
-        uid:firebaseUser.uid,
-      });
-      setMsgEnviado(true); setTimeout(cerrarModalHinchada,1500);
-    } catch(e) { console.error(e); }
-    finally { setEnviandoMsg(false); }
-  };
-
-  const abiertos = partidos.filter(p=>!p.resultado&&partidoAbierto(p));
-  const todosPredecidos = abiertos.length>0 && abiertos.every(p=>prediccionesGuardadas.has(p.id));
-
-  if (cargando) return (
-    <div className="loading-pantalla" style={{ minHeight:"200px" }}>
-      <span className="spinner">⚙</span><p>CARGANDO...</p>
-    </div>
-  );
-
-  return (
-    <div style={{ paddingBottom:"80px" }}>
-      {/* ── SuperDestacado flotante (preguntas en vivo) ─── */}
-      {superDestacado && (
-  <SuperDestacado
-    partidoId={superDestacado.id}
-    nombrePartido={`${superDestacado.local?.nombre} vs ${superDestacado.visitante?.nombre}`}
-  />
-)}
-
-      {/* Modal hinchada */}
-      {mostrarModalHinchada && (
-        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:800,
-          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
-          <div style={{ background:"var(--negro)",border:"4px solid var(--amarillo)",
-            boxShadow:"6px 6px 0 var(--amarillo-oscuro)",
-            padding:"24px 20px",maxWidth:"360px",width:"100%",
-            display:"flex",flexDirection:"column",gap:"14px" }}>
-            {!mostrarFormHinchada ? (
-              <>
-                <p style={{ fontSize:"24px",textAlign:"center" }}>📢</p>
-                <p style={{ fontSize:"8px",color:"var(--blanco)",textAlign:"center",lineHeight:2 }}>
-                  ¿Algún mensaje<br/>para la hinchada?
-                </p>
-                <div style={{ display:"flex",gap:"8px" }}>
-                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"8px" }}
-                    onClick={()=>setMostrarFormHinchada(true)}>SÍ</button>
-                  <button className="btn-pixel btn-gris w-full" style={{ fontSize:"8px" }}
-                    onClick={cerrarModalHinchada}>NO</button>
-                </div>
-              </>
-            ) : msgEnviado ? (
-              <p style={{ fontSize:"8px",color:"var(--verde-claro)",textAlign:"center",lineHeight:2 }}>✅ ¡Mensaje enviado!</p>
-            ) : (
-              <>
-                <p style={{ fontSize:"7px",color:"var(--amarillo)" }}>📢 TU MENSAJE</p>
-                <textarea value={textoMensaje} onChange={e=>setTextoMensaje(e.target.value.slice(0,200))}
-                  placeholder="Escribe algo (máx 200 caracteres)..." rows={3}
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",
-                    width:"100%",padding:"8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",
-                    outline:"none",resize:"none",lineHeight:2 }} />
-                <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"right" }}>{textoMensaje.length}/200</p>
-                <input value={urlMensaje} onChange={e=>setUrlMensaje(e.target.value)}
-                  placeholder="URL opcional"
-                  style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-                    width:"100%",padding:"6px 8px",border:"2px solid var(--negro)",
-                    background:"var(--blanco)",color:"var(--negro)",outline:"none" }} />
-                <div style={{ display:"flex",gap:"8px" }}>
-                  <button className="btn-pixel btn-verde w-full" style={{ fontSize:"7px" }}
-                    onClick={enviarMensajeHinchada}
-                    disabled={enviandoMsg||!textoMensaje.trim()}>
-                    {enviandoMsg?"⚙...":"✅ ENVIAR"}
-                  </button>
-                  <button className="btn-pixel btn-gris" style={{ fontSize:"7px" }}
-                    onClick={cerrarModalHinchada}>✕</button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="contenedor">
-        <div className="seccion-titulo" style={{ marginTop:"16px" }}>⚽ PARTIDOS DE HOY</div>
-        {partidos.length>0 ? (
-          partidos.map(p => (
-            <PartidoCard key={p.id} partido={p} onGuardado={handlePrediccionGuardada} />
-          ))
-        ) : (
-          <div className="caja-pixel mb-16 text-center">
-            <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>No hay partidos para hoy.</p>
-          </div>
-        )}
-        {abiertos.length>0 && (
-          <div style={{ padding:"8px 12px",marginBottom:"12px",
-            border:"2px solid var(--verde-campo)",background:"rgba(64,145,108,0.1)",
-            fontFamily:"'Press Start 2P',monospace",fontSize:"6px",
-            color:"var(--verde-claro)",textAlign:"center" }}>
-            {todosPredecidos
-              ? "✅ TODOS LOS PRONÓSTICOS GUARDADOS"
-              : `📝 ${prediccionesGuardadas.size} / ${abiertos.length} PRONÓSTICOS GUARDADOS`
-            }
-          </div>
-        )}
-        {pregunta && (
-          <>
-            <div className="seccion-titulo">
-              ❓ PREGUNTA DEL DÍA
-              {respuestaUsuario && (
-                <span style={{ marginLeft:"8px",fontSize:"6px",color:"var(--verde-claro)",
-                  background:"rgba(82,183,136,0.15)",border:"1px solid var(--verde-claro)",
-                  padding:"2px 6px" }}>✓ RESPONDIDA</span>
-              )}
-            </div>
-            <PreguntaCard pregunta={pregunta} />
-          </>
-        )}
-      </div>
     </div>
   );
 }
@@ -10733,18 +10734,117 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                 <div key={preg.id} style={{ padding:"12px",
                   background:"rgba(214,40,40,0.06)", border:"2px solid var(--rojo-chile)",
                   boxShadow:"0 0 16px rgba(214,40,40,0.2)" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"10px" }}>
+                  {/* Cabecera */}
+                  <div style={{ display:"flex", justifyContent:"space-between",
+                    alignItems:"center", marginBottom:"10px", flexWrap:"wrap", gap:"6px" }}>
                     <span style={{ fontSize:"6px", color:"var(--rojo-chile)" }}>
-                      🔴 PREGUNTA #{preg.numero} — ABIERTA
+                      🔴 PREGUNTA #{preg.numero}
+                      {preg.timerMinutos > 0 && (
+                        <span style={{ color:"var(--gris-claro)", marginLeft:"6px" }}>
+                          ⏱{preg.timerMinutos}min
+                        </span>
+                      )}
                     </span>
-                    <span style={{ fontSize:"5px", color:"var(--amarillo)",
-                      border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
-                      +{preg.puntosEnVivo} PTS
-                    </span>
+                    <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+                      <span style={{ fontSize:"5px", color:"var(--amarillo)",
+                        border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
+                        +{preg.puntosEnVivo} PTS
+                      </span>
+                      <button
+                        onClick={() => {
+                          if (editandoId === preg.id) { setEditandoId(null); return; }
+                          setEditandoId(preg.id);
+                          setEditForm({
+                            texto:        preg.texto,
+                            opciones:     [...(preg.opciones||[])],
+                            puntosEnVivo: preg.puntosEnVivo,
+                            timerMinutos: preg.timerMinutos || 0,
+                          });
+                        }}
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                          padding:"3px 7px", cursor:"pointer",
+                          border:`1px solid ${editandoId===preg.id?"var(--amarillo)":"var(--gris)"}`,
+                          background: editandoId===preg.id?"rgba(244,208,63,0.15)":"transparent",
+                          color: editandoId===preg.id?"var(--amarillo)":"var(--gris-claro)" }}>
+                        {editandoId===preg.id ? "✕ CERRAR" : "✏ EDITAR"}
+                      </button>
+                    </div>
                   </div>
-                  <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
-                    {preg.texto}
-                  </p>
+
+                  {/* Formulario edición inline */}
+                  {editandoId === preg.id && (
+                    <div style={{ marginBottom:"12px", padding:"10px",
+                      border:"1px solid var(--amarillo)", background:"rgba(0,0,0,0.3)" }}>
+                      <textarea value={editForm.texto}
+                        onChange={e => setEditForm(f => ({ ...f, texto: e.target.value }))}
+                        rows={2}
+                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
+                          width:"100%", padding:"6px", border:"2px solid var(--negro)",
+                          background:"var(--blanco)", color:"var(--negro)",
+                          outline:"none", resize:"none", lineHeight:2, marginBottom:"8px" }} />
+                      {(editForm.opciones||[]).map((op,oi) => (
+                        <div key={oi} style={{ display:"flex", gap:"4px", marginBottom:"4px" }}>
+                          <input value={op}
+                            onChange={e => setEditForm(f => ({
+                              ...f, opciones: f.opciones.map((o,idx) => idx===oi ? e.target.value : o)
+                            }))}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                              flex:1, padding:"4px 6px", border:"2px solid var(--negro)",
+                              background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
+                          {(editForm.opciones||[]).length > 2 && (
+                            <button onClick={() => setEditForm(f => ({
+                                ...f, opciones: f.opciones.filter((_,idx) => idx!==oi)
+                              }))}
+                              style={{ background:"var(--rojo-chile)", color:"var(--blanco)",
+                                border:"none", cursor:"pointer", padding:"3px 7px",
+                                fontFamily:"'Press Start 2P',monospace", fontSize:"8px" }}>✕</button>
+                          )}
+                        </div>
+                      ))}
+                      {(editForm.opciones||[]).length < 5 && (
+                        <button onClick={() => setEditForm(f => ({ ...f, opciones:[...(f.opciones||[]),""] }))}
+                          style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                            width:"100%", padding:"4px", marginBottom:"8px", cursor:"pointer",
+                            border:"1px solid var(--gris)", background:"transparent",
+                            color:"var(--gris-claro)" }}>+ OPCIÓN</button>
+                      )}
+                      <div style={{ display:"flex", gap:"10px", marginBottom:"10px", flexWrap:"wrap" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+                          <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>PTS:</span>
+                          <input type="number" min="1" max="99" value={editForm.puntosEnVivo}
+                            onChange={e => setEditForm(f => ({ ...f, puntosEnVivo: Math.max(1,Math.min(99,Number(e.target.value)||1)) }))}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                              width:"44px", padding:"4px", textAlign:"center",
+                              border:"2px solid var(--amarillo)", background:"var(--negro)",
+                              color:"var(--amarillo)", outline:"none" }} />
+                        </div>
+                        <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+                          <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>⏱ MINS (0=∞):</span>
+                          <input type="number" min="0" max="99" value={editForm.timerMinutos ?? 0}
+                            onChange={e => setEditForm(f => ({ ...f, timerMinutos: Math.max(0,Math.min(99,Number(e.target.value)||0)) }))}
+                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                              width:"44px", padding:"4px", textAlign:"center",
+                              border:"2px solid var(--rojo-chile)", background:"var(--negro)",
+                              color:"var(--rojo-chile)", outline:"none" }} />
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", gap:"6px" }}>
+                        <button className="btn-pixel btn-amarillo" style={{ flex:2, fontSize:"6px" }}
+                          onClick={() => guardarEdicion(preg)}>💾 GUARDAR</button>
+                        <button className="btn-pixel btn-gris" style={{ flex:1, fontSize:"6px" }}
+                          onClick={() => setEditandoId(null)}>CANCELAR</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Texto de la pregunta (cuando no se edita) */}
+                  {editandoId !== preg.id && (
+                    <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
+                      {preg.texto}
+                    </p>
+                  )}
+
+                  {/* Selección respuesta correcta y cierre */}
                   <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
                     MARCA LA RESPUESTA CORRECTA:
                   </p>
@@ -10766,7 +10866,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                     disabled={!respSels[preg.id] || cerrando===preg.id}>
                     {cerrando===preg.id
                       ? "⚙ PROCESANDO..."
-                      : `🔒 CERRAR PREGUNTA #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
+                      : `🔒 CERRAR #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
                   </button>
                 </div>
               ))}
@@ -10848,6 +10948,29 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                   width:"44px", height:"33px", textAlign:"center",
                   border:"2px solid var(--amarillo)",
                   background:"var(--negro)", color:"var(--amarillo)", outline:"none" }} />
+            </div>
+
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
+              ⏱ CRONÓMETRO (minutos, 0 = sin límite):
+            </p>
+            <div style={{ display:"flex", alignItems:"center", gap:"5px",
+              marginBottom:"12px", flexWrap:"wrap" }}>
+              {[0,1,2,3,5,10].map(n => (
+                <button key={n} onClick={() => setTimerMin(n)}
+                  style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                    width:"33px", height:"33px", cursor:"pointer",
+                    border:`2px solid ${timerMin===n?"var(--rojo-chile)":"var(--gris)"}`,
+                    background:timerMin===n?"rgba(214,40,40,0.2)":"transparent",
+                    color:timerMin===n?"var(--rojo-chile)":"var(--gris-claro)" }}>
+                  {n===0?"∞":n}
+                </button>
+              ))}
+              <input type="number" min="0" max="99" value={timerMin}
+                onChange={e => setTimerMin(Math.max(0, Math.min(99, Number(e.target.value)||0)))}
+                style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                  width:"44px", height:"33px", textAlign:"center",
+                  border:"2px solid var(--rojo-chile)",
+                  background:"var(--negro)", color:"var(--rojo-chile)", outline:"none" }} />
             </div>
 
             <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
