@@ -49,10 +49,8 @@ export default function EventoEnVivo() {
   const preguntas = evento?.preguntas || [];
   // Pueden convivir varias preguntas abiertas a la vez.
   // Se invierte el orden: la pregunta más reciente aparece arriba.
-  const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
-  const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
-  // Suma de puntos de TODAS las preguntas del evento (abiertas + cerradas)
-  const ptsJugados = preguntas.reduce((s, p) => s + (p.puntosEnVivo || 0), 0);
+  const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
+  const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
 
   // Cuando aparece una pregunta nueva abierta, des-minimizar
   const idsAbiertas = abiertas.map(p => p.id).join(",");
@@ -179,28 +177,6 @@ export default function EventoEnVivo() {
           padding:"0 16px 14px",
           display:"flex", flexDirection:"column", alignItems:"center",
         }}>
-          {/* Puntos jugados en el EN VIVO */}
-          {ptsJugados > 0 && (
-            <div style={{
-              marginBottom:"10px",
-              background:"rgba(0,0,0,0.55)",
-              border:"2px solid var(--amarillo)",
-              padding:"6px 16px",
-              textAlign:"center",
-              boxShadow:"0 0 12px rgba(244,208,63,0.3)",
-            }}>
-              <p style={{
-                fontFamily:"'Press Start 2P',monospace",
-                fontSize:"7px",
-                color:"var(--amarillo)",
-                lineHeight:1.8,
-                textShadow:"0 0 8px rgba(244,208,63,0.6)",
-              }}>
-                🏆 {ptsJugados} PTS ENTREGADOS HASTA AHORA
-              </p>
-            </div>
-          )}
-
           <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
             <span style={{ fontSize:"40px", lineHeight:1,
               filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
@@ -303,10 +279,40 @@ const PALETA = [
 ];
 function colorPregunta(n) { return PALETA[((n||1)-1) % PALETA.length]; }
 
+function useCountdown(pregunta) {
+  const [secsLeft, setSecsLeft] = React.useState(null);
+
+  React.useEffect(() => {
+    const mins = pregunta.timerMinutos || 0;
+    if (!mins || !pregunta.creadaEn) { setSecsLeft(null); return; }
+
+    const inicio   = new Date(pregunta.creadaEn).getTime();
+    const duracion = mins * 60 * 1000;
+
+    const tick = () => {
+      const restante = Math.max(0, Math.ceil((inicio + duracion - Date.now()) / 1000));
+      setSecsLeft(restante);
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, [pregunta.id, pregunta.timerMinutos, pregunta.creadaEn]);
+
+  return secsLeft;
+}
+
 function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
-  const pts    = pregunta.puntosEnVivo || 3;
-  const color  = colorPregunta(pregunta.numero);
-  const letras = ["A","B","C","D","E"];
+  const pts      = pregunta.puntosEnVivo || 3;
+  const color    = colorPregunta(pregunta.numero);
+  const letras   = ["A","B","C","D","E"];
+  const secsLeft = useCountdown(pregunta);
+  const tiempoAgotado = secsLeft !== null && secsLeft <= 0;
+
+  const fmtTime = (s) => {
+    const m = Math.floor(s / 60);
+    const ss = s % 60;
+    return `${m}:${String(ss).padStart(2,"0")}`;
+  };
 
   return (
     <div style={{
@@ -346,7 +352,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
 
       {/* Opciones o confirmación */}
       <div style={{ padding:"0 12px 14px" }}>
-        {!miRespuesta ? (
+        {!miRespuesta && !tiempoAgotado ? (
           <div style={{ display:"flex", flexDirection:"column", gap:"7px" }}>
             {(pregunta.opciones||[]).map((op,i) => (
               <button key={i} onClick={() => onResponder(op)} disabled={enviando}

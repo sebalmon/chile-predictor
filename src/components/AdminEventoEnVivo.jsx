@@ -46,11 +46,10 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   const [opciones, setOpciones] = useState(["",""]);
   const [puntos,   setPuntos]   = useState(3);
   const [creando,  setCreando]  = useState(false);
+  const [timerMin, setTimerMin] = useState(0); // 0 = sin límite
 
   // Cierre — ahora un mapa por pregunta
   const [respSels,  setRespSels]  = useState({}); // { preguntaId: opcion }
-  const [editandoId, setEditandoId] = useState(null); // preguntaId en edición
-  const [editForm,   setEditForm]   = useState({}); // { texto, opciones, puntosEnVivo }
   const [cerrando,  setCerrando]  = useState(null); // preguntaId siendo cerrada
   const [reparando, setReparando] = useState(false);
 
@@ -140,12 +139,13 @@ export default function AdminEventoEnVivo({ onMensaje }) {
         respuestaCorrecta: null,
         puntosEnVivo:      Number(puntos),
         creadaEn:          new Date().toISOString(),
+        timerMinutos:      Number(timerMin) || 0,
       };
       await updateDoc(REF_EVENTO(), {
         preguntas: [...preguntas, pregNueva],
       });
       onMensaje("ok", `🔴 Pregunta #${numeroSiguiente} publicada (+${puntos} pts)`);
-      setTextoPrg(""); setOpciones(["",""]); setPuntos(3);
+      setTextoPrg(""); setOpciones(["",""]); setPuntos(3); setTimerMin(0);
     } catch (e) { onMensaje("error", e.message); }
     finally { setCreando(false); }
   };
@@ -223,25 +223,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       onMensaje(reparadas > 0 ? "ok" : "error", msg + msg2);
     } catch (e) { onMensaje("error", e.message); }
     finally { setReparando(false); }
-  };
-
-  // ── Editar una pregunta abierta ────────────────────────────
-  const guardarEdicion = async (pregunta) => {
-    const nuevasPreguntas = preguntas.map(p =>
-      p.id === pregunta.id
-        ? {
-            ...p,
-            texto:        editForm.texto?.trim() || p.texto,
-            opciones:     (editForm.opciones || p.opciones).filter(o => o.trim()),
-            puntosEnVivo: Number(editForm.puntosEnVivo) || p.puntosEnVivo,
-          }
-        : p
-    );
-    try {
-      await updateDoc(REF_EVENTO(), { preguntas: nuevasPreguntas });
-      setEditandoId(null);
-      onMensaje("ok", `✅ Pregunta #${pregunta.numero} actualizada.`);
-    } catch(e) { onMensaje("error", e.message); }
   };
 
   // ── Cerrar UNA pregunta específica y dar sus puntos ─────────
@@ -436,145 +417,41 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                 <div key={preg.id} style={{ padding:"12px",
                   background:"rgba(214,40,40,0.06)", border:"2px solid var(--rojo-chile)",
                   boxShadow:"0 0 16px rgba(214,40,40,0.2)" }}>
-                  {/* Cabecera con botón editar */}
-                  <div style={{ display:"flex", justifyContent:"space-between",
-                    alignItems:"center", marginBottom:"10px" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"10px" }}>
                     <span style={{ fontSize:"6px", color:"var(--rojo-chile)" }}>
                       🔴 PREGUNTA #{preg.numero} — ABIERTA
                     </span>
-                    <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
-                      <span style={{ fontSize:"5px", color:"var(--amarillo)",
-                        border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
-                        +{preg.puntosEnVivo} PTS
-                      </span>
-                      <button
-                        onClick={() => {
-                          if (editandoId === preg.id) { setEditandoId(null); return; }
-                          setEditandoId(preg.id);
-                          setEditForm({
-                            texto: preg.texto,
-                            opciones: [...(preg.opciones||[])],
-                            puntosEnVivo: preg.puntosEnVivo,
-                          });
-                        }}
-                        style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
-                          padding:"3px 7px", cursor:"pointer",
-                          border:`1px solid ${editandoId===preg.id?"var(--amarillo)":"var(--gris)"}`,
-                          background: editandoId===preg.id?"rgba(244,208,63,0.15)":"transparent",
-                          color: editandoId===preg.id?"var(--amarillo)":"var(--gris-claro)" }}>
-                        ✏ EDITAR
-                      </button>
-                    </div>
+                    <span style={{ fontSize:"5px", color:"var(--amarillo)",
+                      border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
+                      +{preg.puntosEnVivo} PTS
+                    </span>
                   </div>
-
-                  {/* Modo edición */}
-                  {editandoId === preg.id ? (
-                    <div style={{ marginBottom:"12px" }}>
-                      <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
-                        TEXTO:
-                      </p>
-                      <textarea
-                        value={editForm.texto}
-                        onChange={e => setEditForm(f => ({ ...f, texto: e.target.value }))}
-                        rows={2}
+                  <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
+                    {preg.texto}
+                  </p>
+                  <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
+                    MARCA LA RESPUESTA CORRECTA:
+                  </p>
+                  <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"12px" }}>
+                    {(preg.opciones||[]).map((op,i) => (
+                      <button key={i} onClick={() =>
+                          setRespSels(prev => ({ ...prev, [preg.id]: op }))}
                         style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                          width:"100%", padding:"6px", border:"2px solid var(--negro)",
-                          background:"var(--blanco)", color:"var(--negro)",
-                          outline:"none", resize:"none", lineHeight:2, marginBottom:"8px" }}
-                      />
-                      <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
-                        OPCIONES:
-                      </p>
-                      {(editForm.opciones||[]).map((op,oi) => (
-                        <div key={oi} style={{ display:"flex", gap:"4px", marginBottom:"4px" }}>
-                          <input value={op}
-                            onChange={e => setEditForm(f => ({
-                              ...f,
-                              opciones: f.opciones.map((o,idx) => idx===oi ? e.target.value : o)
-                            }))}
-                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-                              flex:1, padding:"4px 6px", border:"2px solid var(--negro)",
-                              background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
-                          {(editForm.opciones||[]).length > 2 && (
-                            <button onClick={() => setEditForm(f => ({
-                                ...f, opciones: f.opciones.filter((_,idx) => idx!==oi)
-                              }))}
-                              style={{ background:"var(--rojo-chile)", color:"var(--blanco)",
-                                border:"none", cursor:"pointer", padding:"3px 7px",
-                                fontFamily:"'Press Start 2P',monospace", fontSize:"8px" }}>
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      {(editForm.opciones||[]).length < 5 && (
-                        <button onClick={() => setEditForm(f => ({
-                            ...f, opciones: [...(f.opciones||[]), ""]
-                          }))}
-                          style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
-                            width:"100%", padding:"4px", marginBottom:"8px", cursor:"pointer",
-                            border:"1px solid var(--gris)", background:"transparent",
-                            color:"var(--gris-claro)" }}>
-                          + OPCIÓN
-                        </button>
-                      )}
-                      <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"10px" }}>
-                        <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>PUNTOS:</span>
-                        <input type="number" min="1" max="99"
-                          value={editForm.puntosEnVivo}
-                          onChange={e => setEditForm(f => ({
-                            ...f, puntosEnVivo: Math.max(1, Math.min(99, Number(e.target.value)||1))
-                          }))}
-                          style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                            width:"50px", padding:"4px", textAlign:"center",
-                            border:"2px solid var(--amarillo)", background:"var(--negro)",
-                            color:"var(--amarillo)", outline:"none" }} />
-                      </div>
-                      <div style={{ display:"flex", gap:"6px" }}>
-                        <button className="btn-pixel btn-amarillo" style={{ flex:2, fontSize:"6px" }}
-                          onClick={() => guardarEdicion(preg)}>
-                          💾 GUARDAR CAMBIOS
-                        </button>
-                        <button className="btn-pixel btn-gris" style={{ flex:1, fontSize:"6px" }}
-                          onClick={() => setEditandoId(null)}>
-                          CANCELAR
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
-                      {preg.texto}
-                    </p>
-                  )}
-
-                  {/* Selección de respuesta correcta y cierre */}
-                  {editandoId !== preg.id && (
-                    <>
-                      <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
-                        MARCA LA RESPUESTA CORRECTA:
-                      </p>
-                      <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"12px" }}>
-                        {(preg.opciones||[]).map((op,i) => (
-                          <button key={i} onClick={() =>
-                              setRespSels(prev => ({ ...prev, [preg.id]: op }))}
-                            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
-                              padding:"8px 10px", cursor:"pointer", textAlign:"left",
-                              border:`2px solid ${respSels[preg.id]===op?"var(--verde-claro)":"var(--gris)"}`,
-                              background:respSels[preg.id]===op?"rgba(82,183,136,0.15)":"transparent",
-                              color:"var(--blanco)" }}>
-                            {respSels[preg.id]===op ? "✅ " : ""}{op}
-                          </button>
-                        ))}
-                      </div>
-                      <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
-                        onClick={() => cerrarPregunta(preg)}
-                        disabled={!respSels[preg.id] || cerrando===preg.id}>
-                        {cerrando===preg.id
-                          ? "⚙ PROCESANDO..."
-                          : `🔒 CERRAR PREGUNTA #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
+                          padding:"8px 10px", cursor:"pointer", textAlign:"left",
+                          border:`2px solid ${respSels[preg.id]===op?"var(--verde-claro)":"var(--gris)"}`,
+                          background:respSels[preg.id]===op?"rgba(82,183,136,0.15)":"transparent",
+                          color:"var(--blanco)" }}>
+                        {respSels[preg.id]===op ? "✅ " : ""}{op}
                       </button>
-                    </>
-                  )}
+                    ))}
+                  </div>
+                  <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
+                    onClick={() => cerrarPregunta(preg)}
+                    disabled={!respSels[preg.id] || cerrando===preg.id}>
+                    {cerrando===preg.id
+                      ? "⚙ PROCESANDO..."
+                      : `🔒 CERRAR PREGUNTA #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
+                  </button>
                 </div>
               ))}
             </div>
