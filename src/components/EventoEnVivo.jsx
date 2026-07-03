@@ -364,7 +364,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
               ? "0 0 10px rgba(214,40,40,0.8)"
               : "0 0 6px rgba(52,211,153,0.4)",
           }}>
-            {tiempoAgotado ? "⏰ TIEMPO AGOTADO" : `⏱ ${fmtTime(secsLeft)}`}
+            {tiempoAgotado ? "⏰ TIEMPO AGOTADO" : `⏱ Te quedan ${fmtTime(secsLeft)} para responder`}
           </span>
         </div>
       )}
