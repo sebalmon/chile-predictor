@@ -53,7 +53,7 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // ── config ──────────────────────────────────────────────────
+    // ── config ─────────────────────────────────────────────────
     match /config/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
@@ -67,13 +67,13 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
-    // ── Reacciones en mensajes ────────────────────────────────
+    // ── Reacciones en mensajes ─────────────────────────────────
     match /mensajesDia/{docId}/reacciones/{uid} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // ── admins ──────────────────────────────────────────────────
+    // ── admins ─────────────────────────────────────────────────
     match /admins/{uid} {
       allow read: if request.auth != null;
       allow write: if false;
@@ -85,7 +85,7 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
-    // ── preguntasEnVivo (legacy, atado a partidos) ─────────────
+    // ── preguntasEnVivo (legacy) ───────────────────────────────
     match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
@@ -97,31 +97,27 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-   // ── pronosticoCuartos ──────────────────────────────────────
+    // ── pronosticoCuartos ──────────────────────────────────────
     match /pronosticoCuartos/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
-    match /pronosticoCuartos/votos/{uid} {
+
+    // ── pronosticoCuartos_votos ────────────────────────────────
+    match /pronosticoCuartos_votos/{uid} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // ── eventoEnVivo (independiente, array de preguntas) ───────
+    // ── eventoEnVivo ───────────────────────────────────────────
     match /eventoEnVivo/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
-    // Respuestas: clave compuesta {uid}_{preguntaId}
-    // Permite que cada usuario responda varias preguntas del
-    // mismo evento sin sobrescribir respuestas anteriores.
     match /eventoEnVivo/{docId}/respuestas/{respId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      // Se permite update para que, al cerrar una pregunta, se pueda
-      // guardar en cada respuesta si fue correcta y cuántos puntos ganó
-      // ese usuario (usado luego en el historial de pronósticos).
       allow update: if request.auth != null;
       allow delete: if false;
     }

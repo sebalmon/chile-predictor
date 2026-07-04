@@ -15,7 +15,7 @@ import {
 import { db } from "../firebase";
 
 const REF_CONFIG = () => doc(db, "pronosticoCuartos", "config");
-const REF_VOTOS  = () => collection(db, "pronosticoCuartos", "votos");
+const REF_VOTOS  = () => collection(db, "pronosticoCuartos_votos");
 
 const TABLA_PUNTOS = [0, 100, 200, 250, 300, 350, 400, 450, 500];
 

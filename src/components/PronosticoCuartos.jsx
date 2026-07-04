@@ -24,7 +24,7 @@ import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 
 const REF_CONFIG = () => doc(db, "pronosticoCuartos", "config");
-const REF_VOTO   = (uid) => doc(db, "pronosticoCuartos", "votos", uid);
+const REF_VOTO   = (uid) => doc(db, "pronosticoCuartos_votos", uid);
 
 const TABLA_PUNTOS = [0, 100, 200, 250, 300, 350, 400, 450, 500];
 
