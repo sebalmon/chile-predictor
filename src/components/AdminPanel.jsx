@@ -102,7 +102,6 @@ function AdminPanelInterno({ onVolver }) {
     { id:"preguntas", label:"❓ PREGUNTAS" },
     { id:"cartas",    label:"🃏 CARTAS Y BONUS" },
     { id:"aviso",     label:"📢 AVISO" },
-    { id:"promo",     label:"🖼 IMÁGENES" },
     { id:"mensajes",  label:"💬 MENSAJES" },
     { id:"sonido",    label:"🎵 SONIDO" },
   ];
@@ -149,7 +148,6 @@ function AdminPanelInterno({ onVolver }) {
           {tab==="preguntas" && <TabPreguntasAdmin preguntas={preguntas} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="cartas"    && <TabCartasBonus preguntas={preguntas} onMensaje={msg} />}
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
-          {tab==="promo"     && <TabPromoImagenes onMensaje={msg} />}
           {tab==="mensajes"  && <TabMensajes onMensaje={msg} />}
           {tab==="sonido"    && <TabSonido onMensaje={msg} />}
         </>
@@ -880,80 +878,6 @@ function TabSonido({ onMensaje }) {
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-
-// ── Tab Imágenes Promocionales ───────────────────────────────
-function TabPromoImagenes({ onMensaje }) {
-  const [activo,   setActivo]   = React.useState(false);
-  const [imagenes, setImagenes] = React.useState(["A_PAISES_MARRUECOS.jpg","A_Nuevospun.jpg","A_500.jpg"]);
-  const [guardando,setGuardando]= React.useState(false);
-
-  React.useEffect(() => {
-    const { getDoc, doc } = require ? null : null; // use dynamic import
-    import("firebase/firestore").then(({ getDoc, doc }) => {
-      getDoc(doc(db,"config","promoImagenes")).then(snap => {
-        if (snap.exists()) {
-          setActivo(snap.data().activo || false);
-          setImagenes(snap.data().imagenes || []);
-        }
-      });
-    });
-  }, []);
-
-  const guardar = async (nuevoActivo) => {
-    setGuardando(true);
-    try {
-      const { setDoc, doc } = await import("firebase/firestore");
-      await setDoc(doc(db,"config","promoImagenes"), {
-        activo:   nuevoActivo ?? activo,
-        imagenes: imagenes.filter(i => i.trim()),
-      });
-      setActivo(nuevoActivo ?? activo);
-      onMensaje("ok", nuevoActivo ? "✅ Imágenes activadas." : "Imágenes desactivadas.");
-    } catch(e) { onMensaje("error", e.message); }
-    finally { setGuardando(false); }
-  };
-
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
-      <p style={{ fontSize:"7px", color:"var(--amarillo)" }}>
-        🖼 IMÁGENES PROMOCIONALES
-      </p>
-      <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-        Estas imágenes aparecen al entrar a la app.
-        Actívalas o desactívalas cuando quieras.
-        Estado actual: <span style={{ color: activo ? "var(--verde-claro)" : "var(--gris)" }}>
-          {activo ? "🟢 ACTIVAS" : "⚪ INACTIVAS"}
-        </span>
-      </p>
-
-      <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
-        NOMBRES DE ARCHIVO (en /public/):
-      </p>
-      {imagenes.map((img,i) => (
-        <div key={i} style={{ display:"flex", gap:"6px", alignItems:"center" }}>
-          <span style={{ fontSize:"5px", color:"var(--gris-claro)", width:"16px" }}>{i+1}.</span>
-          <input value={img}
-            onChange={e => setImagenes(prev => prev.map((x,idx) => idx===i ? e.target.value : x))}
-            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-              flex:1, padding:"5px 7px", border:"2px solid var(--negro)",
-              background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
-        </div>
-      ))}
-
-      <div style={{ display:"flex", gap:"8px", marginTop:"4px" }}>
-        <button className="btn-pixel btn-rojo" style={{ flex:2, fontSize:"6px" }}
-          onClick={() => guardar(true)} disabled={guardando}>
-          🟢 GUARDAR Y ACTIVAR
-        </button>
-        <button className="btn-pixel btn-gris" style={{ flex:1, fontSize:"6px" }}
-          onClick={() => guardar(false)} disabled={guardando}>
-          DESACTIVAR
-        </button>
-      </div>
     </div>
   );
 }
