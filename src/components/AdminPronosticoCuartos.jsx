@@ -38,6 +38,7 @@ const EQUIPOS_OCTAVOS = [
   { nombre:"Japón",        bandera:"🇯🇵" },
   { nombre:"Estados Unidos", bandera:"🇺🇸" },
   { nombre:"Canadá", bandera:"🇨🇦" },
+  {nombre:"Paraguay", bandera:"🇵🇾"},
 ];
 
 export default function AdminPronosticoCuartos({ onMensaje }) {
