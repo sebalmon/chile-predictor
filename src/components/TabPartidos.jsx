@@ -94,7 +94,7 @@ export default function TabPartidos({ onGuardado }) {
         // Dieciseisavos sin resultado (pueden ser de cualquier fecha)
         let d16Lista = [];
         try {
-          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","dieciseisavos")));
+          const snapD16 = await getDocs(query(collection(db,"partidos"), where("fase","==","octavos")));
           d16Lista = snapD16.docs.map(d => ({ id:d.id, ...d.data() })).filter(p => !p.resultado);
         } catch(_) {}
 
