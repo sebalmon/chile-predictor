@@ -134,7 +134,7 @@ const PANTALLAS = {
 };
 
 // ── FECHA DE PROMOCIÓN ──────────────────────────────────────
-const FECHA_PROMO = "2026-07-04"; // Cambiar manualmente cada día
+const FECHA_PROMO = "2026-07-02"; // Cambiar manualmente cada día
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
@@ -150,14 +150,20 @@ function DashboardInterno() {
   useEffect(() => {
     const hoy = new Date().toISOString().slice(0,10);
     if (hoy === FECHA_PROMO) {
-      setMostrarPromo(true);
+      setMostrarPromo(true); setPromoIdx(0);
     } else {
       setMostrarPromo(false);
     }
   }, []);
 
   const cerrarPromo = () => {
-    setMostrarPromo(false);
+    if (promoIdx < PROMO_IMGS.length - 1) {
+      setPromoIdx(prev => prev + 1);
+    } else {
+      setMostrarPromo(false);
+      setPromoIdx(0);
+      localStorage.setItem(LS_KEY_PROMO, "1");
+    }
   };
 
   const [esAdmin, setEsAdmin] = useState(false);
@@ -224,7 +230,7 @@ function DashboardInterno() {
             onClick={(e) => e.stopPropagation()} // Evita cerrar al hacer clic dentro
           >
             <img
-              src="/A_PAISES_MARRUECOS.jpg"
+              src={PROMO_IMGS[promoIdx]}
               alt="Afiche promocional"
               style={{
                 width: "100%",
@@ -252,7 +258,7 @@ function DashboardInterno() {
               }}
               onClick={cerrarPromo}
             >
-              ✕ CERRAR
+              {promoIdx < PROMO_IMGS.length - 1 ? `SIGUIENTE (${promoIdx+1}/${PROMO_IMGS.length}) →` : "✕ CERRAR"}
             </button>
           </div>
         </div>
