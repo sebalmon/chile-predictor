@@ -92,10 +92,15 @@ export default function PronosticoCuartos() {
       ? partido.visitante.nombre : partido.local.nombre;
 
     setSelecciones(prev => {
-      if (prev.includes(nombre)) return prev.filter(n => n !== nombre);
-      // Quitar rival si estaba seleccionado
-      const sinRival = prev.filter(n => n !== rival);
-      return [...sinRival, nombre];
+      let next;
+      if (prev.includes(nombre)) {
+        next = prev.filter(n => n !== nombre);
+      } else {
+        const sinRival = prev.filter(n => n !== rival);
+        next = [...sinRival, nombre];
+      }
+      localStorage.setItem("cp8b_cuartos_sel", JSON.stringify(next));
+      return next;
     });
   };
 
