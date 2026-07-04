@@ -40,6 +40,7 @@ const EQUIPOS_OCTAVOS = [
   { nombre:"Canadá", bandera:"🇨🇦" },
   { nombre:"Paraguay", bandera:"🇵🇾"},
   { nombre:"Noruega", bandera:"🇳🇴"},
+  { nombre:"Bélgica", bandera:"🇧🇪"},
 ];
 
 export default function AdminPronosticoCuartos({ onMensaje }) {
