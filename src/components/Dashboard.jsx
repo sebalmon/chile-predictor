@@ -133,8 +133,8 @@ const PANTALLAS = {
   LAMINAS:  "laminas",
 };
 
-// ── IMÁGENES PROMOCIONALES — controladas por admin en Firestore ──
-// config/promoImagenes → { activo: true, imagenes: ["A_X.jpg","A_Y.jpg"] }
+// ── FECHA DE PROMOCIÓN ──────────────────────────────────────
+const FECHA_PROMO = "2026-07-02"; // Cambiar manualmente cada día
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
@@ -144,33 +144,20 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // ── Modal promocional — controlado por admin ──────────────
+  // ── Modal promocional (SOLO UNA IMAGEN) ──────────────────
   const [mostrarPromo, setMostrarPromo] = useState(false);
-  const [promoImagenes, setPromoImagenes] = useState([]);
-  const [promoIdx,      setPromoIdx]      = useState(0);
 
   useEffect(() => {
-    // Leer config de Firestore — admin decide si está activo y qué imágenes
-    import("firebase/firestore").then(({ getDoc, doc }) => {
-      getDoc(doc(db, "config", "promoImagenes")).then(snap => {
-        if (snap.exists() && snap.data().activo) {
-          const imgs = snap.data().imagenes || [];
-          if (imgs.length > 0) {
-            setPromoImagenes(imgs);
-            setMostrarPromo(true);
-            setPromoIdx(0);
-          }
-        }
-      }).catch(() => {});
-    });
-  }, []);
-
-  const cerrarPromo = () => {
-    if (promoIdx < promoImagenes.length - 1) {
-      setPromoIdx(prev => prev + 1);
+    const hoy = new Date().toISOString().slice(0,10);
+    if (hoy === FECHA_PROMO) {
+      setMostrarPromo(true);
     } else {
       setMostrarPromo(false);
     }
+  }, []);
+
+  const cerrarPromo = () => {
+    setMostrarPromo(false);
   };
 
   const [esAdmin, setEsAdmin] = useState(false);
@@ -237,7 +224,7 @@ function DashboardInterno() {
             onClick={(e) => e.stopPropagation()} // Evita cerrar al hacer clic dentro
           >
             <img
-              src={promoImagenes[promoIdx] ? "/" + promoImagenes[promoIdx] : "/A_PAISES_MARRUECOS.jpg"}
+              src="/A_PAISES_MARRUECOS.jpg"
               alt="Afiche promocional"
               style={{
                 width: "100%",
@@ -265,9 +252,7 @@ function DashboardInterno() {
               }}
               onClick={cerrarPromo}
             >
-              {promoIdx < promoImagenes.length - 1
-                ? `SIGUIENTE (${promoIdx + 1}/${promoImagenes.length}) →`
-                : "✕ CERRAR"}
+              ✕ CERRAR
             </button>
           </div>
         </div>
@@ -366,15 +351,15 @@ export default function Dashboard() {
 // ── Sistema de puntuación ────────────────────────────────
 function SistemaPuntuacion() {
   const muere = [
-    { pts: "+4",  desc: "Acertar ganador en 90 min" },
-    { pts: "+6",  desc: "Ganador + diferencia en 90 min" },
-    { pts: "+6",  desc: "Acertar que se define en Alargue" },
-    { pts: "+12", desc: "Alargue + diferencia en el alargue" },
-    { pts: "+6",  desc: "Acertar que se define en Penales" },
-    { pts: "+10", desc: "Penales + quién gana la tanda" },
-    { pts: "+14", desc: "Penales + diferencia exacta de la tanda" },
-    { pts: "+2",  desc: "Pregunta del día correcta" },
-    { pts: "+2",  desc: "Ganador del día (más puntos)" },
+    { pts: "+4→+8→+16→+24",  desc: "Ganador en 90 min (×2 Octavos, ×4 Cuartos, ×8 Semi, ×12 Final)" },
+    { pts: "+6→+12→+24→+36", desc: "Ganador + diferencia 90 min" },
+    { pts: "+6→+12→+24→+36", desc: "Acertar que se define en Alargue" },
+    { pts: "+12→+24→+48→+72",desc: "Alargue + diferencia exacta" },
+    { pts: "+6→+12→+24→+36", desc: "Acertar que se define en Penales" },
+    { pts: "+10→+20→+40→+60",desc: "Penales + quién gana la tanda" },
+    { pts: "+14→+28→+56→+84",desc: "Penales + diferencia exacta" },
+    { pts: "+2",              desc: "Pregunta del día correcta" },
+    { pts: "+2",              desc: "Ganador del día (más puntos)" },
   ];
   const FilaPts = ({ pts, desc }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",

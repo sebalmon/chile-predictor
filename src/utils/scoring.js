@@ -3,6 +3,15 @@
 import { CARTAS } from "../data/sampleData.js";
 
 // ── Cálculo de puntos ────────────────────────────────────────
+// Multiplicador por fase eliminatoria
+function multFase(fase) {
+  if (fase === "dieciseisavos" || fase === "octavos") return 2;
+  if (fase === "cuartos")    return 4;
+  if (fase === "semifinal")  return 8;
+  if (fase === "final")      return 12;
+  return 1;
+}
+
 export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado) {
   if (!resultado || !prediccion) return { puntos: 0, esMaximo: false };
   const esElim = fase && fase !== "grupos";
@@ -21,7 +30,7 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
         pts += 1;
         if (ganReal !== "empate" && prediccion.diferencia === difReal) pts += 2;
       }
-      if (fase === "dieciseisavos" && pts > 0) pts *= 2;
+      const m = multFase(fase); if (m > 1 && pts > 0) pts *= m;
   return { puntos: pts, esMaximo: pts > 0 };
     }
   }
@@ -51,7 +60,7 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
       else if (prediccion.ganadorPenales === ganadorFinal) pts += 2;
     }
   }
-  if (fase === "dieciseisavos" && pts > 0) pts *= 2;
+  const mult = multFase(fase); if (mult > 1 && pts > 0) pts *= mult;
   return { puntos: pts, esMaximo: pts > 0 };
 }
 

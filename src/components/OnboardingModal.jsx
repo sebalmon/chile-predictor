@@ -139,13 +139,13 @@ export default function OnboardingModal({ isOpen, onClose }) {
             fase eliminatoria. Cuanto más exacto tu pronóstico, más puntos.
           </p>
           <div style={{ display:"flex", flexDirection:"column", gap:"3px" }}>
-            <FilaPts pts="+4"  desc="Acertar ganador en 90 min" color="var(--rojo-chile)" />
-            <FilaPts pts="+6"  desc="Ganador + diferencia (90 min)" color="var(--rojo-chile)" />
-            <FilaPts pts="+6"  desc="Acertar que va a Alargue" color="var(--rojo-chile)" />
-            <FilaPts pts="+12" desc="Alargue + diferencia exacta" color="var(--rojo-chile)" />
-            <FilaPts pts="+6"  desc="Acertar que va a Penales" color="var(--rojo-chile)" />
-            <FilaPts pts="+10" desc="Penales + quién gana la tanda" color="var(--rojo-chile)" />
-            <FilaPts pts="+14" desc="Penales + diferencia exacta" color="var(--rojo-chile)" />
+            <FilaPts pts="+4/8/16/24"  desc="Ganador en 90 min (sube por fase)" color="var(--rojo-chile)" />
+            <FilaPts pts="+6/12/24/36" desc="Ganador + diferencia 90 min" color="var(--rojo-chile)" />
+            <FilaPts pts="+6/12/24/36" desc="Acertar que va a Alargue" color="var(--rojo-chile)" />
+            <FilaPts pts="+12/24/48/72" desc="Alargue + diferencia exacta" color="var(--rojo-chile)" />
+            <FilaPts pts="+6/12/24/36" desc="Acertar que va a Penales" color="var(--rojo-chile)" />
+            <FilaPts pts="+10/20/40/60" desc="Penales + quién gana la tanda" color="var(--rojo-chile)" />
+            <FilaPts pts="+14/28/56/84" desc="Penales + diferencia exacta" color="var(--rojo-chile)" />
             <FilaPts pts="+2"  desc="Pregunta del día correcta" />
             <FilaPts pts="+2"  desc="Ganador del día (bonus diario)" color="var(--verde-claro)" />
           </div>
