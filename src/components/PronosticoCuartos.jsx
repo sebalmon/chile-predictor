@@ -92,15 +92,10 @@ export default function PronosticoCuartos() {
       ? partido.visitante.nombre : partido.local.nombre;
 
     setSelecciones(prev => {
-      let next;
-      if (prev.includes(nombre)) {
-        next = prev.filter(n => n !== nombre);
-      } else {
-        const sinRival = prev.filter(n => n !== rival);
-        next = [...sinRival, nombre];
-      }
-      localStorage.setItem("cp8b_cuartos_sel", JSON.stringify(next));
-      return next;
+      if (prev.includes(nombre)) return prev.filter(n => n !== nombre);
+      // Quitar rival si estaba seleccionado
+      const sinRival = prev.filter(n => n !== rival);
+      return [...sinRival, nombre];
     });
   };
 
@@ -380,30 +375,43 @@ export default function PronosticoCuartos() {
 
         {/* Botón guardar o editar */}
         {guardadoOk && (
-          <div style={{ marginTop:"10px", padding:"10px",
-            background:"rgba(52,211,153,0.15)",
-            border:"2px solid #34d399", textAlign:"center" }}>
-            <p style={{ fontSize:"7px", color:"#34d399", lineHeight:2 }}>
-              ✅ ¡PRONÓSTICOS GUARDADOS!
-            </p>
-            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)", marginTop:"4px" }}>
-              Puedes editarlos hasta que empiece cada partido.
-            </p>
+          <div style={{
+            position:"fixed", inset:0, zIndex:800,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            background:"rgba(0,0,0,0.75)",
+          }}>
+            <div style={{
+              background:"#0f2a1a", border:"4px solid #34d399",
+              padding:"28px 24px", textAlign:"center",
+              boxShadow:"0 0 40px rgba(52,211,153,0.5)",
+              maxWidth:"280px",
+            }}>
+              <p style={{ fontSize:"32px", marginBottom:"12px" }}>✅</p>
+              <p style={{ fontFamily:"'Press Start 2P',monospace",
+                fontSize:"9px", color:"#34d399", lineHeight:2, marginBottom:"10px" }}>
+                ¡PRONÓSTICOS<br/>GUARDADOS!
+              </p>
+              <p style={{ fontFamily:"'Press Start 2P',monospace",
+                fontSize:"5px", color:"rgba(255,255,255,0.6)", lineHeight:2 }}>
+                Puedes editarlos hasta que<br/>empiece cada partido.
+              </p>
+            </div>
           </div>
         )}
 
-        {!yaVoto && (selecciones.length > 0 || miVoto) && (
+        {/* Botón guardar/editar — siempre visible si hay selecciones o voto guardado */}
+        {!yaVoto && (
           <button
             className="btn-pixel btn-rojo w-full"
-            style={{ fontSize:"6px", marginTop:"10px" }}
+            style={{ fontSize:"7px", marginTop:"10px", padding:"10px" }}
             onClick={guardar}
             disabled={guardando || selecciones.length === 0}>
             {guardando
               ? "⚙ GUARDANDO..."
-              : miVoto && selecciones.length > 0
-                ? `✏ ACTUALIZAR MIS ${selecciones.length} PRONÓSTICOS`
-                : miVoto
-                  ? "✏ EDITAR PRONÓSTICOS"
+              : selecciones.length === 0 && miVoto
+                ? "✏ CAMBIA TU SELECCIÓN ARRIBA"
+                : miVoto && selecciones.length > 0
+                  ? `✏ ACTUALIZAR ${selecciones.length} PRONÓSTICOS`
                   : `💾 GUARDAR MIS ${selecciones.length} PRONÓSTICOS`}
           </button>
         )}
