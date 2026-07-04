@@ -23,29 +23,43 @@ import {
 import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
 import AdminSuperDestacado from "./AdminSuperDestacado";
 import AdminEventoEnVivo from "./AdminEventoEnVivo";
+import AdminPronosticoCuartos from "./AdminPronosticoCuartos";
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
 export default function AdminPanel({ onVolver }) {
-  const { firebaseUser, loadingProfile } = useAuth();
+  const { firebaseUser } = useAuth();
+  const [esAdmin,     setEsAdmin]     = useState(false);
+  const [verificando, setVerificando] = useState(true);
 
-  // Esperar a que Firebase Auth resuelva completamente
-  if (loadingProfile) {
+  useEffect(() => {
+    if (firebaseUser === null) {
+      const t = setTimeout(() => setVerificando(false), 4000);
+      return () => clearTimeout(t);
+    }
+    setEsAdmin(ADMIN_EMAILS.includes(firebaseUser.email));
+    setVerificando(false);
+  }, [firebaseUser]);
+
+  if (verificando) {
     return (
       <div style={{ padding:"40px", textAlign:"center" }}>
         <span className="spinner" style={{ fontSize:"24px" }}>⚙</span>
         <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"7px",
           color:"var(--verde-claro)", marginTop:"16px" }}>
-          Cargando...
+          Verificando acceso...
         </p>
       </div>
     );
   }
-
-  if (!ADMIN_EMAILS.includes(firebaseUser?.email)) {
+  if (!esAdmin) {
     return (
       <div style={{ padding:"20px", textAlign:"center" }}>
         <p style={{ color:"var(--rojo-chile)", fontSize:"8px" }}>🔒 ACCESO DENEGADO</p>
+        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
+          Email: {firebaseUser?.email || "no autenticado"}
+        </p>
         <button className="btn-pixel btn-gris" onClick={onVolver} style={{ marginTop:"16px" }}>
           ← VOLVER
         </button>
@@ -84,6 +98,7 @@ function AdminPanelInterno({ onVolver }) {
   const TABS = [
     { id:"partidos",  label:"⚽ PARTIDOS" },
     { id:"envivo",    label:"🔴 EN VIVO" },
+    { id:"cuartos",   label:"🏆 CUARTOS" },
     { id:"preguntas", label:"❓ PREGUNTAS" },
     { id:"cartas",    label:"🃏 CARTAS Y BONUS" },
     { id:"aviso",     label:"📢 AVISO" },
@@ -129,6 +144,7 @@ function AdminPanelInterno({ onVolver }) {
         <>
           {tab==="partidos"  && <TabPartidosAdmin partidos={partidos} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="envivo"    && <AdminEventoEnVivo onMensaje={msg} />}
+          {tab==="cuartos"   && <AdminPronosticoCuartos onMensaje={msg} />}
           {tab==="preguntas" && <TabPreguntasAdmin preguntas={preguntas} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="cartas"    && <TabCartasBonus preguntas={preguntas} onMensaje={msg} />}
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}

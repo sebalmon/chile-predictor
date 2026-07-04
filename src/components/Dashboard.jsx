@@ -22,6 +22,7 @@ import AvisoAdmin from "./AvisoAdmin";
 import NotificacionesModal from "./NotificacionesModal";
 import VozHinchada from "./VozHinchada";
 import EventoEnVivo from "./EventoEnVivo";
+import PronosticoCuartos from "./PronosticoCuartos";
 import SeccionLaminas from "./SeccionLaminas";
 
 // ── Contexto de sonidos ───────────────────────────────────────
@@ -133,7 +134,7 @@ const PANTALLAS = {
 };
 
 // ── FECHA DE PROMOCIÓN ──────────────────────────────────────
-const FECHA_PROMO = "2026-07-04"; // Cambiar manualmente cada día
+const FECHA_PROMO = "2026-07-02"; // Cambiar manualmente cada día
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
@@ -390,6 +391,7 @@ function WithShell({ children, userProfile, onPerfil, onLogout,
       <AvisoAdmin />
       <NotificacionesModal />
       <EventoEnVivo />
+      <PronosticoCuartos />
 
       <TopBar userProfile={userProfile} onPerfil={onPerfil} onLogout={onLogout}
         diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos} />
