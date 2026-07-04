@@ -405,12 +405,12 @@ export default function PronosticoCuartos() {
             className="btn-pixel btn-rojo w-full"
             style={{ fontSize:"7px", marginTop:"10px", padding:"10px" }}
             onClick={guardar}
-            disabled={guardando || selecciones.length === 0}>
+            disabled={guardando || (selecciones.length === 0 && !miVoto)}>
             {guardando
               ? "⚙ GUARDANDO..."
               : selecciones.length === 0 && miVoto
-                ? "✏ CAMBIA TU SELECCIÓN ARRIBA"
-                : miVoto && selecciones.length > 0
+                ? `✏ VER/EDITAR MIS ${miVoto.selecciones?.length || 0} PRONÓSTICOS`
+                : miVoto
                   ? `✏ ACTUALIZAR ${selecciones.length} PRONÓSTICOS`
                   : `💾 GUARDAR MIS ${selecciones.length} PRONÓSTICOS`}
           </button>
