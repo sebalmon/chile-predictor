@@ -133,8 +133,8 @@ const PANTALLAS = {
   LAMINAS:  "laminas",
 };
 
-// ── FECHA DE PROMOCIÓN ──────────────────────────────────────
-const PROMO_VERSION = "v3"; // Cambiar para forzar re-mostrar a todos
+// ── IMÁGENES PROMOCIONALES — controladas por admin en Firestore ──
+// config/promoImagenes → { activo: true, imagenes: ["A_X.jpg","A_Y.jpg"] }
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
@@ -144,30 +144,32 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // ── Modal promocional (SOLO UNA IMAGEN) ──────────────────
-  const PROMO_IMGS = [
-    "/A_PAISES_MARRUECOS.jpg",
-    "/A_Nuevospun.jpg",
-    "/A_500.jpg",
-  ];
+  // ── Modal promocional — controlado por admin ──────────────
   const [mostrarPromo, setMostrarPromo] = useState(false);
-  const [promoIdx,     setPromoIdx]     = useState(0);
+  const [promoImagenes, setPromoImagenes] = useState([]);
+  const [promoIdx,      setPromoIdx]      = useState(0);
 
   useEffect(() => {
-    const visto = localStorage.getItem("cp8b_promo_" + PROMO_VERSION);
-    if (!visto) {
-      setMostrarPromo(true);
-      setPromoIdx(0);
-    }
+    // Leer config de Firestore — admin decide si está activo y qué imágenes
+    import("firebase/firestore").then(({ getDoc, doc }) => {
+      getDoc(doc(db, "config", "promoImagenes")).then(snap => {
+        if (snap.exists() && snap.data().activo) {
+          const imgs = snap.data().imagenes || [];
+          if (imgs.length > 0) {
+            setPromoImagenes(imgs);
+            setMostrarPromo(true);
+            setPromoIdx(0);
+          }
+        }
+      }).catch(() => {});
+    });
   }, []);
 
   const cerrarPromo = () => {
-    if (promoIdx < PROMO_IMGS.length - 1) {
+    if (promoIdx < promoImagenes.length - 1) {
       setPromoIdx(prev => prev + 1);
     } else {
       setMostrarPromo(false);
-      setPromoIdx(0);
-      localStorage.setItem("cp8b_promo_" + PROMO_VERSION, "1");
     }
   };
 
@@ -235,7 +237,7 @@ function DashboardInterno() {
             onClick={(e) => e.stopPropagation()} // Evita cerrar al hacer clic dentro
           >
             <img
-              src={PROMO_IMGS[promoIdx]}
+              src={promoImagenes[promoIdx] ? "/" + promoImagenes[promoIdx] : "/A_PAISES_MARRUECOS.jpg"}
               alt="Afiche promocional"
               style={{
                 width: "100%",
@@ -263,8 +265,8 @@ function DashboardInterno() {
               }}
               onClick={cerrarPromo}
             >
-              {promoIdx < PROMO_IMGS.length - 1
-                ? `SIGUIENTE (${promoIdx + 1}/${PROMO_IMGS.length}) →`
+              {promoIdx < promoImagenes.length - 1
+                ? `SIGUIENTE (${promoIdx + 1}/${promoImagenes.length}) →`
                 : "✕ CERRAR"}
             </button>
           </div>
