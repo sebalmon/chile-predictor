@@ -91,6 +91,18 @@ export default function PronosticoCuartos() {
 
   const guardar = async () => {
     if (!firebaseUser || selecciones.length === 0) return;
+    // Verificar que no se estén votando equipos de partidos ya cerrados
+    const selInvalidas = selecciones.filter(nombre => {
+      const partido = partidos.find(p =>
+        p.local.nombre === nombre || p.visitante.nombre === nombre
+      );
+      if (!partido) return false;
+      return partido.cerrado || partido.fecha < hoy;
+    });
+    if (selInvalidas.length > 0) {
+      alert(`No puedes votar por: ${selInvalidas.join(", ")} — ese partido ya empezó.`);
+      return;
+    }
     setGuardando(true);
     try {
       await setDoc(REF_VOTO(firebaseUser.uid), {
@@ -100,33 +112,50 @@ export default function PronosticoCuartos() {
         calculado:   false,
         puntos:      0,
       });
-      setMiVoto({ selecciones, calculado: false, puntos: 0 });
+      setMiVoto(prev => ({ ...(prev||{}), selecciones, calculado: false, puntos: 0 }));
     } catch(e) { console.error(e); }
     finally { setGuardando(false); }
   };
 
-  // ── BURBUJA MINIMIZADA ──────────────────────────────────────
+  // ── BOTÓN INVITACIÓN ─────────────────────────────────────────
   if (!abierto) {
     return (
       <button
         onClick={() => setAbierto(true)}
         style={{
-          position:"fixed", bottom:"160px", right:"16px", zIndex:600,
+          position:"fixed", bottom:"160px", right:"0", zIndex:600,
           background:"linear-gradient(135deg,#1e3a8a,#1e40af)",
           border:"3px solid #60a5fa",
-          borderRadius:"50%", width:"52px", height:"52px",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:"22px", cursor:"pointer",
-          boxShadow:"0 0 14px rgba(96,165,250,0.5)",
+          borderLeft:"3px solid #60a5fa",
+          borderRight:"none",
+          borderRadius:"8px 0 0 8px",
+          padding:"10px 12px",
+          display:"flex", flexDirection:"column", alignItems:"center",
+          gap:"4px", cursor:"pointer",
+          boxShadow:"-4px 0 14px rgba(96,165,250,0.4)",
           animation:"pulsoAzul 2s ease-in-out infinite",
+          maxWidth:"70px",
         }}
         title="Pronóstico Cuartos de Final"
       >
-        🏆
+        <span style={{ fontSize:"20px" }}>🏆</span>
+        <span style={{
+          fontFamily:"'Press Start 2P',monospace",
+          fontSize:"4px", color:"#93c5fd",
+          lineHeight:1.6, textAlign:"center",
+        }}>
+          PRONOSTICA<br/>CUARTOS
+        </span>
+        <span style={{
+          fontFamily:"'Press Start 2P',monospace",
+          fontSize:"4px", color:"var(--amarillo)",
+        }}>
+          ¡500 pts!
+        </span>
         <style>{`
           @keyframes pulsoAzul {
-            0%,100%{ box-shadow:0 0 14px rgba(96,165,250,0.5); }
-            50%    { box-shadow:0 0 22px rgba(96,165,250,0.9); }
+            0%,100%{ box-shadow:-4px 0 14px rgba(96,165,250,0.4); }
+            50%    { box-shadow:-4px 0 22px rgba(96,165,250,0.9); }
           }
         `}</style>
       </button>
@@ -169,16 +198,24 @@ export default function PronosticoCuartos() {
         </button>
       </div>
 
-      {/* Tabla de puntos */}
-      <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display:"flex", gap:"4px", flexWrap:"wrap" }}>
+      {/* Texto explicativo */}
+      <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.08)",
+        background:"rgba(30,64,175,0.1)" }}>
+        <p style={{ fontSize:"5px", color:"#93c5fd", lineHeight:2.2, marginBottom:"8px" }}>
+          Elige el equipo que crees que clasificará a cuartos de final en cada partido.
+          Puedes cambiar tu voto hasta que el partido empiece.
+        </p>
+        <p style={{ fontSize:"5px", color:"var(--amarillo)", marginBottom:"6px" }}>
+          PUNTOS SEGÚN ACIERTOS:
+        </p>
+        <div style={{ display:"flex", gap:"3px", flexWrap:"wrap" }}>
           {[8,7,6,5,4,3,2,1].map(n => (
             <div key={n} style={{
               background:"rgba(30,64,175,0.3)", border:"1px solid rgba(96,165,250,0.3)",
-              padding:"3px 6px", textAlign:"center",
+              padding:"3px 5px", textAlign:"center",
             }}>
-              <p style={{ fontSize:"5px", color:"#93c5fd" }}>{n} ✓</p>
-              <p style={{ fontSize:"6px", color:"var(--amarillo)" }}>{TABLA_PUNTOS[n]}</p>
+              <p style={{ fontSize:"4px", color:"#93c5fd" }}>{n} ✓</p>
+              <p style={{ fontSize:"5px", color:"var(--amarillo)" }}>{TABLA_PUNTOS[n]} pts</p>
             </div>
           ))}
         </div>
@@ -295,35 +332,55 @@ export default function PronosticoCuartos() {
           </>
         )}
 
-        {/* Resumen selecciones */}
-        {selecciones.length > 0 && (
+        {/* Resumen selecciones — siempre visible si hay algo guardado */}
+        {(selecciones.length > 0 || miVoto?.selecciones?.length > 0) && (
           <div style={{ marginTop:"10px", padding:"8px",
             border:"1px solid rgba(96,165,250,0.3)",
             background:"rgba(30,64,175,0.15)" }}>
             <p style={{ fontSize:"5px", color:"#93c5fd", marginBottom:"6px" }}>
-              TUS {selecciones.length} SELECCION(ES):
+              {miVoto?.selecciones?.length > 0
+                ? `✅ TUS ${miVoto.selecciones.length} PRONÓSTICOS GUARDADOS:`
+                : `TUS ${selecciones.length} SELECCIÓN(ES):`}
             </p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:"4px" }}>
-              {selecciones.map(n => (
-                <span key={n} style={{ fontSize:"5px", color:"var(--blanco)",
-                  background:"rgba(96,165,250,0.2)",
-                  border:"1px solid #60a5fa", padding:"2px 6px" }}>
-                  {n}
-                </span>
-              ))}
+              {(miVoto?.selecciones || selecciones).map(n => {
+                const correcto = config.clasificados?.includes(n);
+                const incorrecto = config.clasificados?.length > 0 && !correcto;
+                return (
+                  <span key={n} style={{ fontSize:"5px", color:"var(--blanco)",
+                    background: correcto ? "rgba(52,211,153,0.25)"
+                               : incorrecto ? "rgba(248,113,113,0.2)"
+                               : "rgba(96,165,250,0.2)",
+                    border: `1px solid ${correcto ? "#34d399" : incorrecto ? "#f87171" : "#60a5fa"}`,
+                    padding:"2px 6px" }}>
+                    {correcto ? "✓ " : incorrecto ? "✗ " : ""}{n}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Botón guardar */}
+        {/* Botón guardar o editar */}
         {!yaVoto && selecciones.length > 0 && (
           <button
             className="btn-pixel btn-rojo w-full"
             style={{ fontSize:"6px", marginTop:"10px" }}
             onClick={guardar}
             disabled={guardando}>
-            {guardando ? "⚙ GUARDANDO..." : `💾 GUARDAR MIS ${selecciones.length} PRONÓSTICOS`}
+            {guardando
+              ? "⚙ GUARDANDO..."
+              : miVoto
+                ? `✏ ACTUALIZAR MIS ${selecciones.length} PRONÓSTICOS`
+                : `💾 GUARDAR MIS ${selecciones.length} PRONÓSTICOS`}
           </button>
+        )}
+
+        {miVoto && abiertos.length > 0 && !yaVoto && (
+          <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
+            textAlign:"center", marginTop:"6px", lineHeight:2 }}>
+            Puedes cambiar tus votos mientras los partidos no hayan empezado.
+          </p>
         )}
 
         {yaVoto && (
@@ -333,7 +390,7 @@ export default function PronosticoCuartos() {
           </p>
         )}
 
-        {abiertos.length === 0 && !yaVoto && (
+        {abiertos.length === 0 && !miVoto && (
           <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
             textAlign:"center", marginTop:"10px", lineHeight:2 }}>
             Todos los partidos están cerrados.
