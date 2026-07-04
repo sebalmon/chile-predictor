@@ -34,7 +34,13 @@ export default function PronosticoCuartos() {
   const [miVoto,      setMiVoto]      = useState(null);
   const [abierto,     setAbierto]     = useState(false);
   const [guardando,   setGuardando]   = useState(false);
-  const [selecciones, setSelecciones] = useState([]);
+  const [selecciones, setSelecciones] = useState(
+    () => {
+      try { return JSON.parse(localStorage.getItem("cp8b_cuartos_sel") || "[]"); }
+      catch { return []; }
+    }
+  );
+  const [guardadoOk,  setGuardadoOk]  = useState(false);
 
   // Escuchar config en tiempo real
   useEffect(() => {
@@ -49,8 +55,12 @@ export default function PronosticoCuartos() {
     if (!firebaseUser) return;
     getDoc(REF_VOTO(firebaseUser.uid)).then(snap => {
       if (snap.exists()) {
-        setMiVoto(snap.data());
-        setSelecciones(snap.data().selecciones || []);
+        const data = snap.data();
+        setMiVoto(data);
+        // Usar selecciones guardadas en Firestore como fuente de verdad
+        const sels = data.selecciones || [];
+        setSelecciones(sels);
+        localStorage.setItem("cp8b_cuartos_sel", JSON.stringify(sels));
       }
     });
   }, [firebaseUser]);
@@ -113,6 +123,8 @@ export default function PronosticoCuartos() {
         puntos:      0,
       });
       setMiVoto(prev => ({ ...(prev||{}), selecciones, calculado: false, puntos: 0 }));
+      setGuardadoOk(true);
+      setTimeout(() => setGuardadoOk(false), 4000);
     } catch(e) { console.error(e); }
     finally { setGuardando(false); }
   };
@@ -362,17 +374,32 @@ export default function PronosticoCuartos() {
         )}
 
         {/* Botón guardar o editar */}
-        {!yaVoto && selecciones.length > 0 && (
+        {guardadoOk && (
+          <div style={{ marginTop:"10px", padding:"10px",
+            background:"rgba(52,211,153,0.15)",
+            border:"2px solid #34d399", textAlign:"center" }}>
+            <p style={{ fontSize:"7px", color:"#34d399", lineHeight:2 }}>
+              ✅ ¡PRONÓSTICOS GUARDADOS!
+            </p>
+            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)", marginTop:"4px" }}>
+              Puedes editarlos hasta que empiece cada partido.
+            </p>
+          </div>
+        )}
+
+        {!yaVoto && (selecciones.length > 0 || miVoto) && (
           <button
             className="btn-pixel btn-rojo w-full"
             style={{ fontSize:"6px", marginTop:"10px" }}
             onClick={guardar}
-            disabled={guardando}>
+            disabled={guardando || selecciones.length === 0}>
             {guardando
               ? "⚙ GUARDANDO..."
-              : miVoto
+              : miVoto && selecciones.length > 0
                 ? `✏ ACTUALIZAR MIS ${selecciones.length} PRONÓSTICOS`
-                : `💾 GUARDAR MIS ${selecciones.length} PRONÓSTICOS`}
+                : miVoto
+                  ? "✏ EDITAR PRONÓSTICOS"
+                  : `💾 GUARDAR MIS ${selecciones.length} PRONÓSTICOS`}
           </button>
         )}
 
