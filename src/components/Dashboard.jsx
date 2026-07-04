@@ -134,7 +134,7 @@ const PANTALLAS = {
 };
 
 // ── FECHA DE PROMOCIÓN ──────────────────────────────────────
-const FECHA_PROMO = "2026-07-02"; // Cambiar manualmente cada día
+const PROMO_VERSION = "v3"; // Cambiar para forzar re-mostrar a todos
 
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
@@ -145,14 +145,19 @@ function DashboardInterno() {
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
   // ── Modal promocional (SOLO UNA IMAGEN) ──────────────────
+  const PROMO_IMGS = [
+    "/A_PAISES_MARRUECOS.jpg",
+    "/A_Nuevospun.jpg",
+    "/A_500.jpg",
+  ];
   const [mostrarPromo, setMostrarPromo] = useState(false);
+  const [promoIdx,     setPromoIdx]     = useState(0);
 
   useEffect(() => {
-    const hoy = new Date().toISOString().slice(0,10);
-    if (hoy === FECHA_PROMO) {
-      setMostrarPromo(true); setPromoIdx(0);
-    } else {
-      setMostrarPromo(false);
+    const visto = localStorage.getItem("cp8b_promo_" + PROMO_VERSION);
+    if (!visto) {
+      setMostrarPromo(true);
+      setPromoIdx(0);
     }
   }, []);
 
@@ -162,7 +167,7 @@ function DashboardInterno() {
     } else {
       setMostrarPromo(false);
       setPromoIdx(0);
-      localStorage.setItem(LS_KEY_PROMO, "1");
+      localStorage.setItem("cp8b_promo_" + PROMO_VERSION, "1");
     }
   };
 
@@ -258,7 +263,9 @@ function DashboardInterno() {
               }}
               onClick={cerrarPromo}
             >
-              {promoIdx < PROMO_IMGS.length - 1 ? `SIGUIENTE (${promoIdx+1}/${PROMO_IMGS.length}) →` : "✕ CERRAR"}
+              {promoIdx < PROMO_IMGS.length - 1
+                ? `SIGUIENTE (${promoIdx + 1}/${PROMO_IMGS.length}) →`
+                : "✕ CERRAR"}
             </button>
           </div>
         </div>
