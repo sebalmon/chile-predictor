@@ -455,14 +455,10 @@ function MenuInferior({ pantalla, setPantalla, esAdmin }) {
     <nav
       className="menu-inferior"
       style={{
-        overflowX: "auto",
-        whiteSpace: "nowrap",
-        WebkitOverflowScrolling: "touch",
-        scrollbarWidth: "none", // Firefox
-        msOverflowStyle: "none", // IE/Edge
         display: "flex",
-        gap: "4px",
-        padding: "4px 8px",
+        justifyContent: "space-around",
+        alignItems: "center",
+        padding: "4px 2px",
         background: "var(--negro)",
         borderTop: "2px solid var(--verde-campo)",
         position: "fixed",
@@ -470,6 +466,7 @@ function MenuInferior({ pantalla, setPantalla, esAdmin }) {
         left: 0,
         right: 0,
         zIndex: 100,
+        overflowX: "hidden",
       }}
     >
       {/* Ocultar scrollbar en Chrome/Safari */}
