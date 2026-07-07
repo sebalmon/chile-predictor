@@ -849,19 +849,30 @@ export default function SeccionLaminas() {
       .catch(() => {});
   }, []);
 
-  // 1b. Siempre sincronizar láminas desde Firestore al montar
+  // 1b. Sincronizar láminas desde Firestore (aplana mapa anidado)
   useEffect(() => {
     if (!uid) return;
     getDoc(doc(db, "usuarios", uid)).then(snap => {
-      if (snap.exists()) {
-        const firestoreLaminas = snap.data().laminas || {};
-        // Solo actualizar si Firestore tiene más láminas que localStorage
-        const localCount = Object.values(laminasLocal).reduce((s,v) => s+(v||0), 0);
-        const fsCount    = Object.values(firestoreLaminas).reduce((s,v) => s+(v||0), 0);
-        if (fsCount >= localCount) {
-          setLaminasLocal(firestoreLaminas);
-          localStorage.setItem("cp8b_mis_laminas", JSON.stringify(firestoreLaminas));
+      if (!snap.exists()) return;
+      const raw = snap.data().laminas || {};
+      // Firestore guarda {BA_CERRO:{jpeg:1}} — aplanar a {"BA_CERRO.jpeg":1}
+      const plano = {};
+      for (const [k, v] of Object.entries(raw)) {
+        if (typeof v === "object" && v !== null) {
+          for (const [ext, cnt] of Object.entries(v)) {
+            plano[`${k}.${ext}`] = cnt;
+          }
+        } else {
+          plano[k] = v;
         }
+      }
+      const fsCount    = Object.values(plano).reduce((s,n) => s+(n||0), 0);
+      const localCount = Object.values(
+        (() => { try { return JSON.parse(localStorage.getItem("cp8b_mis_laminas")||"{}"); } catch{return {};} })()
+      ).reduce((s,n) => s+(n||0), 0);
+      if (fsCount >= localCount) {
+        setLaminasLocal(plano);
+        localStorage.setItem("cp8b_mis_laminas", JSON.stringify(plano));
       }
     }).catch(() => {});
   }, [uid]);
