@@ -849,6 +849,23 @@ export default function SeccionLaminas() {
       .catch(() => {});
   }, []);
 
+  // 1b. Siempre sincronizar láminas desde Firestore al montar
+  useEffect(() => {
+    if (!uid) return;
+    getDoc(doc(db, "usuarios", uid)).then(snap => {
+      if (snap.exists()) {
+        const firestoreLaminas = snap.data().laminas || {};
+        // Solo actualizar si Firestore tiene más láminas que localStorage
+        const localCount = Object.values(laminasLocal).reduce((s,v) => s+(v||0), 0);
+        const fsCount    = Object.values(firestoreLaminas).reduce((s,v) => s+(v||0), 0);
+        if (fsCount >= localCount) {
+          setLaminasLocal(firestoreLaminas);
+          localStorage.setItem("cp8b_mis_laminas", JSON.stringify(firestoreLaminas));
+        }
+      }
+    }).catch(() => {});
+  }, [uid]);
+
   // 2. Cargar/crear el sobre del día (fuente de verdad: Firestore sobresDelDia)
   useEffect(() => {
     if (!uid || iniciadoRef.current || todasLaminas.length === 0) return;
@@ -932,10 +949,10 @@ export default function SeccionLaminas() {
         const nuevasLaminas = data.laminas || {};
         setLaminasLocal(nuevasLaminas);
         localStorage.setItem("cp8b_mis_laminas", JSON.stringify(nuevasLaminas));
-        // NO llamar refreshProfile() — causa re-render que resetea laminasLocal
       }
+      if (refreshProfile) await refreshProfile();
     } catch (_) {}
-  }, [uid]);
+  }, [uid, refreshProfile]);
 
   const handleClickLamina = (lamina, cantidad) => {
     setLightboxLamina(lamina);
