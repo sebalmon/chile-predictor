@@ -1,14 +1,7 @@
-// src/components/AdminEventoEnVivo.jsx  — v3
+// src/components/AdminEventoEnVivo.jsx  — v4 (Agregada bandera Egipto)
 // ─────────────────────────────────────────────────────────────
-// CAMBIOS v3:
-//   • Ya NO se bloquea crear una pregunta nueva si hay otra
-//     abierta — pueden convivir varias preguntas "abiertas" a
-//     la vez dentro del mismo evento.
-//   • Cada pregunta abierta tiene su PROPIA tarjeta con su propio
-//     selector de respuesta correcta y su propio botón de cierre.
-//     Se cierran de forma independiente, una por una.
-//   • respSels ahora es un mapa { preguntaId: opcionElegida }
-//     para no mezclar las selecciones entre preguntas distintas.
+// CAMBIOS v4:
+//   • Agregada bandera de Egipto (🇪🇬) al selector de banderas.
 // ─────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -20,9 +13,10 @@ import { db } from "../firebase";
 const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
 const REF_RESPS  = () => collection(db, "eventoEnVivo", "actual", "respuestas");
 
+// ─── LISTA DE BANDERAS (AGREGADA 🇪🇬) ──────────────────────
 const BANDERAS = [
   "🇦🇷","🇧🇷","🇨🇱","🇺🇾","🇩🇪","🇫🇷","🇪🇸","🇵🇹","🇮🇹",
-  "🇬🇧","🇳🇱","🇧🇪","🇧🇦",  // <-- Agregar aquí
+  "🇬🇧","🇳🇱","🇧🇪","🇧🇦","🇪🇬",  // <-- AGREGADA AQUÍ
   "🇨🇷","🇲🇽","🇨🇴","🇵🇪","🇵🇾","🇪🇨",
   "🇺🇸","🇯🇵","🇰🇷","🇲🇦","🇸🇳","🇬🇭","🇨🇲","🇨🇭","🇦🇹",
   "🇵🇱","🇭🇷","🇸🇪","🇩🇰","🇳🇴","🇦🇺","🇳🇿","🇸🇦","🇮🇷",
@@ -74,12 +68,10 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   }, []);
 
   const preguntas = evento?.preguntas || [];
-  // AHORA: puede haber varias abiertas a la vez.
-  // Se invierte el orden: la más reciente aparece primero/arriba.
   const abiertas  = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   const cerradas  = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
 
-  // ── Guardar configuración (NO toca el array de preguntas) ───
+  // ── Guardar configuración ──────────────────────────────────
   const guardarConfig = async () => {
     if (!nombreL.trim() || !nombreV.trim()) {
       onMensaje("error", "Escribe el nombre de ambos equipos."); return;
@@ -95,7 +87,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       onMensaje("ok", `✅ Evento configurado: ${banderaL} ${nombreL} vs ${nombreV} ${banderaV}`);
     } catch (e) { onMensaje("error", e.message); }
   };
-// ── NUEVO: empezar un evento en vivo desde cero ───────────────
+
   const nuevoEvento = async () => {
     if (!nombreL.trim() || !nombreV.trim()) {
       onMensaje("error", "Escribe el nombre de ambos equipos."); return;
@@ -115,6 +107,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       onMensaje("ok", `🆕 Nuevo evento iniciado: ${banderaL} ${nombreL} vs ${nombreV} ${banderaV}`);
     } catch (e) { onMensaje("error", e.message); }
   };
+
   const desactivar = async () => {
     try {
       await updateDoc(REF_EVENTO(), { activo: false });
@@ -122,8 +115,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
     } catch (e) { onMensaje("error", e.message); }
   };
 
-  // ── Publicar nueva pregunta (push al array) ─────────────────
-  // YA NO bloquea si hay otra(s) abierta(s) — pueden convivir.
+  // ── Publicar nueva pregunta ──────────────────────────────
   const publicarPregunta = async () => {
     const optsValidas = opciones.filter(o => o.trim());
     if (!textoPrg.trim()) { onMensaje("error", "Escribe la pregunta."); return; }
@@ -152,35 +144,26 @@ export default function AdminEventoEnVivo({ onMensaje }) {
     finally { setCreando(false); }
   };
 
-  // ── Reparar respuestas sin campo correcta (historial roto) ───
+  // ── Reparar respuestas ─────────────────────────────────────
   const repararRespuestas = async () => {
     setReparando(true);
     try {
-      // Leer TODAS las respuestas (de cualquier evento, activo o pasado)
       const snapR = await getDocs(REF_RESPS());
       if (snapR.empty) {
         onMensaje("error", "No hay respuestas guardadas en Firestore."); return;
       }
 
-      // Agrupar por preguntaId para poder buscar la respuesta correcta
-      // Las respuestas que YA tienen campo correcta se saltan.
-      // Para las que no tienen correcta, intentar deducir desde:
-      //   1. respuestaCorrecta guardada en la propia respuesta (campo heredado)
-      //   2. El evento activo actual (si la pregunta sigue ahí)
       const preguntasActuales = evento?.preguntas || [];
-
       const batch = writeBatch(db);
       let reparadas = 0;
       let sinInfo   = 0;
 
       snapR.docs.forEach(d => {
         const r = d.data();
-        if (r.correcta !== undefined) return; // ya tiene resultado, saltar
+        if (r.correcta !== undefined) return; // ya tiene resultado
 
-        // Buscar la pregunta en el evento actual
         const preg = preguntasActuales.find(p => p.id === r.preguntaId);
 
-        // Si la pregunta está en el evento actual y está cerrada
         if (preg && preg.estado === "cerrada" && preg.respuestaCorrecta) {
           const esCorrecta = r.respuesta === preg.respuestaCorrecta;
           batch.update(d.ref, {
@@ -194,7 +177,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           return;
         }
 
-        // Si la respuesta tiene respuestaCorrecta guardada (de versiones anteriores)
         if (r.respuestaCorrecta) {
           const esCorrecta = r.respuesta === r.respuestaCorrecta;
           batch.update(d.ref, {
@@ -205,7 +187,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           return;
         }
 
-        // Sin información suficiente para reparar esta respuesta
         sinInfo++;
       });
 
@@ -246,7 +227,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
     } catch(e) { onMensaje("error", e.message); }
   };
 
-  // ── Cerrar UNA pregunta específica y dar sus puntos ─────────
+  // ── Cerrar UNA pregunta específica ────────────────────────
   const cerrarPregunta = async (pregunta) => {
     const respCorrecta = respSels[pregunta.id];
     if (!respCorrecta) { onMensaje("error", "Selecciona la respuesta correcta."); return; }
@@ -254,7 +235,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
     try {
       const pts = pregunta.puntosEnVivo || 3;
 
-      // 1. Actualizar SOLO esta pregunta dentro del array
       const nuevasPreguntas = preguntas.map(p =>
         p.id === pregunta.id
           ? { ...p, estado: "cerrada", respuestaCorrecta: respCorrecta }
@@ -262,7 +242,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       );
       await updateDoc(REF_EVENTO(), { preguntas: nuevasPreguntas });
 
-      // 2. Leer respuestas SOLO de esta pregunta y dar puntos
       const snapR = await getDocs(query(
         REF_RESPS(), where("preguntaId", "==", pregunta.id)
       ));
@@ -276,9 +255,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           });
           acertaron++;
         }
-        // Guardamos en la propia respuesta si fue correcta y cuántos
-        // puntos ganó ese usuario, para poder mostrarlo luego en su
-        // historial de pronósticos.
         batch.update(d.ref, {
           correcta: esCorrecta,
           puntosGanados: esCorrecta ? pts : 0,
@@ -289,7 +265,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       onMensaje("ok",
         `✅ Pregunta #${pregunta.numero} cerrada. ${acertaron} de ${snapR.size} acertaron → +${pts} pts c/u.`
       );
-      // Limpiar la selección de esta pregunta
       setRespSels(prev => { const n = { ...prev }; delete n[pregunta.id]; return n; });
     } catch (e) { onMensaje("error", e.message); }
     finally { setCerrando(null); }
@@ -431,14 +406,13 @@ export default function AdminEventoEnVivo({ onMensaje }) {
             ❓ PREGUNTAS EN VIVO ({preguntas.length} en total)
           </p>
 
-          {/* Todas las preguntas ABIERTAS, apiladas, cada una con su propio cierre */}
+          {/* Todas las preguntas ABIERTAS */}
           {abiertas.length > 0 && (
             <div style={{ display:"flex", flexDirection:"column", gap:"10px", marginBottom:"14px" }}>
               {abiertas.map(preg => (
                 <div key={preg.id} style={{ padding:"12px",
                   background:"rgba(214,40,40,0.06)", border:"2px solid var(--rojo-chile)",
                   boxShadow:"0 0 16px rgba(214,40,40,0.2)" }}>
-                  {/* Cabecera */}
                   <div style={{ display:"flex", justifyContent:"space-between",
                     alignItems:"center", marginBottom:"10px", flexWrap:"wrap", gap:"6px" }}>
                     <span style={{ fontSize:"6px", color:"var(--rojo-chile)" }}>
@@ -475,7 +449,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                     </div>
                   </div>
 
-                  {/* Formulario edición inline */}
                   {editandoId === preg.id && (
                     <div style={{ marginBottom:"12px", padding:"10px",
                       border:"1px solid var(--amarillo)", background:"rgba(0,0,0,0.3)" }}>
@@ -541,14 +514,12 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                     </div>
                   )}
 
-                  {/* Texto de la pregunta (cuando no se edita) */}
                   {editandoId !== preg.id && (
                     <p style={{ fontSize:"8px", color:"var(--blanco)", lineHeight:2, marginBottom:"12px" }}>
                       {preg.texto}
                     </p>
                   )}
 
-                  {/* Selección respuesta correcta y cierre */}
                   <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>
                     MARCA LA RESPUESTA CORRECTA:
                   </p>
@@ -577,7 +548,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
             </div>
           )}
 
-          {/* Form nueva pregunta — SIEMPRE disponible, pueden convivir */}
+          {/* Form nueva pregunta */}
           <div style={{ padding:"12px", border:"2px solid rgba(255,255,255,0.1)",
             background:"rgba(0,0,0,0.2)", marginBottom:"14px" }}>
             <p style={{ fontSize:"7px", color:"var(--amarillo)", marginBottom:"12px" }}>
@@ -684,7 +655,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
           </div>
 
           {/* Historial de preguntas cerradas */}
-          {/* Botón reparar historial */}
           {cerradas.length > 0 && (
             <div style={{ marginBottom:"10px" }}>
               <button
