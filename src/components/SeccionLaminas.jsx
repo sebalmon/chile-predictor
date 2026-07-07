@@ -932,10 +932,10 @@ export default function SeccionLaminas() {
         const nuevasLaminas = data.laminas || {};
         setLaminasLocal(nuevasLaminas);
         localStorage.setItem("cp8b_mis_laminas", JSON.stringify(nuevasLaminas));
+        // NO llamar refreshProfile() — causa re-render que resetea laminasLocal
       }
-      if (refreshProfile) await refreshProfile();
     } catch (_) {}
-  }, [uid, refreshProfile]);
+  }, [uid]);
 
   const handleClickLamina = (lamina, cantidad) => {
     setLightboxLamina(lamina);
