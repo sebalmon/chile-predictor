@@ -23,6 +23,7 @@ import NotificacionesModal from "./NotificacionesModal";
 import VozHinchada from "./VozHinchada";
 import EventoEnVivo from "./EventoEnVivo";
 import PronosticoCuartos from "./PronosticoCuartos";
+import PronosticoSemis from "./PronosticoSemis";
 import SeccionLaminas from "./SeccionLaminas";
 
 // ── Contexto de sonidos ───────────────────────────────────────
@@ -392,6 +393,7 @@ function WithShell({ children, userProfile, onPerfil, onLogout,
       <NotificacionesModal />
       <EventoEnVivo />
       <PronosticoCuartos />
+      <PronosticoSemis />
 
       <TopBar userProfile={userProfile} onPerfil={onPerfil} onLogout={onLogout}
         diaLabel={diaLabel} sonidosOn={sonidosOn} toggleSonidos={toggleSonidos} />
