@@ -162,7 +162,7 @@ export default function PronosticoCuartos() {
           fontFamily:"'Press Start 2P',monospace",
           fontSize:"4px", color:"var(--amarillo)",
         }}>
-          ¡500 pts!
+          ¡1000 pts!
         </span>
         <style>{`
           @keyframes pulsoAzul {
@@ -214,7 +214,7 @@ export default function PronosticoCuartos() {
       <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.08)",
         background:"rgba(30,64,175,0.1)" }}>
         <p style={{ fontSize:"5px", color:"#93c5fd", lineHeight:2.2, marginBottom:"8px" }}>
-          Elige el equipo que crees que clasificará a cuartos de final en cada partido.
+          Elige el equipo que crees que clasificará a semifinal en cada partido.
           Puedes cambiar tu voto hasta que el partido empiece.
         </p>
         <p style={{ fontSize:"5px", color:"var(--amarillo)", marginBottom:"6px" }}>
