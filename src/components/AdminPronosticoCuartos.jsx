@@ -17,7 +17,7 @@ import { db } from "../firebase";
 const REF_CONFIG = () => doc(db, "pronosticoCuartos", "config");
 const REF_VOTOS  = () => collection(db, "pronosticoCuartos_votos");
 
-const TABLA_PUNTOS = [0, 100, 200, 250, 300, 350, 400, 450, 500];
+const TABLA_PUNTOS = [0, 250, 500, 750, 1000]; // Semis: 0-4 aciertos
 
 // Equipos de octavos para selector rápido
 const EQUIPOS_OCTAVOS = [
@@ -53,8 +53,8 @@ export default function AdminPronosticoCuartos({ onMensaje }) {
 
   // Form partidos
   const [partidos, setPartidos] = useState(
-    Array.from({ length:8 }, (_,i) => ({
-      id: `oct_${i+1}`,
+    Array.from({ length:4 }, (_,i) => ({
+      id: `semi_${i+1}`,
       local:     { nombre:"", bandera:"🏳️" },
       visitante: { nombre:"", bandera:"🏳️" },
       fecha:     "",
@@ -137,8 +137,8 @@ export default function AdminPronosticoCuartos({ onMensaje }) {
 
   // ── Confirmar clasificados y calcular puntos ──────────────
   const calcularPuntos = async () => {
-    if (clasificados.length !== 8) {
-      onMensaje("error", "Confirma exactamente 8 clasificados."); return;
+    if (clasificados.length !== 4) {
+      onMensaje("error", "Confirma exactamente 4 clasificados."); return;
     }
     setCalculando(true);
     try {
@@ -187,7 +187,7 @@ export default function AdminPronosticoCuartos({ onMensaje }) {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <p style={{ fontSize:"7px", color:"#60a5fa", marginBottom:"2px" }}>
-              🏆 PRONÓSTICO CUARTOS
+              🏆 PRONÓSTICO SEMIFINALES
             </p>
             <p style={{ fontSize:"5px", color:"var(--gris-claro)" }}>
               Estado: {config?.activo
@@ -290,7 +290,7 @@ export default function AdminPronosticoCuartos({ onMensaje }) {
         <p style={{ fontSize:"5px", color:"var(--gris-claro)",
           marginBottom:"10px", lineHeight:2 }}>
           Selecciona los 8 equipos que clasificaron. Al confirmar se calculan los puntos.
-          ({clasificados.length}/8 seleccionados)
+          ({clasificados.length}/4 seleccionados)
         </p>
 
         <div style={{ display:"flex", flexWrap:"wrap", gap:"5px", marginBottom:"12px" }}>
@@ -319,7 +319,7 @@ export default function AdminPronosticoCuartos({ onMensaje }) {
           {calculando
             ? "⚙ CALCULANDO..."
             : clasificados.length !== 8
-              ? `⚠ FALTAN ${8 - clasificados.length} EQUIPOS`
+              ? `⚠ FALTAN ${4 - clasificados.length} EQUIPOS`
               : "⚡ CONFIRMAR Y CALCULAR PUNTOS"}
         </button>
       </div>

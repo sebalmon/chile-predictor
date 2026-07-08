@@ -26,7 +26,7 @@ import { useAuth } from "../contexts/AuthContext";
 const REF_CONFIG = () => doc(db, "pronosticoCuartos", "config");
 const REF_VOTO   = (uid) => doc(db, "pronosticoCuartos_votos", uid);
 
-const TABLA_PUNTOS = [0, 100, 200, 250, 300, 350, 400, 450, 500];
+const TABLA_PUNTOS = [0, 250, 500, 750, 1000]; // Semis: 0-4 aciertos
 
 export default function PronosticoCuartos() {
   const { firebaseUser } = useAuth();
@@ -156,7 +156,7 @@ export default function PronosticoCuartos() {
           fontSize:"4px", color:"#93c5fd",
           lineHeight:1.6, textAlign:"center",
         }}>
-          PRONOSTICA<br/>CUARTOS
+          PRONOSTICA<br/>SEMIS
         </span>
         <span style={{
           fontFamily:"'Press Start 2P',monospace",
@@ -196,7 +196,7 @@ export default function PronosticoCuartos() {
       }}>
         <div>
           <p style={{ fontSize:"7px", color:"#93c5fd", marginBottom:"2px" }}>
-            🏆 CUARTOS DE FINAL
+            🏆 SEMIFINALES
           </p>
           <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.6)" }}>
             ¿Quiénes clasifican?
@@ -221,7 +221,7 @@ export default function PronosticoCuartos() {
           PUNTOS SEGÚN ACIERTOS:
         </p>
         <div style={{ display:"flex", gap:"3px", flexWrap:"wrap" }}>
-          {[8,7,6,5,4,3,2,1].map(n => (
+          {[4,3,2,1].map(n => (
             <div key={n} style={{
               background:"rgba(30,64,175,0.3)", border:"1px solid rgba(96,165,250,0.3)",
               padding:"3px 5px", textAlign:"center",
