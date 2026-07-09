@@ -37,20 +37,30 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
   const { golesLocal: gl, golesVisitante: gv, definicion,
     golesLocalAlargue, golesVisitanteAlargue,
     penalesLocal, penalesVisitante, ganadorFinal } = resultado;
-  const gan90 = gl > gv ? "local" : gv > gl ? "visitante" : null;
+  const gan90     = gl > gv ? "local" : gv > gl ? "visitante" : null;
   const dif90Real = Math.abs(gl-gv) === 1 ? "1" : "2+";
+  // Ganador real del partido (puede ser por normal, alargue o penales)
+  const ganadorReal = ganadorFinal || gan90;
+
   let pts = 0;
+
   if (definicion === "normal") {
     if (prediccion.definicion === "normal" && prediccion.ganador90 === gan90) {
       pts += 2;
       if (prediccion.diferencia90 === dif90Real) pts += 1;
+    } else if (prediccion.ganador90 === gan90) {
+      // Acertó el ganador aunque pronosticó otra definición → premio base
+      pts += 2;
     }
   } else if (definicion === "alargue") {
     if (prediccion.definicion === "alargue") {
       pts += 3;
-      const dAlg = Math.abs((golesLocalAlargue??0)-(golesVisitanteAlargue??0));
+      const dAlg  = Math.abs((golesLocalAlargue??0)-(golesVisitanteAlargue??0));
       const dAlgR = dAlg === 1 ? "1" : "2+";
       if (prediccion.ganadorAlargue === ganadorFinal && prediccion.diferenciaAlargue === dAlgR) pts += 3;
+    } else if (prediccion.ganador90 === ganadorFinal || prediccion.ganadorAlargue === ganadorFinal || prediccion.ganadorPenales === ganadorFinal) {
+      // Acertó el ganador aunque pronosticó otra definición → premio base
+      pts += 2;
     }
   } else if (definicion === "penales") {
     if (prediccion.definicion === "penales") {
@@ -58,8 +68,12 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
       const exacta = Number(prediccion.penalesLocal) === penalesLocal && Number(prediccion.penalesVisitante) === penalesVisitante;
       if (exacta) pts += 4;
       else if (prediccion.ganadorPenales === ganadorFinal) pts += 2;
+    } else if (prediccion.ganador90 === ganadorFinal || prediccion.ganadorAlargue === ganadorFinal || prediccion.ganadorPenales === ganadorFinal) {
+      // Acertó el ganador aunque pronosticó otra definición → premio base
+      pts += 2;
     }
   }
+
   const mult = multFase(fase); if (mult > 1 && pts > 0) pts *= mult;
   return { puntos: pts, esMaximo: pts > 0 };
 }

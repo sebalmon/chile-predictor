@@ -23,7 +23,6 @@ import {
 import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
 import AdminSuperDestacado from "./AdminSuperDestacado";
 import AdminEventoEnVivo from "./AdminEventoEnVivo";
-import AdminSemifinal from "./AdminSemifinal";
 import AdminPronosticoCuartos from "./AdminPronosticoCuartos";
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
@@ -100,7 +99,6 @@ function AdminPanelInterno({ onVolver }) {
     { id:"partidos",  label:"⚽ PARTIDOS" },
     { id:"envivo",    label:"🔴 EN VIVO" },
     { id:"cuartos",   label:"🏆 CUARTOS" },
-    { id:"semis",     label:"⚽ SEMIS" },
     { id:"preguntas", label:"❓ PREGUNTAS" },
     { id:"cartas",    label:"🃏 CARTAS Y BONUS" },
     { id:"aviso",     label:"📢 AVISO" },
@@ -148,7 +146,6 @@ function AdminPanelInterno({ onVolver }) {
           {tab==="partidos"  && <TabPartidosAdmin partidos={partidos} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="envivo"    && <AdminEventoEnVivo onMensaje={msg} />}
           {tab==="cuartos"   && <AdminPronosticoCuartos onMensaje={msg} />}
-          {tab==="semis"     && <AdminSemifinal onMensaje={msg} />}
           {tab==="preguntas" && <TabPreguntasAdmin preguntas={preguntas} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="cartas"    && <TabCartasBonus preguntas={preguntas} onMensaje={msg} />}
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
@@ -165,6 +162,7 @@ function AdminPanelInterno({ onVolver }) {
 function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
   const [sel, setSel]         = useState(null);
   const [procesando, setProc] = useState(false);
+  const [recalc,    setRecalc] = useState(false);
   const [gl, setGl] = useState(""); const [gv, setGv] = useState("");
   const [def, setDef] = useState("normal");
   const [glA, setGlA] = useState(""); const [gvA, setGvA] = useState("");
@@ -183,6 +181,23 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
     } else {
       setGl(""); setGv(""); setDef("normal"); setGlA(""); setGvA(""); setPL(""); setPV(""); setGanFin("");
     }
+  };
+
+  const recalcularTodos = async () => {
+    if (!window.confirm("¿Recalcular puntos de TODOS los partidos con resultado? Esto aplica el nuevo scoring retroactivamente.")) return;
+    setRecalc(true);
+    try {
+      const conResultado = partidos.filter(p => p.resultado);
+      let total = 0, errTotal = 0;
+      for (const p of conResultado) {
+        const { procesados, errores } = await procesarResultadoPartido(
+          p.id, p.resultado, p.fase, p.estaDestacado, p.fecha
+        );
+        total += procesados; errTotal += errores;
+      }
+      onMensaje("ok", `✅ Recalculado: ${conResultado.length} partidos, ${total} predicciones actualizadas.${errTotal>0?` (${errTotal} errores)`:""}`);
+    } catch(e) { onMensaje("error", e.message); }
+    finally { setRecalc(false); }
   };
 
   const esElim = sel && FASES_ELIMINATORIAS.includes(sel.fase);
@@ -227,7 +242,12 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
         Selecciona un partido e ingresa el resultado. Los puntos se calculan inmediatamente.
       </p>
       <div style={{ display:"flex",flexDirection:"column",gap:"6px" }}>
-        {partidos.map(p => (
+        <button className="btn-pixel btn-gris w-full" style={{ fontSize:"5px", marginBottom:"8px" }}
+        onClick={recalcularTodos} disabled={recalc}>
+        {recalc ? "⚙ RECALCULANDO..." : "🔄 RECALCULAR PUNTOS (aplica nuevo scoring retroactivo)"}
+      </button>
+
+      {partidos.map(p => (
           <React.Fragment key={p.id}>
             <button onClick={() => sel?.id===p.id ? setSel(null) : seleccionar(p)}
               style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"7px",padding:"10px 12px",
