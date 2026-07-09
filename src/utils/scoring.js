@@ -44,11 +44,14 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
 
   let pts = 0;
 
+  // El ganador pronosticado puede estar en cualquier campo según la definición elegida
+  const ganadorPred = prediccion.ganador90 || prediccion.ganadorAlargue || prediccion.ganadorPenales;
+
   if (definicion === "normal") {
     if (prediccion.definicion === "normal" && prediccion.ganador90 === gan90) {
       pts += 2;
       if (prediccion.diferencia90 === dif90Real) pts += 1;
-    } else if (prediccion.ganador90 === gan90) {
+    } else if (ganadorPred === gan90) {
       // Acertó el ganador aunque pronosticó otra definición → premio base
       pts += 2;
     }
@@ -58,7 +61,7 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
       const dAlg  = Math.abs((golesLocalAlargue??0)-(golesVisitanteAlargue??0));
       const dAlgR = dAlg === 1 ? "1" : "2+";
       if (prediccion.ganadorAlargue === ganadorFinal && prediccion.diferenciaAlargue === dAlgR) pts += 3;
-    } else if (prediccion.ganador90 === ganadorFinal || prediccion.ganadorAlargue === ganadorFinal || prediccion.ganadorPenales === ganadorFinal) {
+    } else if (ganadorPred === ganadorFinal) {
       // Acertó el ganador aunque pronosticó otra definición → premio base
       pts += 2;
     }
@@ -68,7 +71,7 @@ export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado
       const exacta = Number(prediccion.penalesLocal) === penalesLocal && Number(prediccion.penalesVisitante) === penalesVisitante;
       if (exacta) pts += 4;
       else if (prediccion.ganadorPenales === ganadorFinal) pts += 2;
-    } else if (prediccion.ganador90 === ganadorFinal || prediccion.ganadorAlargue === ganadorFinal || prediccion.ganadorPenales === ganadorFinal) {
+    } else if (ganadorPred === ganadorFinal) {
       // Acertó el ganador aunque pronosticó otra definición → premio base
       pts += 2;
     }
