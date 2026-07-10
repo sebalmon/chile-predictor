@@ -554,7 +554,11 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                     disabled={!respSels[preg.id] || cerrando===preg.id}>
                     {cerrando===preg.id
                       ? "⚙ PROCESANDO..."
-                      : `🔒 CERRAR #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
+                      : preg.modoApuesta === "apuesta"
+                        ? `🔒 CERRAR PREGUNTA #${preg.numero}`
+                        : preg.modoApuesta === "ambos"
+                          ? `🔒 CERRAR #${preg.numero} (+${preg.puntosEnVivo}pts ×${preg.multiplicador?.toFixed(1)})`
+                          : `🔒 CERRAR #${preg.numero} Y DAR +${preg.puntosEnVivo} PTS`}
                   </button>
                 </div>
               ))}
