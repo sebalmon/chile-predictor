@@ -1,7 +1,7 @@
 // src/components/EventoEnVivo.jsx  — v4
 import React, { useState, useEffect } from "react";
 import {
-  doc, onSnapshot, setDoc, serverTimestamp,
+  doc, collection, query, where, onSnapshot, setDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
@@ -13,14 +13,7 @@ export default function EventoEnVivo() {
   const [evento,            setEvento]            = useState(null);
   const [misRespuestas,     setMisRespuestas]     = useState({});
   const [misRespuestasData, setMisRespuestasData] = useState({});
-  // useRef para apuestas: no se resetea con re-renders del onSnapshot
-  const apuestasRef = React.useRef({});
-  const [apuestas, setApuestas] = useState({});
-  const setApuesta = (pregId, valor) => {
-    apuestasRef.current[pregId] = valor;
-    setApuestas(prev => ({ ...prev, [pregId]: valor }));
-  };
-  const getApuesta = (pregId) => apuestasRef.current[pregId] || 0;
+  const [apuestas,          setApuestas]          = useState({});
   const [enviando,          setEnviando]          = useState(null);
   const [minimizado,        setMinimizado]        = useState(false);
   const [imgError,          setImgError]          = useState(false);
@@ -33,6 +26,26 @@ export default function EventoEnVivo() {
     const unsub = onSnapshot(doc(db,"usuarios",firebaseUser.uid), snap => {
       if (snap.exists()) setPuntosVivos(snap.data().puntosTotal ?? 0);
     });
+    return () => unsub();
+  }, [firebaseUser?.uid]);
+
+  // Escuchar respuestas propias en tiempo real — actualiza puntosGanados cuando admin cierra pregunta
+  useEffect(() => {
+    if (!firebaseUser?.uid) return;
+    const unsub = onSnapshot(
+      query(collection(db,"eventoEnVivo","actual","respuestas"), where("uid","==",firebaseUser.uid)),
+      snap => {
+        const data = {};
+        snap.docs.forEach(d => {
+          const r = d.data();
+          data[r.preguntaId] = {
+            apuesta:       r.apuesta       || 0,
+            puntosGanados: r.puntosGanados ?? null,
+          };
+        });
+        setMisRespuestasData(data);
+      }
+    );
     return () => unsub();
   }, [firebaseUser?.uid]);
 
@@ -55,6 +68,8 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, []);
 
+
+
   const preguntas  = evento?.preguntas || [];
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
@@ -76,7 +91,7 @@ export default function EventoEnVivo() {
           respuesta:  opcion,
           preguntaId: pregunta.id,
           timestamp:  serverTimestamp(),
-          apuesta:    getApuesta(pregunta.id),
+          apuesta:    apuestas[pregunta.id] || 0,
         }
       );
       setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
@@ -245,7 +260,7 @@ export default function EventoEnVivo() {
                 enviando={enviando === preg.id}
                 onResponder={(op) => responder(preg, op)}
                 apuesta={apuestas[preg.id] || 0}
-                onApuesta={(v) => setApuesta(preg.id, v)}
+                onApuesta={(v) => setApuestas(prev => ({ ...prev, [preg.id]: v }))}
                 puntosDisponibles={puntosVivos}
               />
             ))}
@@ -505,17 +520,11 @@ function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle
             color: acerte ? "var(--verde-claro)" : "var(--rojo-chile)",
             display:"flex", alignItems:"center", gap:"4px",
           }}>
-            {pregunta.modoApuesta === "apuesta"
-              ? acerte
-                ? `✅ Apostaste ${apuesta} → +${Math.round(apuesta * (pregunta.multiplicador||1))} pts`
-                : `❌ Apostaste ${apuesta} → -${apuesta} pts`
-              : pregunta.modoApuesta === "ambos"
-                ? acerte
-                  ? `✅ +${ptsReales} pts${apuesta>0?` (incl. apuesta ×${pregunta.multiplicador})`:""}`
-                  : apuesta>0 ? `❌ -${apuesta} pts apostados` : "❌ NO ACERTASTE"
-                : acerte
-                  ? `🎉 +${ptsReales} PTS`
-                  : "❌ NO ACERTASTE"}
+            {acerte
+              ? `🎉 +${ptsReales} PTS`
+              : apuesta > 0
+                ? `❌ -${apuesta} pts`
+                : "❌ NO ACERTASTE"}
             <span style={{ color:"rgba(255,255,255,0.4)", fontSize:"8px" }}>
               {expandida ? "▲" : "▼"}
             </span>
