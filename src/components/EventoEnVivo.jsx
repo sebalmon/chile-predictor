@@ -406,7 +406,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
         background:`rgba(0,0,0,0.35)`,
         borderBottom:`1px solid ${color.borde}44`,
       }}>
-        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"9px",
           color: color.texto, letterSpacing:"1px" }}>
           PREGUNTA #{pregunta.numero}
         </span>
