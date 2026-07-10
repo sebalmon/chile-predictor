@@ -260,6 +260,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
         const apuesta    = Number(r.apuesta || 0);
         let ptsGanados   = 0;
         let ptsDelta     = 0;
+        let puntosGanados = 0;
 
         if ((modo === "fijo" || modo === "ambos") && esCorrecta) {
           ptsGanados += pts; ptsDelta += pts; acertaron++;
