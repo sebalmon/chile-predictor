@@ -291,6 +291,19 @@ function BloqueEnVivo({ respuestasEnVivo, ptsEnVivo }) {
                         (correcta: {r.respuestaCorrecta})
                       </span>}
                   </p>
+                  {r.apuesta > 0 && (
+                    <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:1.8 }}>
+                      Apostaste: <span style={{ color:"var(--amarillo)" }}>{r.apuesta} pts</span>
+                      {!pendiente && (
+                        <span style={{ marginLeft:"4px",
+                          color: r.correcta ? "var(--verde-claro)" : "var(--rojo-chile)" }}>
+                          {r.correcta
+                            ? `(+${Math.round(r.apuesta * (r.multiplicador||1))} ganados)`
+                            : `(-${r.apuesta} perdidos)`}
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
                 <div style={{ textAlign:"right", flexShrink:0 }}>
                   {pendiente ? (

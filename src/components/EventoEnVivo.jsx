@@ -9,8 +9,17 @@ import { useAuth } from "../contexts/AuthContext";
 const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
 
 export default function EventoEnVivo() {
-  const { firebaseUser, userProfile } = useAuth();
+  const { firebaseUser } = useAuth();
   const [evento,        setEvento]        = useState(null);
+  const [puntosVivos,   setPuntosVivos]   = useState(0);
+
+  useEffect(() => {
+    if (!firebaseUser?.uid) return;
+    const unsub = onSnapshot(doc(db,"usuarios",firebaseUser.uid), snap => {
+      if (snap.exists()) setPuntosVivos(snap.data().puntosTotal ?? 0);
+    });
+    return () => unsub();
+  }, [firebaseUser?.uid]);
   const [misRespuestas, setMisRespuestas] = useState({});
   const [enviando,      setEnviando]      = useState(null);
   const [minimizado,    setMinimizado]    = useState(false);
@@ -225,7 +234,7 @@ export default function EventoEnVivo() {
                 onResponder={(op) => responder(preg, op)}
                 apuesta={apuestas[preg.id] || 0}
                 onApuesta={(v) => setApuestas(prev => ({ ...prev, [preg.id]: v }))}
-                puntosDisponibles={userProfile?.puntosTotal || 0}
+                puntosDisponibles={puntosVivos}
               />
             ))}
           </div>
