@@ -420,11 +420,11 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
           </span>
         )}
         {(pregunta.modoApuesta === "apuesta" || pregunta.modoApuesta === "ambos") && pregunta.multiplicador && (
-          <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+          <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"12px",
             color:"var(--rojo-chile)",
             background:"rgba(214,40,40,0.15)",
-            border:"1px solid var(--rojo-chile)",
-            padding:"2px 8px" }}>
+            border:"2px solid var(--rojo-chile)",
+            padding:"4px 12px" }}>
             ×{pregunta.multiplicador.toFixed(1)}
           </span>
         )}
