@@ -49,6 +49,7 @@ export default function EventoEnVivo() {
   }, []);
 
   const preguntas  = evento?.preguntas || [];
+  console.log("preguntas:", preguntas.length, preguntas.map(p=>p.modoApuesta));
 
   // Cuando una pregunta se cierra, leer puntosGanados y apuesta del doc de respuesta
   useEffect(() => {
