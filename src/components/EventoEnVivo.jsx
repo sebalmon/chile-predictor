@@ -51,25 +51,25 @@ export default function EventoEnVivo() {
   const preguntas  = evento?.preguntas || [];
   console.log("preguntas:", preguntas.length, preguntas.map(p=>p.modoApuesta));
 
-  // Cuando una pregunta se cierra, leer puntosGanados y apuesta del doc de respuesta
-  useEffect(() => {
-    if (!firebaseUser?.uid) return;
-    const cerradas = preguntas.filter(p => p.estado === "cerrada");
-    cerradas.forEach(p => {
-      const docId = `${firebaseUser.uid}_${p.id}`;
-      getDoc(doc(db,"eventoEnVivo","actual","respuestas",docId)).then(snap => {
-        if (!snap.exists()) return;
-        const r = snap.data();
-        setMisRespuestasData(prev => ({
-          ...prev,
-          [p.id]: {
-            apuesta:       r.apuesta       || 0,
-            puntosGanados: r.puntosGanados ?? null,
-          }
-        }));
-      }).catch(()=>{});
+// Listener en tiempo real de las respuestas del usuario
+useEffect(() => {
+  if (!firebaseUser?.uid) return;
+  const respuestasRef = collection(db, "eventoEnVivo", "actual", "respuestas");
+  const q = query(respuestasRef, where("uid", "==", firebaseUser.uid));
+  const unsub = onSnapshot(q, (snapshot) => {
+    const nuevasData = {};
+    snapshot.docs.forEach(doc => {
+      const r = doc.data();
+      nuevasData[r.preguntaId] = {
+        apuesta:       r.apuesta || 0,
+        puntosGanados: r.puntosGanados ?? null,
+        respuesta:     r.respuesta,
+      };
     });
-  }, [JSON.stringify(preguntas.map(p=>p.estado)), firebaseUser?.uid]);
+    setMisRespuestasData(nuevasData);
+  });
+  return () => unsub();
+}, [firebaseUser?.uid]);
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   if (abiertas.length > 0) console.log("modoApuesta:", abiertas[0].modoApuesta, abiertas[0]);
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
