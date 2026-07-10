@@ -59,18 +59,23 @@ useEffect(() => {
   const q = query(respuestasRef, where("uid", "==", firebaseUser.uid));
   const unsub = onSnapshot(q, (snapshot) => {
     const nuevasData = {};
+    const nuevasResp = {};
     snapshot.docs.forEach(doc => {
       const r = doc.data();
+      nuevasResp[r.preguntaId] = r.respuesta;
       nuevasData[r.preguntaId] = {
-  apuesta:       r.apuesta || 0,
-  puntosGanados: r.puntosGanados ?? null,
-  correcta:      r.correcta ?? null,   // <--- AGREGAMOS ESTA LÍNEA
-};
+        apuesta:       r.apuesta || 0,
+        puntosGanados: r.puntosGanados ?? null,
+        correcta:      r.correcta ?? null,
+      };
     });
+    console.log("📩 Respuestas recibidas:", nuevasResp);
+    console.log("📩 Datos completos:", nuevasData);
+    setMisRespuestas(nuevasResp);
     setMisRespuestasData(nuevasData);
   });
   return () => unsub();
-}, [firebaseUser?.uid]);
+}, [firebaseUser?.uid, evento]);
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   if (abiertas.length > 0) console.log("modoApuesta:", abiertas[0].modoApuesta, abiertas[0]);
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
