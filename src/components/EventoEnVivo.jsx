@@ -1,7 +1,7 @@
 // src/components/EventoEnVivo.jsx  — v4
 import React, { useState, useEffect } from "react";
 import {
-  doc, collection, query, where, onSnapshot, setDoc, serverTimestamp,
+  doc, getDoc, collection, onSnapshot, setDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
@@ -29,26 +29,6 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, [firebaseUser?.uid]);
 
-  // Escuchar respuestas propias en tiempo real — actualiza puntosGanados cuando admin cierra pregunta
-  useEffect(() => {
-    if (!firebaseUser?.uid) return;
-    const unsub = onSnapshot(
-      query(collection(db,"eventoEnVivo","actual","respuestas"), where("uid","==",firebaseUser.uid)),
-      snap => {
-        const data = {};
-        snap.docs.forEach(d => {
-          const r = d.data();
-          data[r.preguntaId] = {
-            apuesta:       r.apuesta       || 0,
-            puntosGanados: r.puntosGanados ?? null,
-          };
-        });
-        setMisRespuestasData(data);
-      }
-    );
-    return () => unsub();
-  }, [firebaseUser?.uid]);
-
   useEffect(() => {
     const unsub = onSnapshot(REF_EVENTO(), snap => {
       if (snap.exists()) {
@@ -68,9 +48,27 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, []);
 
-
-
   const preguntas  = evento?.preguntas || [];
+
+  // Cuando una pregunta se cierra, leer puntosGanados y apuesta del doc de respuesta
+  useEffect(() => {
+    if (!firebaseUser?.uid) return;
+    const cerradas = preguntas.filter(p => p.estado === "cerrada");
+    cerradas.forEach(p => {
+      const docId = `${firebaseUser.uid}_${p.id}`;
+      getDoc(doc(db,"eventoEnVivo","actual","respuestas",docId)).then(snap => {
+        if (!snap.exists()) return;
+        const r = snap.data();
+        setMisRespuestasData(prev => ({
+          ...prev,
+          [p.id]: {
+            apuesta:       r.apuesta       || 0,
+            puntosGanados: r.puntosGanados ?? null,
+          }
+        }));
+      }).catch(()=>{});
+    });
+  }, [preguntas.filter(p=>p.estado==="cerrada").map(p=>p.id).join(","), firebaseUser?.uid]);
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
   const ptsJugados = preguntas.reduce((s, p) => s + (p.puntosEnVivo || 0), 0);
