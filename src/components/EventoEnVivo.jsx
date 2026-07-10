@@ -439,8 +439,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
     textAlign: "center",
     background: "rgba(0, 0, 0, 0.6)",
     padding: "10px 14px",
-    borderRadius: "4px",
-    boxShadow: "inset 0 0 10px rgba(0,0,0,0.3)"
+    // Sin borderRadius y sin boxShadow
   }}>
     {pregunta.texto}
   </p>
