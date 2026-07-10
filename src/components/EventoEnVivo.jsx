@@ -13,18 +13,14 @@ export default function EventoEnVivo() {
   const [evento,            setEvento]            = useState(null);
   const [misRespuestas,     setMisRespuestas]     = useState({});
   const [misRespuestasData, setMisRespuestasData] = useState({});
-  const [apuestas, setApuestas] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("cp8b_ev_apuestas") || "{}"); }
-    catch { return {}; }
-  });
-
+  // useRef para apuestas: no se resetea con re-renders del onSnapshot
+  const apuestasRef = React.useRef({});
+  const [apuestas, setApuestas] = useState({});
   const setApuesta = (pregId, valor) => {
-    setApuestas(prev => {
-      const next = { ...prev, [pregId]: valor };
-      localStorage.setItem("cp8b_ev_apuestas", JSON.stringify(next));
-      return next;
-    });
+    apuestasRef.current[pregId] = valor;
+    setApuestas(prev => ({ ...prev, [pregId]: valor }));
   };
+  const getApuesta = (pregId) => apuestasRef.current[pregId] || 0;
   const [enviando,          setEnviando]          = useState(null);
   const [minimizado,        setMinimizado]        = useState(false);
   const [imgError,          setImgError]          = useState(false);
@@ -80,7 +76,7 @@ export default function EventoEnVivo() {
           respuesta:  opcion,
           preguntaId: pregunta.id,
           timestamp:  serverTimestamp(),
-          apuesta:    apuestas[pregunta.id] || 0,
+          apuesta:    getApuesta(pregunta.id),
         }
       );
       setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
@@ -407,7 +403,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
             <input type="range" min="0"
               max={Math.min(200, puntosDisponibles)}
               step="1" value={apuesta}
-              onChange={e => { onApuesta(Number(e.target.value)); }}
+              onChange={e => onApuesta(Number(e.target.value))}
               style={{ width:"100%", accentColor: color.borde }} />
             {apuesta > 0 && (
               <div style={{ display:"flex", justifyContent:"space-between", marginTop:"6px" }}>
