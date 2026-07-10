@@ -1,4 +1,4 @@
-// src/components/EventoEnVivo.jsx  — v8 (con apuesta visible en el desplegable)
+// src/components/EventoEnVivo.jsx  — v9 (con botón CERRAR que oculta completamente)
 import React, { useState, useEffect } from "react";
 import {
   doc, getDoc, collection, onSnapshot, setDoc, serverTimestamp,
@@ -20,6 +20,7 @@ export default function EventoEnVivo() {
   const [imgError,          setImgError]          = useState(false);
   const [expandidaId,       setExpandidaId]       = useState(null);
   const [puntosVivos,       setPuntosVivos]       = useState(0);
+  const [oculto,            setOculto]            = useState(false); // <--- NUEVO: para ocultar completamente
 
   // Escuchar puntosTotal en tiempo real
   useEffect(() => {
@@ -100,7 +101,10 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, [firebaseUser?.uid, evento]);
 
-  // ===== Mostrar historial aunque el evento esté desactivado =====
+  // Si el usuario ocultó manualmente, no mostramos nada
+  if (oculto) return null;
+
+  // Si no hay evento o no tiene preguntas, no mostramos nada
   if (!evento) return null;
   if (evento.preguntas?.length === 0) return null;
 
@@ -109,10 +113,12 @@ export default function EventoEnVivo() {
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
   const ptsJugados = preguntas.reduce((s, p) => s + (p.modoApuesta === "apuesta" ? 0 : (p.puntosEnVivo || 0)), 0);
 
+  // Si el evento está desactivado y no hay preguntas cerradas, no mostramos nada
   if (!evento.activo && cerradas.length === 0) return null;
 
   const estaActivo = evento.activo === true;
 
+  // Si está minimizado y el evento está activo, mostramos el botón flotante
   if (minimizado && estaActivo) {
     return (
       <button
@@ -135,6 +141,7 @@ export default function EventoEnVivo() {
     );
   }
 
+  // Si el evento está desactivado y minimizado, forzamos a mostrarlo (no se minimiza)
   if (!estaActivo && minimizado) {
     setMinimizado(false);
   }
@@ -152,6 +159,23 @@ export default function EventoEnVivo() {
       fontFamily:"'Press Start 2P', monospace",
       background: estaActivo ? "#0a0510" : "#0a0a0a",
     }}>
+      {/* Botón CERRAR (oculta completamente) */}
+      <button
+        onClick={() => setOculto(true)}
+        style={{
+          position:"absolute", top:"14px", left:"14px", zIndex:10,
+          background:"rgba(0,0,0,0.7)",
+          border:"2px solid var(--gris)",
+          color:"var(--blanco)",
+          fontSize:"10px",
+          padding:"6px 12px",
+          cursor:"pointer",
+          fontFamily:"'Press Start 2P', monospace",
+        }}
+      >
+        ✕ CERRAR
+      </button>
+
       {estaActivo && (
         <div style={{
           position:"relative", width:"100%", height:"42vh",
@@ -291,7 +315,7 @@ export default function EventoEnVivo() {
                 pregunta={preg}
                 miRespuesta={misRespuestas[preg.id]}
                 enviando={enviando === preg.id}
-                onResponder={(op) => responder(preg, op)}
+                onResponder={(op) => responder(preg, op, firebaseUser, apuestas, setMisRespuestas, setMisRespuestasData, setEnviando)}
                 apuesta={apuestas[preg.id] || 0}
                 onApuesta={(v) => setApuestas(prev => ({ ...prev, [preg.id]: v }))}
                 puntosDisponibles={puntosVivos}
@@ -346,10 +370,31 @@ export default function EventoEnVivo() {
   );
 }
 
-// ── Función responder (declarada fuera del componente para poder usarla) ──
-// (En realidad está dentro del componente principal, pero para claridad la dejamos aquí)
-// En el código de arriba, la función responder está dentro del componente EventoEnVivo,
-// pero como el archivo es uno solo, no hay problema.
+// ── Función responder (para usar dentro del componente) ──
+async function responder(pregunta, opcion, firebaseUser, apuestas, setMisRespuestas, setMisRespuestasData, setEnviando) {
+  if (!firebaseUser) return;
+  setEnviando(pregunta.id);
+  try {
+    await setDoc(
+      doc(db, "eventoEnVivo", "actual", "respuestas", `${firebaseUser.uid}_${pregunta.id}`),
+      {
+        uid:        firebaseUser.uid,
+        respuesta:  opcion,
+        preguntaId: pregunta.id,
+        timestamp:  serverTimestamp(),
+        apuesta:    apuestas[pregunta.id] || 0,
+        texto:      pregunta.texto,
+        numero:     pregunta.numero,
+      }
+    );
+    setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
+    localStorage.setItem(`cp8b_ev_resp_${pregunta.id}`, opcion);
+    if (apuestas[pregunta.id]) {
+      setMisRespuestasData(prev => ({ ...prev, [pregunta.id]: { apuesta: apuestas[pregunta.id] } }));
+    }
+  } catch (e) { console.error(e); }
+  finally { setEnviando(null); }
+}
 
 // ── Componentes auxiliares ──────────────────────────────────────
 
@@ -584,7 +629,6 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
   );
 }
 
-// ── PreguntaMinimizada (con apuesta visible al desplegar) ──
 function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle }) {
   const correcta  = pregunta.respuestaCorrecta;
   const acerte    = miRespuesta && miRespuesta === correcta;
@@ -650,7 +694,6 @@ function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle
               Tu respuesta: {miRespuesta}
             </p>
           )}
-          {/* ===== NUEVO: Mostrar la apuesta ===== */}
           {miData?.apuesta !== undefined && (
             <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
               color:"var(--amarillo)", marginTop:"4px" }}>
