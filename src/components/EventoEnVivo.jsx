@@ -335,7 +335,7 @@ function useCountdown(pregunta) {
 }
 
 function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta, onApuesta, puntosDisponibles }) {
-  const pts           = pregunta.puntosEnVivo || 3;
+  const pts           = pregunta.modoApuesta === "apuesta" ? 0 : (pregunta.puntosEnVivo || 0);
   const color         = colorPregunta(pregunta.numero);
   const letras        = ["A","B","C","D","E"];
   const secsLeft      = useCountdown(pregunta);
