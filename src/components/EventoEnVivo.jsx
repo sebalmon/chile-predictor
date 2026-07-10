@@ -348,7 +348,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
               💰 APUESTA: <strong>{apuesta} pts</strong>
             </span>
             <span style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)" }}>
-              Tenés {puntosDisponibles} pts · máx 200
+              Tienes {puntosDisponibles} pts · máx 200
             </span>
           </div>
           <input type="range" min="0" max={Math.min(200, puntosDisponibles)} step="1"
