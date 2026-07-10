@@ -365,7 +365,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
             background:"rgba(244,208,63,0.15)",
             border:"1px solid rgba(244,208,63,0.4)",
             padding:"2px 8px" }}>
-            +{pts} PTS
+            {pts > 0 ? `+${pts} PTS` : `×${pregunta.multiplicador?.toFixed(1) || ""}`}
           </span>
         )}
         {(pregunta.modoApuesta === "apuesta" || pregunta.modoApuesta === "ambos") && pregunta.multiplicador && (

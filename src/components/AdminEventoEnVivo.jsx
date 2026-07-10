@@ -440,7 +440,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                       {preg.modoApuesta !== "apuesta" && (
                         <span style={{ fontSize:"5px", color:"var(--amarillo)",
                           border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
-                          +{preg.puntosEnVivo} PTS
+                          {preg.modoApuesta === "apuesta" ? `×${(preg.multiplicador||1).toFixed(1)}` : `+${preg.puntosEnVivo} PTS`}
                         </span>
                       )}
                       {(preg.modoApuesta === "apuesta" || preg.modoApuesta === "ambos") && (
