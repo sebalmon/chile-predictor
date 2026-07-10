@@ -495,7 +495,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
 function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle }) {
   const correcta  = pregunta.respuestaCorrecta;
   const acerte    = miRespuesta && miRespuesta === correcta;
-  const pts       = pregunta.puntosEnVivo || 0;
+  const pts       = pregunta.modoApuesta === "apuesta" ? 0 : (pregunta.puntosEnVivo || 0);
   const ptsReales = miData?.puntosGanados ?? (acerte ? pts : 0);
   const apuesta   = miData?.apuesta || 0;
 

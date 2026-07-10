@@ -3638,6 +3638,358 @@ export default function Perfil({ onVolver }) {
 }
 </file>
 
+<file path="src/components/PodioF1.jsx">
+// src/components/PodioF1.jsx  — v6 (Fase 3)
+// ─────────────────────────────────────────────────────────────
+// REDISEÑO COMPLETO (ítem l):
+//   • Tres columnas horizontales: 1°, 2°, 3° (izq-centro-der)
+//   • Cada columna: número grande, color distintivo (oro/plata/bronce)
+//   • Si hay empate en un lugar → carrusel automático (cada 2s)
+//     + puntos deslizables con swipe
+//   • Fecha del día anterior arriba del podio
+//   • Click en avatar → ModalPerfilConHistorial (igual que Fase 2)
+//   • Confeti al cargar
+// ─────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
+import HistorialPredicciones from "./HistorialPredicciones";
+
+const COLORES = {
+  1: { fondo: "#c9a227", borde: "#8a6e00", num: "#3d2e00" },
+  2: { fondo: "#8e9196", borde: "#5a5d61", num: "#1a1a1a" },
+  3: { fondo: "#9c6b2e", borde: "#6b4410", num: "#2a1a00" },
+};
+const ETIQUETAS = { 1: "🥇 1°", 2: "🥈 2°", 3: "🥉 3°" };
+
+// ── Avatar animado ────────────────────────────────────────────
+function AvatarAnimado({ avatarId, size = 64 }) {
+  const [frame, setFrame] = useState(1);
+  const av = AVATARES.find(a => a.id === avatarId);
+  useEffect(() => {
+    const iv = setInterval(() => setFrame(f => f === 3 ? 1 : f + 1), 200);
+    return () => clearInterval(iv);
+  }, []);
+  if (!av) return <div style={{ width:size,height:size,background:"#333",display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.5 }}>?</div>;
+  return (
+    <img src={avatarFrame(av.slug, frame)} alt={av.nombre}
+      style={{ width:size,height:size,imageRendering:"pixelated",objectFit:"cover",
+        border:"3px solid var(--negro)",boxShadow:"2px 2px 0 var(--negro)" }}
+      onError={e => { e.target.style.display="none"; }}
+    />
+  );
+}
+
+// ── Columna de lugar con carrusel ─────────────────────────────
+function ColumnaLugar({ lugar, jugadores, onClickJugador }) {
+  const [idx, setIdx] = useState(0);
+  const startXRef = useRef(null);
+  const col = COLORES[lugar];
+
+  // Carrusel automático cada 2s
+  useEffect(() => {
+    if (jugadores.length <= 1) return;
+    const iv = setInterval(() => setIdx(i => (i + 1) % jugadores.length), 2000);
+    return () => clearInterval(iv);
+  }, [jugadores.length]);
+
+  const handleSwipeStart = e => { startXRef.current = e.touches?.[0]?.clientX ?? e.clientX; };
+  const handleSwipeEnd = e => {
+    if (startXRef.current === null) return;
+    const endX = e.changedTouches?.[0]?.clientX ?? e.clientX;
+    const diff = startXRef.current - endX;
+    if (Math.abs(diff) > 30) {
+      setIdx(i => diff > 0
+        ? (i + 1) % jugadores.length
+        : (i - 1 + jugadores.length) % jugadores.length
+      );
+    }
+    startXRef.current = null;
+  };
+
+  const j = jugadores[idx];
+
+  return (
+    <div style={{
+      flex: 1, display:"flex", flexDirection:"column", alignItems:"center", gap:"6px",
+      padding: "10px 6px",
+      background: `${col.fondo}22`,
+      border: `3px solid ${col.borde}`,
+      boxShadow: `3px 3px 0 ${col.borde}`,
+      position:"relative",
+    }}
+      onTouchStart={handleSwipeStart} onTouchEnd={handleSwipeEnd}
+      onMouseDown={handleSwipeStart} onMouseUp={handleSwipeEnd}
+    >
+      {/* Número grande */}
+      <div style={{
+        fontFamily:"'Press Start 2P',monospace",
+        fontSize:"28px", fontWeight:"bold",
+        color: col.num,
+        background: col.fondo,
+        border: `3px solid ${col.borde}`,
+        width:"48px", height:"48px",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        boxShadow: `3px 3px 0 ${col.borde}`,
+        flexShrink: 0,
+      }}>
+        {lugar}
+      </div>
+
+      {/* Avatar clicable */}
+      <div
+        style={{ cursor:"pointer", position:"relative" }}
+        onClick={() => onClickJugador(j)}
+      >
+        <AvatarAnimado avatarId={j.avatarId} size={60} />
+        {jugadores.length > 1 && (
+          <div style={{
+            position:"absolute", bottom:"-2px", right:"-2px",
+            background:"var(--negro)", border:`1px solid ${col.borde}`,
+            fontSize:"5px", fontFamily:"'Press Start 2P',monospace",
+            color:col.fondo, padding:"1px 3px", lineHeight:1.5,
+          }}>
+            {idx+1}/{jugadores.length}
+          </div>
+        )}
+      </div>
+
+      {/* Nombre */}
+      <p style={{
+        fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+        color:"var(--blanco)", textAlign:"center",
+        maxWidth:"80px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+      }}>
+        {j.nickname}
+      </p>
+
+      {/* Puntos */}
+      <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px", color:"var(--verde-claro)" }}>
+        {j.puntos}pts
+      </p>
+
+      {/* Indicador de múltiples jugadores */}
+      {jugadores.length > 1 && (
+        <div style={{ display:"flex", gap:"3px" }}>
+          {jugadores.map((_,i) => (
+            <div key={i} style={{
+              width:"5px", height:"5px",
+              background: i === idx ? col.fondo : "var(--gris)",
+              border:`1px solid ${col.borde}`,
+            }} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Confeti ───────────────────────────────────────────────────
+function Confeti() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx   = canvas.getContext("2d");
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const colors = ["#ff0000","#00ff00","#0000ff","#ffff00","#ff00ff","#00ffff"];
+    const parts  = Array.from({length:120}, () => ({
+      x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
+      size: Math.random()*6+2, speedY: Math.random()*3+2,
+      speedX: (Math.random()-0.5)*2, color: colors[Math.floor(Math.random()*colors.length)],
+      rot: Math.random()*360, rotS: (Math.random()-0.5)*10,
+    }));
+    const start = performance.now(); let animId;
+    const draw = now => {
+      if (now - start >= 3000) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for (const p of parts) {
+        p.y += p.speedY; p.x += p.speedX; p.rot += p.rotS;
+        if (p.y > canvas.height) p.y = 0;
+        if (p.x > canvas.width) p.x = 0; if (p.x < 0) p.x = canvas.width;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+        ctx.fillStyle = p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+        ctx.restore();
+      }
+      animId = requestAnimationFrame(draw);
+    };
+    animId = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+  return <canvas ref={canvasRef} style={{ position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:200 }} />;
+}
+
+// ── Modal perfil + historial ──────────────────────────────────
+function ModalPerfilConHistorial({ jugador, onCerrar }) {
+  const [tab, setTab]       = useState("historial");
+  const [frame, setFrame]   = useState(1);
+  const [userData, setUserData] = useState(null); // datos adicionales de Firestore
+
+  const av = jugador?.avatarId ? AVATARES.find(a => a.id === jugador.avatarId) : null;
+
+  useEffect(() => {
+    const iv = setInterval(() => setFrame(f => f===3?1:f+1), 200);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Fix 1: cargar datos completos del usuario desde Firestore
+  useEffect(() => {
+    if (!jugador?.uid) return;
+    const cargar = async () => {
+      try {
+        const { getDoc, doc } = await import("firebase/firestore");
+        const { db } = await import("../firebase");
+        const snap = await getDoc(doc(db, "usuarios", jugador.uid));
+        if (snap.exists()) setUserData(snap.data());
+      } catch(_) {}
+    };
+    cargar();
+  }, [jugador?.uid]);
+
+  if (!jugador) return null;
+
+  // Merge: puntosDelDia data + Firestore user data
+  const displayNickname  = userData?.nickname  || jugador.nickname  || "—";
+  const displayNombreReal= userData?.nombreReal || "";
+  const displayPuntos    = jugador.puntos ?? userData?.puntosTotal ?? 0;
+  const displayCartas    = userData?.cartas || jugador.cartas || {};
+
+  return (
+    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:600,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",overflowY:"auto" }}
+      onClick={onCerrar}>
+      <div style={{ background:"var(--negro)",border:"4px solid var(--verde-claro)",
+        boxShadow:"6px 6px 0 var(--verde-oscuro)",maxWidth:"400px",width:"100%",
+        maxHeight:"90vh",overflowY:"auto",display:"flex",flexDirection:"column" }}
+        onClick={e => e.stopPropagation()}>
+
+        <div style={{ padding:"16px",display:"flex",flexDirection:"column",alignItems:"center",gap:"8px" }}>
+          {av
+            ? <img src={avatarFrame(av.slug,frame)} alt={av.nombre}
+                style={{ width:64,height:64,imageRendering:"pixelated",objectFit:"cover",
+                  border:"3px solid var(--negro)",boxShadow:"2px 2px 0 var(--negro)" }}
+                onError={e => { e.target.style.display="none"; }} />
+            : <div style={{ width:64,height:64,background:"#333",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32 }}>?</div>
+          }
+          <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{displayNickname}</p>
+          {displayNombreReal && (
+            <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>👤 {displayNombreReal}</p>
+          )}
+          <span className="puntos-badge" style={{ fontSize:"11px" }}>{displayPuntos} pts</span>
+        </div>
+
+        <div style={{ display:"flex",borderTop:"2px solid var(--verde-campo)",borderBottom:"2px solid var(--verde-campo)" }}>
+          {[{id:"historial",label:"🔮 PRONÓSTICOS"},{id:"perfil",label:"👤 INFO"}].map(t => (
+            <button key={t.id}
+              style={{ flex:1,fontFamily:"'Press Start 2P',monospace",fontSize:"5px",padding:"7px",
+                background:tab===t.id?"var(--verde-campo)":"var(--negro)",
+                color:tab===t.id?"var(--negro)":"var(--gris-claro)",
+                border:"none",cursor:"pointer" }}
+              onClick={() => setTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+
+        <div style={{ flex:1,overflowY:"auto" }}>
+          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} puntosTotal={jugador.puntosTotal} />}
+          {tab === "perfil" && (
+            <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
+              <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntos ?? jugador.puntosTotal ?? 0}</span></p>
+              {Object.keys(displayCartas).length > 0 && (
+                <p>🃏 Cartas: <span style={{ color:"var(--amarillo)" }}>
+                  {Object.values(displayCartas).reduce((s,v)=>s+v,0)}
+                </span></p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding:"10px",borderTop:"2px solid var(--verde-campo)" }}>
+          <button className="btn-pixel btn-gris w-full" style={{ fontSize:"7px" }} onClick={onCerrar}>CERRAR ✕</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+export default function PodioF1({ datos }) {
+  const [perfilAbierto, setPerfilAbierto] = useState(null);
+  const [mostrarConfeti, setMostrarConfeti] = useState(false);
+
+  useEffect(() => {
+    if (datos && datos.length > 0) setMostrarConfeti(true);
+  }, [datos]);
+
+  if (!datos || datos.length === 0) {
+    return (
+      <div className="caja-pixel text-center mb-16">
+        <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>
+          Sin podio todavía. ¡Juega hoy para aparecer mañana!
+        </p>
+      </div>
+    );
+  }
+
+  // Construir lugares
+  const pts1 = datos[0].puntos;
+  const l1   = datos.filter(j => j.puntos === pts1);
+  const r1   = datos.filter(j => j.puntos < pts1);
+  const pts2 = r1[0]?.puntos;
+  const l2   = pts2 !== undefined ? r1.filter(j => j.puntos === pts2) : [];
+  const r2   = r1.filter(j => j.puntos < (pts2 ?? -Infinity));
+  const pts3 = r2[0]?.puntos;
+  const l3   = pts3 !== undefined ? r2.filter(j => j.puntos === pts3) : [];
+
+  // Fecha del podio (fecha de los datos)
+  const fechaPodio = datos[0]?.fecha;
+  let labelPodio = "";
+  if (fechaPodio) {
+    const [y,m,d] = fechaPodio.split("-").map(Number);
+    const meses = ["enero","febrero","marzo","abril","mayo","junio",
+                   "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    labelPodio = `${d} de ${meses[m-1]} de ${y}`;
+  }
+
+  return (
+    <>
+      {mostrarConfeti && <Confeti />}
+      {perfilAbierto && (
+        <ModalPerfilConHistorial jugador={perfilAbierto} onCerrar={() => setPerfilAbierto(null)} />
+      )}
+
+      <div className="caja-pixel mb-16" style={{ padding:"12px 8px" }}>
+        {labelPodio && (
+          <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"center",marginBottom:"10px" }}>
+            Podio del {labelPodio}
+          </p>
+        )}
+
+        {/* Columnas del podio: 1°, 2°, 3° */}
+        <div style={{ display:"flex",gap:"6px",alignItems:"stretch" }}>
+          {l2.length > 0
+            ? <ColumnaLugar lugar={2} jugadores={l2} onClickJugador={setPerfilAbierto} />
+            : <div style={{ flex:1, border:"2px dashed var(--gris)",display:"flex",alignItems:"center",justifyContent:"center" }}>
+                <p style={{ fontSize:"5px",color:"var(--gris)" }}>—</p>
+              </div>
+          }
+          <ColumnaLugar lugar={1} jugadores={l1} onClickJugador={setPerfilAbierto} />
+          {l3.length > 0
+            ? <ColumnaLugar lugar={3} jugadores={l3} onClickJugador={setPerfilAbierto} />
+            : <div style={{ flex:1, border:"2px dashed var(--gris)",display:"flex",alignItems:"center",justifyContent:"center" }}>
+                <p style={{ fontSize:"5px",color:"var(--gris)" }}>—</p>
+              </div>
+          }
+        </div>
+
+        <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"center",marginTop:"8px" }}>
+          Toca un avatar para ver el perfil y pronósticos
+        </p>
+      </div>
+    </>
+  );
+}
+</file>
+
 <file path="src/components/PreguntaCard.jsx">
 // src/components/PreguntaCard.jsx  — v2 (Bugfix 3)
 // ─────────────────────────────────────────────────────────────
@@ -3828,6 +4180,345 @@ export default function PreguntaCard({ pregunta }) {
             </div>
           )}
         </>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/Ranking.jsx">
+// src/components/Ranking.jsx  — v8 (Números de fondo en podio, corregido)
+// ─────────────────────────────────────────────────────────────
+// CAMBIOS v8:
+//   • Número de fondo gigante (1,2,3) en primera celda para los primeros puestos,
+//     solo en la primera fila de cada grupo de empate.
+//   • Corregida estructura de tabla (celdas duplicadas, sintaxis).
+//   • Variable isTop para resaltar los tres primeros puestos.
+//   • Botón VOLVER corregido.
+//   • Fecha de última actualización mostrada correctamente.
+// ─────────────────────────────────────────────────────────────
+import React, { useEffect, useState, useMemo } from "react";
+import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { ayerStr } from "../utils/helpers";
+import { AVATARES, CARTAS } from "../data/sampleData";
+import HistorialPredicciones from "./HistorialPredicciones";
+
+// ── Colores de fondo por posición ────────────────────────────
+const FONDO_POS = {
+  1: { bg: "#FFD966", borde: "#D4A017", texto: "#000000" },   // amarillo sólido, texto negro
+  2: { bg: "#D3D3D3", borde: "#A9A9A9", texto: "#000000" },   // gris plata, texto negro
+  3: { bg: "#CD7F32", borde: "#8B5A2B", texto: "#000000" },   // bronce sólido, texto negro
+};
+
+function AvatarSmall({ avatarId, avatarSlug }) {
+  const src = avatarSlug
+    ? `/avatares/${avatarSlug}-1.png`
+    : `/avatares/${(AVATARES.find(a => a.id === avatarId)?.slug || "default")}-1.png`;
+  return (
+    <img src={src} alt=""
+      style={{ width:22, height:22, imageRendering:"pixelated", flexShrink:0 }}
+      onError={e => (e.target.style.display = "none")}
+    />
+  );
+}
+
+// ── Modal perfil + historial ──────────────────────────────────
+function ModalPerfilConHistorial({ jugador, onCerrar }) {
+  const [tab, setTab] = useState("historial");
+  if (!jugador) return null;
+  const cartasMap     = jugador.cartas || {};
+  const cartasDesbloq = CARTAS.filter(c => (cartasMap[c.id] || 0) > 0);
+
+  return (
+    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:600,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      padding:"20px",overflowY:"auto" }} onClick={onCerrar}>
+      <div style={{ background:"var(--negro)",border:"4px solid var(--verde-claro)",
+        boxShadow:"6px 6px 0 var(--verde-oscuro)",maxWidth:"400px",width:"100%",
+        maxHeight:"90vh",overflowY:"auto",display:"flex",flexDirection:"column" }}
+        onClick={e => e.stopPropagation()}>
+
+        <div style={{ padding:"16px",display:"flex",flexDirection:"column",alignItems:"center",gap:"8px" }}>
+          <img
+            src={`/avatares/${jugador.avatarSlug || "default"}-1.png`}
+            alt={jugador.nickname}
+            style={{ width:60,height:60,imageRendering:"pixelated",border:"3px solid var(--negro)" }}
+            onError={e => (e.target.style.display="none")}
+          />
+          <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{jugador.nickname}</p>
+          {jugador.nombreReal && (
+            <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>👤 {jugador.nombreReal}</p>
+          )}
+          <span className="puntos-badge" style={{ fontSize:"11px" }}>{jugador.puntosTotal ?? 0} pts</span>
+        </div>
+
+        <div style={{ display:"flex",borderTop:"2px solid var(--verde-campo)",borderBottom:"2px solid var(--verde-campo)" }}>
+          {[{id:"historial",label:"🔮 PRONÓSTICOS"},{id:"perfil",label:"👤 INFO"}].map(t => (
+            <button key={t.id}
+              style={{ flex:1,fontFamily:"'Press Start 2P',monospace",fontSize:"5px",padding:"7px",
+                background:tab===t.id?"var(--verde-campo)":"var(--negro)",
+                color:tab===t.id?"var(--negro)":"var(--gris-claro)",
+                border:"none",cursor:"pointer" }}
+              onClick={() => setTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+
+        <div style={{ flex:1,overflowY:"auto" }}>
+          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} puntosTotal={jugador.puntosTotal} />}
+          {tab === "perfil" && (
+            <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
+              <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntosTotal ?? 0}</span></p>
+              <p>🃏 Cartas: <span style={{ color:"var(--amarillo)" }}>{cartasDesbloq.length}</span></p>
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding:"10px",borderTop:"2px solid var(--verde-campo)" }}>
+          <button className="btn-pixel btn-gris w-full" style={{ fontSize:"7px" }} onClick={onCerrar}>
+            CERRAR ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────
+export default function Ranking({ onVolver }) {
+  const { firebaseUser } = useAuth();
+  const [usuarios,    setUsuarios]    = useState([]);
+  const [rankingAyer, setRankingAyer] = useState({});
+  const [cargando,    setCargando]    = useState(true);
+  const [jugadorSel,  setJugadorSel]  = useState(null);
+  const [fechaActualizacion, setFechaActualizacion] = useState(null);
+
+  useEffect(() => { cargar(); }, []);
+
+  useEffect(() => {
+    const cargarFecha = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "ultimaActualizacion"));
+        if (snap.exists()) {
+          setFechaActualizacion(snap.data().fecha);
+        }
+      } catch (e) {
+        console.error("Error cargando fecha de actualización", e);
+      }
+    };
+    cargarFecha();
+  }, []);
+
+  const cargar = async () => {
+    setCargando(true);
+    try {
+      const snapU = await getDocs(query(collection(db,"usuarios"), orderBy("puntosTotal","desc")));
+      setUsuarios(snapU.docs.map(d => ({ id:d.id, ...d.data() })));
+
+      const ayer = ayerStr();
+      const snapAyer = await getDocs(query(collection(db,"puntosDelDia"), where("fecha","==",ayer)));
+      if (!snapAyer.empty) {
+        const ayerOrd = snapAyer.docs.map(d => d.data()).sort((a,b) => b.puntos - a.puntos);
+        const mapa = {}; let pos = 1;
+        for (let i = 0; i < ayerOrd.length; i++) {
+          if (i > 0 && ayerOrd[i].puntos < ayerOrd[i-1].puntos) pos = i + 1;
+          mapa[ayerOrd[i].uid] = pos;
+        }
+        setRankingAyer(mapa);
+      }
+    } catch(e) { console.error(e); }
+    finally { setCargando(false); }
+  };
+
+  // ── Dense rank con tracking del primer del grupo ──────────
+  // Memorizado: solo se recalcula cuando cambia la lista de usuarios.
+  const filasMeta = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < usuarios.length; i++) {
+      const u = usuarios[i];
+      const esPrimero = (i === 0) || (u.puntosTotal < usuarios[i-1].puntosTotal);
+      let posicion = i + 1;
+      if (i > 0 && u.puntosTotal === usuarios[i-1].puntosTotal) {
+        posicion = result[i-1].posicion;
+      } else {
+        posicion = i + 1;
+      }
+      result.push({ posicion, esPrimero });
+    }
+    return result;
+  }, [usuarios]);
+
+  const medallas = ["🥇","🥈","🥉"];
+
+  return (
+    <div style={{ padding:"16px 16px 80px" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
+        {onVolver && (
+          <button
+            className="btn-pixel btn-gris"
+            onClick={onVolver}
+            style={{ padding:"8px 12px", fontSize:"8px" }}
+          >
+            ← VOLVER
+          </button>
+        )}
+        <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
+      </div>
+      {fechaActualizacion && (
+        <p style={{
+          fontSize: "6px",
+          color: "var(--gris-claro)",
+          textAlign: "center",
+          marginTop: "4px",
+          marginBottom: "12px",
+          lineHeight: 1.5
+        }}>
+          🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
+        </p>
+      )}
+
+      {Object.keys(rankingAyer).length > 0 && (
+        <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"10px",lineHeight:2 }}>
+          ▲▼ junto a los puntos = cambio respecto al ranking de ayer
+        </p>
+      )}
+
+      {cargando ? (
+        <div className="text-center" style={{ padding:"40px",fontSize:"8px",color:"var(--verde-claro)" }}>
+          <span className="spinner">⚙</span><br/><br/>CARGANDO...
+        </div>
+      ) : (
+        <div className="caja-pixel" style={{ padding:0, overflow:"hidden" }}>
+          <table className="ranking-tabla" style={{ borderCollapse:"collapse", width:"100%" }}>
+            <thead>
+              <tr>
+                <th style={{ width:"28px", textAlign:"center" }}>#</th>
+                <th>JUGADOR</th>
+                <th style={{ textAlign:"right", paddingRight:"10px" }}>PUNTOS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuarios.map((u, i) => {
+                const { posicion, esPrimero } = filasMeta[i];
+                const estilo = FONDO_POS[posicion];
+                const posAyer   = rankingAyer[u.uid];
+                const diff = posAyer ? posAyer - posicion : 0;
+                const isTop = i < 3; // primeras tres filas (resalte visual)
+
+                return (
+                  <tr
+                    key={u.id}
+                    onClick={() => setJugadorSel(u)}
+                    style={{
+                      cursor: "pointer",
+                      background: estilo?.bg || (i % 2 === 0 ? "rgba(255,255,255,0.03)" : "transparent"),
+                      borderLeft: estilo ? `3px solid ${estilo.borde}` : "3px solid transparent",
+                      borderBottom: "1px solid rgba(82,183,136,0.15)",
+                    }}
+                  >
+                    {/* Columna # con número de fondo gigante */}
+                    <td
+                      style={{
+                        position: 'relative',
+                        textAlign: "center",
+                        padding: isTop ? "12px 4px" : "8px 4px",
+                        width: "28px",
+                        fontFamily: "'Press Start 2P', monospace",
+                        fontSize: isTop ? "10px" : "7px",
+                        color: estilo?.texto || "var(--gris-claro)"
+                      }}
+                    >
+                      {/* Número de fondo (solo para puestos 1,2,3 y primera fila del grupo) */}
+                      {posicion <= 3 && esPrimero && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '48px',
+                          fontWeight: 'bold',
+                          color: estilo?.texto === "#000000" ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.2)",
+                          pointerEvents: 'none',
+                          zIndex: 0,
+                          fontFamily: "'Press Start 2P', monospace",
+                        }}>
+                          {posicion}
+                        </div>
+                      )}
+                      <span style={{ position: 'relative', zIndex: 1 }}>
+                        {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
+                      </span>
+                    </td>
+
+                    {/* Columna jugador */}
+                    <td style={{ padding: isTop ? "12px 6px" : "8px 6px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap: isTop ? "10px" : "6px" }}>
+                        <AvatarSmall avatarId={u.avatarId} avatarSlug={u.avatarSlug} />
+                        <div style={{ fontSize: isTop ? "9px" : "7px", color:"var(--blanco)", lineHeight:1.6 }}>
+                          {u.nickname}
+                          {u.uid === firebaseUser?.uid && (
+                            <span style={{
+                              marginLeft:"6px",
+                              fontSize:"5px",
+                              background:"var(--verde-claro)",
+                              color:"var(--negro)",
+                              padding:"1px 4px",
+                              border:"1px solid var(--negro)"
+                            }}>TÚ</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Columna puntos + flecha */}
+                    <td style={{ textAlign:"right", padding: isTop ? "12px 10px" : "8px 10px" }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"6px" }}>
+                        {diff !== 0 && (
+                          <span style={{
+                            fontFamily:"'Press Start 2P',monospace",
+                            fontSize: isTop ? "10px" : "8px",
+                            color: diff > 0 ? "#4ade80" : "var(--rojo-chile)",
+                          }}>
+                            {diff > 0 ? `▲${diff}` : `▼${Math.abs(diff)}`}
+                          </span>
+                        )}
+                        <span style={{
+                          fontFamily:"'Press Start 2P',monospace",
+                          fontSize: isTop ? "12px" : "9px",
+                          display:"inline-block",
+                          background: "var(--negro)",
+                          color: "#f4d03f",
+                          border: "2px solid var(--amarillo)",
+                          padding: "2px 8px",
+                          boxShadow: "2px 2px 0 rgba(0,0,0,0.4)",
+                          minWidth: "32px",
+                          textAlign: "center",
+                        }}>
+                          {u.puntosTotal ?? 0}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {usuarios.length === 0 && (
+                <tr>
+                  <td colSpan={3} style={{ textAlign:"center",padding:"20px",
+                    fontSize:"7px",color:"var(--gris-claro)" }}>Aún no hay jugadores</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {jugadorSel && (
+        <ModalPerfilConHistorial jugador={jugadorSel} onCerrar={() => setJugadorSel(null)} />
       )}
     </div>
   );
@@ -7208,1548 +7899,6 @@ export default function AdminSemifinal({ onMensaje }) {
 }
 </file>
 
-<file path="src/components/OnboardingModal.jsx">
-// src/components/OnboardingModal.jsx  — v7 (Patch 4)
-// ─────────────────────────────────────────────────────────────
-// TUTORIAL ACTUALIZADO:
-//   Paso 0: Bienvenida
-//   Paso 1: Cómo predecir (fase eliminatoria / muere-muere)
-//   Paso 2: Sistema de puntos muere-muere (ya no hay grupos)
-//   Paso 3: Podio y ranking diario
-//   Paso 4: Cartas multiplicadoras
-//   Paso 5: Láminas coleccionables
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-
-const LOCAL_KEY = "cp8b_onboarding_visto_v7";
-
-function FilaPts({ pts, desc, color = "var(--amarillo)" }) {
-  return (
-    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-      padding:"5px 8px", border:"1px solid var(--verde-campo)",
-      fontSize:"6px", background:"rgba(0,0,0,0.3)" }}>
-      <span style={{ color:"var(--gris-claro)", lineHeight:1.8, flex:1 }}>{desc}</span>
-      <span style={{ color, fontWeight:"bold", marginLeft:"8px",
-        background:`rgba(${color==="var(--amarillo)"?"244,208,63":"82,183,136"},0.1)`,
-        padding:"1px 6px", border:`1px solid ${color}`, whiteSpace:"nowrap" }}>{pts}</span>
-    </div>
-  );
-}
-
-export default function OnboardingModal({ isOpen, onClose }) {
-  const { firebaseUser, userProfile, refreshProfile } = useAuth();
-  const [visible, setVisible] = useState(false);
-  const [paso,    setPaso]    = useState(0);
-
-  const esControlado  = isOpen !== undefined;
-  const mostrarModal  = esControlado ? isOpen : visible;
-
-  useEffect(() => {
-    if (esControlado) { if (isOpen) setPaso(0); return; }
-    const yaVioLocal     = localStorage.getItem(LOCAL_KEY);
-    const yaVioFirestore = userProfile?.onboardingVisto;
-    if (!yaVioLocal && !yaVioFirestore) {
-      const t = setTimeout(() => { setPaso(0); setVisible(true); }, 600);
-      return () => clearTimeout(t);
-    }
-  }, [userProfile, isOpen, esControlado]);
-
-  const handleCerrar = async () => {
-    if (esControlado) { if (onClose) onClose(); return; }
-    setVisible(false);
-    localStorage.setItem(LOCAL_KEY, "1");
-    if (firebaseUser) {
-      try {
-        await updateDoc(doc(db,"usuarios",firebaseUser.uid), { onboardingVisto:true });
-      } catch(_) {}
-    }
-  };
-
-  if (!mostrarModal) return null;
-
-  const pasos = [
-    // ── 0. Bienvenida ─────────────────────────────────────
-    {
-      icono: "⚽",
-      titulo: "¡BIENVENIDO!",
-      color: "var(--verde-claro)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2 }}>
-            <span style={{ color:"var(--amarillo)" }}>International Superstar Polla</span> es
-            una competencia de pronósticos del{" "}
-            <span style={{ color:"var(--verde-claro)" }}>Mundial 2026</span>.
-            Pronostica partidos, acumula puntos y sube al ranking.
-          </p>
-          <div style={{ marginTop:"12px", padding:"10px",
-            border:"2px solid var(--verde-campo)", background:"rgba(82,183,136,0.08)" }}>
-            <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>🗂 PESTAÑAS:</p>
-            <div style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2.2 }}>
-              <p>🏠 <span style={{ color:"var(--blanco)" }}>INICIO</span> — Podio, mensajes y tabla de puntos</p>
-              <p>⚽ <span style={{ color:"var(--blanco)" }}>PARTIDOS</span> — Pronósticos del día y pregunta</p>
-              <p>📊 <span style={{ color:"var(--blanco)" }}>RANKING</span> — Tabla completa de posiciones</p>
-              <p>🖼️ <span style={{ color:"var(--blanco)" }}>LÁMINAS</span> — Colección y sobre diario</p>
-              <p>👤 <span style={{ color:"var(--blanco)" }}>PERFIL</span> — Cartas y estadísticas</p>
-            </div>
-          </div>
-        </>
-      ),
-    },
-
-    // ── 1. Cómo predecir ──────────────────────────────────
-    {
-      icono: "💀",
-      titulo: "CÓMO PREDECIR",
-      color: "var(--rojo-chile)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2, marginBottom:"10px" }}>
-            Estamos en <span style={{ color:"var(--rojo-chile)" }}>fase eliminatoria</span>.
-            Cada partido puede decidirse en 90 minutos, alargue o penales.
-            Elige cómo crees que se define cada partido.
-          </p>
-          <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
-            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
-              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>⚽ 90 MIN</p>
-              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-                Predice quién gana y por cuánto (1 gol o 2+).
-              </p>
-            </div>
-            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
-              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>⏱ ALARGUE</p>
-              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-                Si empatan en 90 min y va a alargue. Predice quién gana en el alargue y diferencia.
-              </p>
-            </div>
-            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
-              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>🎯 PENALES</p>
-              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-                Si empatan en alargue y va a penales. Predice quién gana y la diferencia exacta de la tanda.
-              </p>
-            </div>
-          </div>
-          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
-            ⚠ Tienes hasta el inicio del partido para guardar tu pronóstico.
-          </p>
-        </>
-      ),
-    },
-
-    // ── 2. Sistema de puntos ──────────────────────────────
-    {
-      icono: "🔢",
-      titulo: "SISTEMA DE PUNTOS FASE MUERE MUERE",
-      color: "var(--rojo-chile)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2, marginBottom:"8px", fontSize:"6px" }}>
-            Todos los puntos <span style={{ color:"var(--amarillo)" }}>aumentaron</span> en
-            fase eliminatoria. Cuanto más exacto tu pronóstico, más puntos.
-          </p>
-          <div style={{ display:"flex", flexDirection:"column", gap:"3px" }}>
-            <FilaPts pts="+4/8/16/24"  desc="Ganador en 90 min (sube por fase)" color="var(--rojo-chile)" />
-            <FilaPts pts="+6/12/24/36" desc="Ganador + diferencia 90 min" color="var(--rojo-chile)" />
-            <FilaPts pts="+6/12/24/36" desc="Acertar que va a Alargue" color="var(--rojo-chile)" />
-            <FilaPts pts="+12/24/48/72" desc="Alargue + diferencia exacta" color="var(--rojo-chile)" />
-            <FilaPts pts="+6/12/24/36" desc="Acertar que va a Penales" color="var(--rojo-chile)" />
-            <FilaPts pts="+10/20/40/60" desc="Penales + quién gana la tanda" color="var(--rojo-chile)" />
-            <FilaPts pts="+14/28/56/84" desc="Penales + diferencia exacta" color="var(--rojo-chile)" />
-            <FilaPts pts="+2"  desc="Pregunta del día correcta" />
-            <FilaPts pts="+2"  desc="Ganador del día (bonus diario)" color="var(--verde-claro)" />
-          </div>
-        </>
-      ),
-    },
-
-    // ── 3. Podio y ranking ────────────────────────────────
-    {
-      icono: "🏆",
-      titulo: "PODIO Y RANKING",
-      color: "var(--amarillo)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2 }}>
-            Cada día hay un <span style={{ color:"var(--amarillo)" }}>ganador del día</span>:
-            quien acumule más puntos en esa jornada recibe{" "}
-            <span style={{ color:"var(--verde-claro)" }}>+2 pts bonus</span> y una{" "}
-            <span style={{ color:"var(--amarillo)" }}>carta ×4</span>.
-          </p>
-          <div style={{ marginTop:"10px", padding:"10px",
-            border:"2px solid var(--amarillo)", background:"rgba(244,208,63,0.06)",
-            display:"flex", flexDirection:"column", gap:"6px" }}>
-            <p style={{ fontSize:"6px", color:"var(--amarillo)", lineHeight:2 }}>
-              🥇 1° del día → carta <strong>×4</strong> + <strong>+2 pts</strong>
-            </p>
-            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
-              🥈 2° del día → carta <strong>×3</strong>
-            </p>
-            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
-              🥉 3° del día → carta <strong>×2</strong>
-            </p>
-          </div>
-          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
-            En el RANKING puedes ver las flechas ▲▼ que indican cuántos puestos
-            subiste o bajaste respecto al día anterior.
-          </p>
-        </>
-      ),
-    },
-
-    // ── 4. Cartas multiplicadoras ─────────────────────────
-    {
-      icono: "🃏",
-      titulo: "CARTAS MULTIPLICADORAS",
-      color: "var(--verde-claro)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2, marginBottom:"10px" }}>
-            Las cartas <span style={{ color:"var(--amarillo)" }}>multiplican tus puntos</span> en
-            un partido. Úsalas estratégicamente en los partidos donde más confías.
-          </p>
-          <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"10px" }}>
-            {[
-              { mult:"×2", desc:"Duplica los puntos del partido", color:"#4ade80" },
-              { mult:"×3", desc:"Triplica los puntos del partido", color:"var(--amarillo)" },
-              { mult:"×4", desc:"Cuadruplica los puntos del partido", color:"var(--rojo-chile)" },
-            ].map((c,i) => (
-              <div key={i} style={{ display:"flex", justifyContent:"space-between",
-                alignItems:"center", padding:"6px 8px",
-                border:`1px solid ${c.color}`, background:"rgba(0,0,0,0.3)" }}>
-                <span style={{ fontSize:"6px", color:"var(--gris-claro)" }}>{c.desc}</span>
-                <span style={{ fontSize:"12px", fontWeight:"bold", color:c.color }}>{c.mult}</span>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-            💡 La carta se consume al procesar el resultado, aunque no hayas acertado.
-          </p>
-        </>
-      ),
-    },
-
-    // ── 5. Láminas ────────────────────────────────────────
-    {
-      icono: "🖼️",
-      titulo: "LÁMINAS COLECCIONABLES",
-      color: "var(--amarillo)",
-      contenido: (
-        <>
-          <p style={{ lineHeight:2.2 }}>
-            Cada día recibes un{" "}
-            <span style={{ color:"var(--amarillo)" }}>sobre de láminas</span> en la
-            pestaña 🖼️ LÁMINAS. Ábrelo y da vuelta cada lámina para revelarla.
-          </p>
-          <div style={{ marginTop:"10px", display:"flex", flexDirection:"column", gap:"8px" }}>
-            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
-              📦 <strong style={{ color:"var(--blanco)" }}>SOBRE DIARIO:</strong>{" "}
-              4 láminas por día. Mejor ranking → mejores cartas extra.
-            </p>
-            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
-              📚 <strong style={{ color:"var(--blanco)" }}>COLECCIÓN:</strong>{" "}
-              Las láminas se organizan por categoría. Completa una categoría entera
-              y reclama <span style={{ color:"var(--amarillo)" }}>2 cartas multiplicadoras</span> de regalo.
-            </p>
-          </div>
-        </>
-      ),
-    },
-  ];
-
-  const esUltimo   = paso === pasos.length - 1;
-  const pasActual  = pasos[paso];
-
-  return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)",
-      zIndex:900, display:"flex", alignItems:"center", justifyContent:"center",
-      padding:"20px", overflowY:"auto" }}>
-      <div style={{ background:"var(--negro)", border:`4px solid ${pasActual.color}`,
-        boxShadow:`6px 6px 0 ${pasActual.color}44`,
-        padding:"24px 20px 20px", maxWidth:"400px", width:"100%",
-        display:"flex", flexDirection:"column", gap:"16px",
-        maxHeight:"88vh", overflowY:"auto" }}>
-
-        {/* Puntos de progreso */}
-        <div style={{ display:"flex", justifyContent:"center", gap:"6px" }}>
-          {pasos.map((_,i) => (
-            <div key={i} style={{
-              width: i===paso ? "16px" : "8px", height:"8px",
-              background: i<=paso ? pasActual.color : "var(--gris)",
-              border:`1px solid ${i<=paso?pasActual.color:"var(--gris)"}`,
-              transition:"width 0.2s",
-            }} />
-          ))}
-        </div>
-
-        {/* Icono + título */}
-        <div style={{ textAlign:"center" }}>
-          <span style={{ fontSize:"32px" }}>{pasActual.icono}</span>
-          <h2 style={{ color:pasActual.color, marginTop:"8px", fontSize:"10px" }}>
-            {pasActual.titulo}
-          </h2>
-        </div>
-
-        {/* Contenido */}
-        <div style={{ fontSize:"7px", color:"var(--blanco)", lineHeight:2, flex:1 }}>
-          {pasActual.contenido}
-        </div>
-
-        {/* Navegación */}
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {!esUltimo ? (
-            <button className="btn-pixel btn-amarillo w-full" style={{ fontSize:"8px" }}
-              onClick={() => setPaso(p=>p+1)}>
-              SIGUIENTE →
-            </button>
-          ) : (
-            <button className="btn-pixel btn-amarillo w-full" style={{ fontSize:"8px" }}
-              onClick={handleCerrar}>
-              {esControlado ? "✕ CERRAR" : "✅ ¡ENTENDIDO! JUGAR"}
-            </button>
-          )}
-          {paso > 0 && (
-            <button onClick={() => setPaso(p=>p-1)}
-              style={{ background:"none", border:"none", color:"var(--gris)",
-                fontSize:"6px", fontFamily:"'Press Start 2P',monospace",
-                cursor:"pointer", textAlign:"center" }}>
-              ← anterior
-            </button>
-          )}
-          {!esUltimo && (
-            <button onClick={handleCerrar}
-              style={{ background:"none", border:"none", color:"var(--gris)",
-                fontSize:"6px", fontFamily:"'Press Start 2P',monospace",
-                cursor:"pointer", textAlign:"center" }}>
-              {esControlado ? "Cerrar ✕" : "Saltar intro →"}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/PodioF1.jsx">
-// src/components/PodioF1.jsx  — v6 (Fase 3)
-// ─────────────────────────────────────────────────────────────
-// REDISEÑO COMPLETO (ítem l):
-//   • Tres columnas horizontales: 1°, 2°, 3° (izq-centro-der)
-//   • Cada columna: número grande, color distintivo (oro/plata/bronce)
-//   • Si hay empate en un lugar → carrusel automático (cada 2s)
-//     + puntos deslizables con swipe
-//   • Fecha del día anterior arriba del podio
-//   • Click en avatar → ModalPerfilConHistorial (igual que Fase 2)
-//   • Confeti al cargar
-// ─────────────────────────────────────────────────────────────
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { AVATARES, avatarFrame, CARTAS } from "../data/sampleData";
-import HistorialPredicciones from "./HistorialPredicciones";
-
-const COLORES = {
-  1: { fondo: "#c9a227", borde: "#8a6e00", num: "#3d2e00" },
-  2: { fondo: "#8e9196", borde: "#5a5d61", num: "#1a1a1a" },
-  3: { fondo: "#9c6b2e", borde: "#6b4410", num: "#2a1a00" },
-};
-const ETIQUETAS = { 1: "🥇 1°", 2: "🥈 2°", 3: "🥉 3°" };
-
-// ── Avatar animado ────────────────────────────────────────────
-function AvatarAnimado({ avatarId, size = 64 }) {
-  const [frame, setFrame] = useState(1);
-  const av = AVATARES.find(a => a.id === avatarId);
-  useEffect(() => {
-    const iv = setInterval(() => setFrame(f => f === 3 ? 1 : f + 1), 200);
-    return () => clearInterval(iv);
-  }, []);
-  if (!av) return <div style={{ width:size,height:size,background:"#333",display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.5 }}>?</div>;
-  return (
-    <img src={avatarFrame(av.slug, frame)} alt={av.nombre}
-      style={{ width:size,height:size,imageRendering:"pixelated",objectFit:"cover",
-        border:"3px solid var(--negro)",boxShadow:"2px 2px 0 var(--negro)" }}
-      onError={e => { e.target.style.display="none"; }}
-    />
-  );
-}
-
-// ── Columna de lugar con carrusel ─────────────────────────────
-function ColumnaLugar({ lugar, jugadores, onClickJugador }) {
-  const [idx, setIdx] = useState(0);
-  const startXRef = useRef(null);
-  const col = COLORES[lugar];
-
-  // Carrusel automático cada 2s
-  useEffect(() => {
-    if (jugadores.length <= 1) return;
-    const iv = setInterval(() => setIdx(i => (i + 1) % jugadores.length), 2000);
-    return () => clearInterval(iv);
-  }, [jugadores.length]);
-
-  const handleSwipeStart = e => { startXRef.current = e.touches?.[0]?.clientX ?? e.clientX; };
-  const handleSwipeEnd = e => {
-    if (startXRef.current === null) return;
-    const endX = e.changedTouches?.[0]?.clientX ?? e.clientX;
-    const diff = startXRef.current - endX;
-    if (Math.abs(diff) > 30) {
-      setIdx(i => diff > 0
-        ? (i + 1) % jugadores.length
-        : (i - 1 + jugadores.length) % jugadores.length
-      );
-    }
-    startXRef.current = null;
-  };
-
-  const j = jugadores[idx];
-
-  return (
-    <div style={{
-      flex: 1, display:"flex", flexDirection:"column", alignItems:"center", gap:"6px",
-      padding: "10px 6px",
-      background: `${col.fondo}22`,
-      border: `3px solid ${col.borde}`,
-      boxShadow: `3px 3px 0 ${col.borde}`,
-      position:"relative",
-    }}
-      onTouchStart={handleSwipeStart} onTouchEnd={handleSwipeEnd}
-      onMouseDown={handleSwipeStart} onMouseUp={handleSwipeEnd}
-    >
-      {/* Número grande */}
-      <div style={{
-        fontFamily:"'Press Start 2P',monospace",
-        fontSize:"28px", fontWeight:"bold",
-        color: col.num,
-        background: col.fondo,
-        border: `3px solid ${col.borde}`,
-        width:"48px", height:"48px",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        boxShadow: `3px 3px 0 ${col.borde}`,
-        flexShrink: 0,
-      }}>
-        {lugar}
-      </div>
-
-      {/* Avatar clicable */}
-      <div
-        style={{ cursor:"pointer", position:"relative" }}
-        onClick={() => onClickJugador(j)}
-      >
-        <AvatarAnimado avatarId={j.avatarId} size={60} />
-        {jugadores.length > 1 && (
-          <div style={{
-            position:"absolute", bottom:"-2px", right:"-2px",
-            background:"var(--negro)", border:`1px solid ${col.borde}`,
-            fontSize:"5px", fontFamily:"'Press Start 2P',monospace",
-            color:col.fondo, padding:"1px 3px", lineHeight:1.5,
-          }}>
-            {idx+1}/{jugadores.length}
-          </div>
-        )}
-      </div>
-
-      {/* Nombre */}
-      <p style={{
-        fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-        color:"var(--blanco)", textAlign:"center",
-        maxWidth:"80px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-      }}>
-        {j.nickname}
-      </p>
-
-      {/* Puntos */}
-      <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px", color:"var(--verde-claro)" }}>
-        {j.puntos}pts
-      </p>
-
-      {/* Indicador de múltiples jugadores */}
-      {jugadores.length > 1 && (
-        <div style={{ display:"flex", gap:"3px" }}>
-          {jugadores.map((_,i) => (
-            <div key={i} style={{
-              width:"5px", height:"5px",
-              background: i === idx ? col.fondo : "var(--gris)",
-              border:`1px solid ${col.borde}`,
-            }} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Confeti ───────────────────────────────────────────────────
-function Confeti() {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx   = canvas.getContext("2d");
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const colors = ["#ff0000","#00ff00","#0000ff","#ffff00","#ff00ff","#00ffff"];
-    const parts  = Array.from({length:120}, () => ({
-      x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
-      size: Math.random()*6+2, speedY: Math.random()*3+2,
-      speedX: (Math.random()-0.5)*2, color: colors[Math.floor(Math.random()*colors.length)],
-      rot: Math.random()*360, rotS: (Math.random()-0.5)*10,
-    }));
-    const start = performance.now(); let animId;
-    const draw = now => {
-      if (now - start >= 3000) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      for (const p of parts) {
-        p.y += p.speedY; p.x += p.speedX; p.rot += p.rotS;
-        if (p.y > canvas.height) p.y = 0;
-        if (p.x > canvas.width) p.x = 0; if (p.x < 0) p.x = canvas.width;
-        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
-        ctx.fillStyle = p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
-        ctx.restore();
-      }
-      animId = requestAnimationFrame(draw);
-    };
-    animId = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(animId);
-  }, []);
-  return <canvas ref={canvasRef} style={{ position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:200 }} />;
-}
-
-// ── Modal perfil + historial ──────────────────────────────────
-function ModalPerfilConHistorial({ jugador, onCerrar }) {
-  const [tab, setTab]       = useState("historial");
-  const [frame, setFrame]   = useState(1);
-  const [userData, setUserData] = useState(null); // datos adicionales de Firestore
-
-  const av = jugador?.avatarId ? AVATARES.find(a => a.id === jugador.avatarId) : null;
-
-  useEffect(() => {
-    const iv = setInterval(() => setFrame(f => f===3?1:f+1), 200);
-    return () => clearInterval(iv);
-  }, []);
-
-  // Fix 1: cargar datos completos del usuario desde Firestore
-  useEffect(() => {
-    if (!jugador?.uid) return;
-    const cargar = async () => {
-      try {
-        const { getDoc, doc } = await import("firebase/firestore");
-        const { db } = await import("../firebase");
-        const snap = await getDoc(doc(db, "usuarios", jugador.uid));
-        if (snap.exists()) setUserData(snap.data());
-      } catch(_) {}
-    };
-    cargar();
-  }, [jugador?.uid]);
-
-  if (!jugador) return null;
-
-  // Merge: puntosDelDia data + Firestore user data
-  const displayNickname  = userData?.nickname  || jugador.nickname  || "—";
-  const displayNombreReal= userData?.nombreReal || "";
-  const displayPuntos    = jugador.puntos ?? userData?.puntosTotal ?? 0;
-  const displayCartas    = userData?.cartas || jugador.cartas || {};
-
-  return (
-    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:600,
-      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",overflowY:"auto" }}
-      onClick={onCerrar}>
-      <div style={{ background:"var(--negro)",border:"4px solid var(--verde-claro)",
-        boxShadow:"6px 6px 0 var(--verde-oscuro)",maxWidth:"400px",width:"100%",
-        maxHeight:"90vh",overflowY:"auto",display:"flex",flexDirection:"column" }}
-        onClick={e => e.stopPropagation()}>
-
-        <div style={{ padding:"16px",display:"flex",flexDirection:"column",alignItems:"center",gap:"8px" }}>
-          {av
-            ? <img src={avatarFrame(av.slug,frame)} alt={av.nombre}
-                style={{ width:64,height:64,imageRendering:"pixelated",objectFit:"cover",
-                  border:"3px solid var(--negro)",boxShadow:"2px 2px 0 var(--negro)" }}
-                onError={e => { e.target.style.display="none"; }} />
-            : <div style={{ width:64,height:64,background:"#333",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32 }}>?</div>
-          }
-          <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{displayNickname}</p>
-          {displayNombreReal && (
-            <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>👤 {displayNombreReal}</p>
-          )}
-          <span className="puntos-badge" style={{ fontSize:"11px" }}>{displayPuntos} pts</span>
-        </div>
-
-        <div style={{ display:"flex",borderTop:"2px solid var(--verde-campo)",borderBottom:"2px solid var(--verde-campo)" }}>
-          {[{id:"historial",label:"🔮 PRONÓSTICOS"},{id:"perfil",label:"👤 INFO"}].map(t => (
-            <button key={t.id}
-              style={{ flex:1,fontFamily:"'Press Start 2P',monospace",fontSize:"5px",padding:"7px",
-                background:tab===t.id?"var(--verde-campo)":"var(--negro)",
-                color:tab===t.id?"var(--negro)":"var(--gris-claro)",
-                border:"none",cursor:"pointer" }}
-              onClick={() => setTab(t.id)}>{t.label}</button>
-          ))}
-        </div>
-
-        <div style={{ flex:1,overflowY:"auto" }}>
-          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} puntosTotal={jugador.puntosTotal} />}
-          {tab === "perfil" && (
-            <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
-              <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntos ?? jugador.puntosTotal ?? 0}</span></p>
-              {Object.keys(displayCartas).length > 0 && (
-                <p>🃏 Cartas: <span style={{ color:"var(--amarillo)" }}>
-                  {Object.values(displayCartas).reduce((s,v)=>s+v,0)}
-                </span></p>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div style={{ padding:"10px",borderTop:"2px solid var(--verde-campo)" }}>
-          <button className="btn-pixel btn-gris w-full" style={{ fontSize:"7px" }} onClick={onCerrar}>CERRAR ✕</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────
-export default function PodioF1({ datos }) {
-  const [perfilAbierto, setPerfilAbierto] = useState(null);
-  const [mostrarConfeti, setMostrarConfeti] = useState(false);
-
-  useEffect(() => {
-    if (datos && datos.length > 0) setMostrarConfeti(true);
-  }, [datos]);
-
-  if (!datos || datos.length === 0) {
-    return (
-      <div className="caja-pixel text-center mb-16">
-        <p style={{ fontSize:"7px",color:"var(--gris-claro)" }}>
-          Sin podio todavía. ¡Juega hoy para aparecer mañana!
-        </p>
-      </div>
-    );
-  }
-
-  // Construir lugares
-  const pts1 = datos[0].puntos;
-  const l1   = datos.filter(j => j.puntos === pts1);
-  const r1   = datos.filter(j => j.puntos < pts1);
-  const pts2 = r1[0]?.puntos;
-  const l2   = pts2 !== undefined ? r1.filter(j => j.puntos === pts2) : [];
-  const r2   = r1.filter(j => j.puntos < (pts2 ?? -Infinity));
-  const pts3 = r2[0]?.puntos;
-  const l3   = pts3 !== undefined ? r2.filter(j => j.puntos === pts3) : [];
-
-  // Fecha del podio (fecha de los datos)
-  const fechaPodio = datos[0]?.fecha;
-  let labelPodio = "";
-  if (fechaPodio) {
-    const [y,m,d] = fechaPodio.split("-").map(Number);
-    const meses = ["enero","febrero","marzo","abril","mayo","junio",
-                   "julio","agosto","septiembre","octubre","noviembre","diciembre"];
-    labelPodio = `${d} de ${meses[m-1]} de ${y}`;
-  }
-
-  return (
-    <>
-      {mostrarConfeti && <Confeti />}
-      {perfilAbierto && (
-        <ModalPerfilConHistorial jugador={perfilAbierto} onCerrar={() => setPerfilAbierto(null)} />
-      )}
-
-      <div className="caja-pixel mb-16" style={{ padding:"12px 8px" }}>
-        {labelPodio && (
-          <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"center",marginBottom:"10px" }}>
-            Podio del {labelPodio}
-          </p>
-        )}
-
-        {/* Columnas del podio: 1°, 2°, 3° */}
-        <div style={{ display:"flex",gap:"6px",alignItems:"stretch" }}>
-          {l2.length > 0
-            ? <ColumnaLugar lugar={2} jugadores={l2} onClickJugador={setPerfilAbierto} />
-            : <div style={{ flex:1, border:"2px dashed var(--gris)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                <p style={{ fontSize:"5px",color:"var(--gris)" }}>—</p>
-              </div>
-          }
-          <ColumnaLugar lugar={1} jugadores={l1} onClickJugador={setPerfilAbierto} />
-          {l3.length > 0
-            ? <ColumnaLugar lugar={3} jugadores={l3} onClickJugador={setPerfilAbierto} />
-            : <div style={{ flex:1, border:"2px dashed var(--gris)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                <p style={{ fontSize:"5px",color:"var(--gris)" }}>—</p>
-              </div>
-          }
-        </div>
-
-        <p style={{ fontSize:"5px",color:"var(--gris-claro)",textAlign:"center",marginTop:"8px" }}>
-          Toca un avatar para ver el perfil y pronósticos
-        </p>
-      </div>
-    </>
-  );
-}
-</file>
-
-<file path="src/components/PronosticoSemis.jsx">
-// src/components/PronosticoSemis.jsx
-// Widget flotante para votar los 4 semifinalistas.
-// Firestore:
-//   semifinales/config → { activo, partidos:[{id,local,visitante,fecha,cerrado}], clasificados:[] }
-//   semifinales_votos/{uid} → { uid, selecciones:[], calculado, puntos, aciertos }
-
-import React, { useState, useEffect } from "react";
-import { doc, onSnapshot, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-
-const REF_CONFIG = () => doc(db, "semifinales", "config");
-const REF_VOTO   = (uid) => doc(db, "semifinales_votos", uid);
-
-const TABLA = [0, 250, 500, 750, 1000]; // índice = aciertos
-
-export default function PronosticoSemis() {
-  const { firebaseUser } = useAuth();
-  const [config,      setConfig]      = useState(null);
-  const [miVoto,      setMiVoto]      = useState(null);
-  const [abierto,     setAbierto]     = useState(false);
-  const [guardando,   setGuardando]   = useState(false);
-  const [guardadoOk,  setGuardadoOk]  = useState(false);
-  const [selecciones, setSelecciones] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("cp8b_semis_sel") || "[]"); }
-    catch { return []; }
-  });
-
-  useEffect(() => {
-    const unsub = onSnapshot(REF_CONFIG(), snap => {
-      setConfig(snap.exists() ? snap.data() : null);
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    if (!firebaseUser) return;
-    getDoc(REF_VOTO(firebaseUser.uid)).then(snap => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setMiVoto(data);
-        setSelecciones(data.selecciones || []);
-        localStorage.setItem("cp8b_semis_sel", JSON.stringify(data.selecciones || []));
-      }
-    });
-  }, [firebaseUser]);
-
-  if (!config?.activo) return null;
-
-  const partidos = config.partidos || [];
-  const hoy      = new Date().toISOString().split("T")[0];
-  const abiertos = partidos.filter(p => !p.cerrado && p.fecha >= hoy);
-  const cerrados = partidos.filter(p => p.cerrado  || p.fecha <  hoy);
-  const yaVoto   = miVoto?.calculado;
-
-  const toggleEquipo = (nombre) => {
-    if (yaVoto) return;
-    const partido = partidos.find(p => p.local.nombre === nombre || p.visitante.nombre === nombre);
-    if (!partido) return;
-    if (partido.cerrado || partido.fecha < hoy) return;
-    const rival = partido.local.nombre === nombre ? partido.visitante.nombre : partido.local.nombre;
-    setSelecciones(prev => {
-      let next;
-      if (prev.includes(nombre)) {
-        next = prev.filter(n => n !== nombre);
-      } else {
-        next = [...prev.filter(n => n !== rival), nombre];
-      }
-      localStorage.setItem("cp8b_semis_sel", JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const guardar = async () => {
-    if (!firebaseUser || selecciones.length === 0) return;
-    setGuardando(true);
-    try {
-      await setDoc(REF_VOTO(firebaseUser.uid), {
-        uid: firebaseUser.uid, selecciones,
-        timestamp: serverTimestamp(), calculado: false, puntos: 0,
-      });
-      setMiVoto(prev => ({ ...(prev||{}), selecciones, calculado:false, puntos:0 }));
-      setGuardadoOk(true);
-      setTimeout(() => setGuardadoOk(false), 3500);
-    } catch(e) { console.error(e); }
-    finally { setGuardando(false); }
-  };
-
-  // ── BOTÓN LATERAL ─────────────────────────────────────────────
-  if (!abierto) return (
-    <button onClick={() => setAbierto(true)}
-      style={{
-        position:"fixed", bottom:"220px", right:0, zIndex:600,
-        background:"linear-gradient(135deg,#4c1d95,#6d28d9)",
-        border:"3px solid #a78bfa", borderRight:"none",
-        borderRadius:"8px 0 0 8px", padding:"10px 10px",
-        display:"flex", flexDirection:"column", alignItems:"center",
-        gap:"4px", cursor:"pointer", maxWidth:"66px",
-        boxShadow:"-4px 0 14px rgba(167,139,250,0.5)",
-        animation:"pulsoVioleta 2s ease-in-out infinite",
-      }}>
-      <span style={{ fontSize:"20px" }}>⚽</span>
-      <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"4px",
-        color:"#c4b5fd", lineHeight:1.6, textAlign:"center" }}>
-        PRONOSTICA<br/>SEMIS
-      </span>
-      <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"4px", color:"var(--amarillo)" }}>
-        ¡1000 pts!
-      </span>
-      <style>{`@keyframes pulsoVioleta{0%,100%{box-shadow:-4px 0 14px rgba(167,139,250,0.5)}50%{box-shadow:-4px 0 22px rgba(167,139,250,0.9)}}`}</style>
-    </button>
-  );
-
-  // ── PANEL ABIERTO ─────────────────────────────────────────────
-  return (
-    <div style={{
-      position:"fixed", right:0, top:0, bottom:0, zIndex:600,
-      width:"min(340px,100vw)",
-      background:"linear-gradient(180deg,#1e0040 0%,#0d001a 100%)",
-      border:"2px solid #6d28d9", borderRight:"none",
-      display:"flex", flexDirection:"column",
-      fontFamily:"'Press Start 2P',monospace",
-      boxShadow:"-4px 0 20px rgba(109,40,217,0.4)",
-      overflowY:"auto",
-    }}>
-      {/* Header */}
-      <div style={{ padding:"12px 14px", flexShrink:0,
-        background:"linear-gradient(90deg,#4c1d95,#6d28d9)",
-        display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div>
-          <p style={{ fontSize:"7px", color:"#c4b5fd", marginBottom:"2px" }}>⚽ SEMIFINALES</p>
-          <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)" }}>¿Quiénes clasifican?</p>
-        </div>
-        <button onClick={() => setAbierto(false)}
-          style={{ background:"rgba(0,0,0,0.3)", border:"1px solid rgba(255,255,255,0.2)",
-            color:"var(--blanco)", fontSize:"14px", width:"28px", height:"28px",
-            cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
-      </div>
-
-      {/* Explicación + tabla */}
-      <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
-        <p style={{ fontSize:"5px", color:"#c4b5fd", lineHeight:2.2, marginBottom:"8px" }}>
-          Elige el equipo que crees que clasificará a semifinales en cada partido.
-          Puedes cambiar tu voto hasta que el partido empiece.
-        </p>
-        <p style={{ fontSize:"5px", color:"var(--amarillo)", marginBottom:"6px" }}>PUNTOS SEGÚN ACIERTOS:</p>
-        <div style={{ display:"flex", gap:"4px", flexWrap:"wrap" }}>
-          {[4,3,2,1].map(n => (
-            <div key={n} style={{ background:"rgba(109,40,217,0.3)",
-              border:"1px solid rgba(167,139,250,0.4)", padding:"4px 8px", textAlign:"center" }}>
-              <p style={{ fontSize:"4px", color:"#c4b5fd" }}>{n} ✓</p>
-              <p style={{ fontSize:"6px", color:"var(--amarillo)" }}>{TABLA[n]} pts</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Resultado si ya calculado */}
-      {yaVoto && miVoto?.puntos > 0 && (
-        <div style={{ padding:"10px 14px", background:"rgba(52,211,153,0.1)",
-          borderBottom:"1px solid rgba(52,211,153,0.3)" }}>
-          <p style={{ fontSize:"7px", color:"#34d399", textAlign:"center" }}>
-            🎉 GANASTE {miVoto.puntos} PTS
-          </p>
-        </div>
-      )}
-
-      <div style={{ padding:"12px 14px", flex:1 }}>
-        {/* Partidos abiertos */}
-        {abiertos.length > 0 && (
-          <>
-            <p style={{ fontSize:"5px", color:"#c4b5fd", marginBottom:"8px", letterSpacing:"1px" }}>
-              ELIGE UN CLASIFICADO POR PARTIDO:
-            </p>
-            {abiertos.map(p => {
-              const selL = selecciones.includes(p.local.nombre);
-              const selV = selecciones.includes(p.visitante.nombre);
-              return (
-                <div key={p.id} style={{ marginBottom:"8px" }}>
-                  <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)", marginBottom:"4px" }}>{p.fecha}</p>
-                  <div style={{ display:"flex", gap:"6px" }}>
-                    {[{eq:p.local,sel:selL},{eq:p.visitante,sel:selV}].map(({eq,sel},ii) => (
-                      <button key={ii} onClick={() => toggleEquipo(eq.nombre)} disabled={yaVoto}
-                        style={{ flex:1, padding:"7px 4px",
-                          fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-                          cursor: yaVoto?"default":"pointer",
-                          border:`2px solid ${sel?"#a78bfa":"rgba(255,255,255,0.15)"}`,
-                          background: sel?"rgba(167,139,250,0.2)":"rgba(0,0,0,0.4)",
-                          color:"var(--blanco)", textAlign:"center" }}>
-                        {eq.bandera}<br/>{eq.nombre}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </>
-        )}
-
-        {/* Partidos cerrados */}
-        {cerrados.length > 0 && (
-          <>
-            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.3)",
-              margin:"10px 0 6px", letterSpacing:"1px" }}>CERRADOS:</p>
-            {cerrados.map(p => {
-              const selL = selecciones.includes(p.local.nombre);
-              const selV = selecciones.includes(p.visitante.nombre);
-              const clas = config.clasificados?.find(n => n===p.local.nombre||n===p.visitante.nombre);
-              return (
-                <div key={p.id} style={{ marginBottom:"6px", opacity:0.65 }}>
-                  <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)" }}>
-                    {p.local.bandera} {p.local.nombre} vs {p.visitante.nombre} {p.visitante.bandera}
-                  </p>
-                  {clas && (
-                    <p style={{ fontSize:"5px", color:"#34d399", marginTop:"2px" }}>
-                      ✅ Clasificó: {clas}
-                      {(selL||selV) && (
-                        <span style={{ marginLeft:"6px",
-                          color:(selL&&clas===p.local.nombre)||(selV&&clas===p.visitante.nombre)?"#34d399":"#f87171" }}>
-                          {(selL&&clas===p.local.nombre)||(selV&&clas===p.visitante.nombre)?"✓ acertaste":"✗ fallaste"}
-                        </span>
-                      )}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </>
-        )}
-
-        {/* Mis selecciones guardadas */}
-        {(selecciones.length > 0) && (
-          <div style={{ marginTop:"10px", padding:"8px",
-            border:"1px solid rgba(167,139,250,0.3)", background:"rgba(109,40,217,0.15)" }}>
-            <p style={{ fontSize:"5px", color:"#c4b5fd", marginBottom:"6px" }}>
-              {miVoto ? `✅ TUS ${miVoto.selecciones?.length||selecciones.length} PRONÓSTICOS:` : `TUS ${selecciones.length} SELECCIÓN(ES):`}
-            </p>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:"4px" }}>
-              {(miVoto?.selecciones||selecciones).map(n => {
-                const correcto   = config.clasificados?.includes(n);
-                const incorrecto = config.clasificados?.length > 0 && !correcto;
-                return (
-                  <span key={n} style={{ fontSize:"5px", color:"var(--blanco)",
-                    background: correcto?"rgba(52,211,153,0.2)":incorrecto?"rgba(248,113,113,0.2)":"rgba(167,139,250,0.2)",
-                    border:`1px solid ${correcto?"#34d399":incorrecto?"#f87171":"#a78bfa"}`,
-                    padding:"2px 6px" }}>
-                    {correcto?"✓ ":incorrecto?"✗ ":""}{n}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Botón guardar/editar */}
-        {!yaVoto && (
-          <button className="btn-pixel btn-rojo w-full"
-            style={{ fontSize:"7px", marginTop:"10px", padding:"10px" }}
-            onClick={guardar}
-            disabled={guardando || (selecciones.length === 0 && !miVoto)}>
-            {guardando ? "⚙ GUARDANDO..."
-              : selecciones.length === 0 && miVoto ? "✏ EDITAR PRONÓSTICOS"
-              : miVoto ? `✏ ACTUALIZAR ${selecciones.length} PRONÓSTICOS`
-              : `💾 GUARDAR MIS ${selecciones.length} PRONÓSTICOS`}
-          </button>
-        )}
-
-        {abiertos.length === 0 && !miVoto && (
-          <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
-            textAlign:"center", marginTop:"10px", lineHeight:2 }}>
-            Todos los partidos están cerrados.
-          </p>
-        )}
-      </div>
-
-      {/* Overlay confirmación */}
-      {guardadoOk && (
-        <div style={{ position:"fixed", inset:0, zIndex:900,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          background:"rgba(0,0,0,0.8)" }}>
-          <div style={{ background:"#1a0030", border:"4px solid #a78bfa",
-            padding:"28px 24px", textAlign:"center",
-            boxShadow:"0 0 40px rgba(167,139,250,0.6)", maxWidth:"280px" }}>
-            <p style={{ fontSize:"32px", marginBottom:"12px" }}>✅</p>
-            <p style={{ fontSize:"9px", color:"#c4b5fd", lineHeight:2 }}>¡PRONÓSTICOS<br/>GUARDADOS!</p>
-            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)",
-              lineHeight:2, marginTop:"8px" }}>
-              Puedes editarlos hasta que empiece cada partido.
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-</file>
-
-<file path="src/components/Ranking.jsx">
-// src/components/Ranking.jsx  — v8 (Números de fondo en podio, corregido)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v8:
-//   • Número de fondo gigante (1,2,3) en primera celda para los primeros puestos,
-//     solo en la primera fila de cada grupo de empate.
-//   • Corregida estructura de tabla (celdas duplicadas, sintaxis).
-//   • Variable isTop para resaltar los tres primeros puestos.
-//   • Botón VOLVER corregido.
-//   • Fecha de última actualización mostrada correctamente.
-// ─────────────────────────────────────────────────────────────
-import React, { useEffect, useState, useMemo } from "react";
-import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
-import { useAuth } from "../contexts/AuthContext";
-import { ayerStr } from "../utils/helpers";
-import { AVATARES, CARTAS } from "../data/sampleData";
-import HistorialPredicciones from "./HistorialPredicciones";
-
-// ── Colores de fondo por posición ────────────────────────────
-const FONDO_POS = {
-  1: { bg: "#FFD966", borde: "#D4A017", texto: "#000000" },   // amarillo sólido, texto negro
-  2: { bg: "#D3D3D3", borde: "#A9A9A9", texto: "#000000" },   // gris plata, texto negro
-  3: { bg: "#CD7F32", borde: "#8B5A2B", texto: "#000000" },   // bronce sólido, texto negro
-};
-
-function AvatarSmall({ avatarId, avatarSlug }) {
-  const src = avatarSlug
-    ? `/avatares/${avatarSlug}-1.png`
-    : `/avatares/${(AVATARES.find(a => a.id === avatarId)?.slug || "default")}-1.png`;
-  return (
-    <img src={src} alt=""
-      style={{ width:22, height:22, imageRendering:"pixelated", flexShrink:0 }}
-      onError={e => (e.target.style.display = "none")}
-    />
-  );
-}
-
-// ── Modal perfil + historial ──────────────────────────────────
-function ModalPerfilConHistorial({ jugador, onCerrar }) {
-  const [tab, setTab] = useState("historial");
-  if (!jugador) return null;
-  const cartasMap     = jugador.cartas || {};
-  const cartasDesbloq = CARTAS.filter(c => (cartasMap[c.id] || 0) > 0);
-
-  return (
-    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:600,
-      display:"flex",alignItems:"center",justifyContent:"center",
-      padding:"20px",overflowY:"auto" }} onClick={onCerrar}>
-      <div style={{ background:"var(--negro)",border:"4px solid var(--verde-claro)",
-        boxShadow:"6px 6px 0 var(--verde-oscuro)",maxWidth:"400px",width:"100%",
-        maxHeight:"90vh",overflowY:"auto",display:"flex",flexDirection:"column" }}
-        onClick={e => e.stopPropagation()}>
-
-        <div style={{ padding:"16px",display:"flex",flexDirection:"column",alignItems:"center",gap:"8px" }}>
-          <img
-            src={`/avatares/${jugador.avatarSlug || "default"}-1.png`}
-            alt={jugador.nickname}
-            style={{ width:60,height:60,imageRendering:"pixelated",border:"3px solid var(--negro)" }}
-            onError={e => (e.target.style.display="none")}
-          />
-          <p style={{ fontSize:"10px",color:"var(--amarillo)",textAlign:"center" }}>{jugador.nickname}</p>
-          {jugador.nombreReal && (
-            <p style={{ fontSize:"6px",color:"var(--gris-claro)" }}>👤 {jugador.nombreReal}</p>
-          )}
-          <span className="puntos-badge" style={{ fontSize:"11px" }}>{jugador.puntosTotal ?? 0} pts</span>
-        </div>
-
-        <div style={{ display:"flex",borderTop:"2px solid var(--verde-campo)",borderBottom:"2px solid var(--verde-campo)" }}>
-          {[{id:"historial",label:"🔮 PRONÓSTICOS"},{id:"perfil",label:"👤 INFO"}].map(t => (
-            <button key={t.id}
-              style={{ flex:1,fontFamily:"'Press Start 2P',monospace",fontSize:"5px",padding:"7px",
-                background:tab===t.id?"var(--verde-campo)":"var(--negro)",
-                color:tab===t.id?"var(--negro)":"var(--gris-claro)",
-                border:"none",cursor:"pointer" }}
-              onClick={() => setTab(t.id)}>{t.label}</button>
-          ))}
-        </div>
-
-        <div style={{ flex:1,overflowY:"auto" }}>
-          {tab === "historial" && <HistorialPredicciones userId={jugador.uid} puntosTotal={jugador.puntosTotal} />}
-          {tab === "perfil" && (
-            <div style={{ padding:"12px",fontSize:"7px",color:"var(--gris-claro)",lineHeight:2 }}>
-              <p>🎯 Puntos: <span style={{ color:"var(--amarillo)" }}>{jugador.puntosTotal ?? 0}</span></p>
-              <p>🃏 Cartas: <span style={{ color:"var(--amarillo)" }}>{cartasDesbloq.length}</span></p>
-            </div>
-          )}
-        </div>
-
-        <div style={{ padding:"10px",borderTop:"2px solid var(--verde-campo)" }}>
-          <button className="btn-pixel btn-gris w-full" style={{ fontSize:"7px" }} onClick={onCerrar}>
-            CERRAR ✕
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────
-export default function Ranking({ onVolver }) {
-  const { firebaseUser } = useAuth();
-  const [usuarios,    setUsuarios]    = useState([]);
-  const [rankingAyer, setRankingAyer] = useState({});
-  const [cargando,    setCargando]    = useState(true);
-  const [jugadorSel,  setJugadorSel]  = useState(null);
-  const [fechaActualizacion, setFechaActualizacion] = useState(null);
-
-  useEffect(() => { cargar(); }, []);
-
-  useEffect(() => {
-    const cargarFecha = async () => {
-      try {
-        const snap = await getDoc(doc(db, "config", "ultimaActualizacion"));
-        if (snap.exists()) {
-          setFechaActualizacion(snap.data().fecha);
-        }
-      } catch (e) {
-        console.error("Error cargando fecha de actualización", e);
-      }
-    };
-    cargarFecha();
-  }, []);
-
-  const cargar = async () => {
-    setCargando(true);
-    try {
-      const snapU = await getDocs(query(collection(db,"usuarios"), orderBy("puntosTotal","desc")));
-      setUsuarios(snapU.docs.map(d => ({ id:d.id, ...d.data() })));
-
-      const ayer = ayerStr();
-      const snapAyer = await getDocs(query(collection(db,"puntosDelDia"), where("fecha","==",ayer)));
-      if (!snapAyer.empty) {
-        const ayerOrd = snapAyer.docs.map(d => d.data()).sort((a,b) => b.puntos - a.puntos);
-        const mapa = {}; let pos = 1;
-        for (let i = 0; i < ayerOrd.length; i++) {
-          if (i > 0 && ayerOrd[i].puntos < ayerOrd[i-1].puntos) pos = i + 1;
-          mapa[ayerOrd[i].uid] = pos;
-        }
-        setRankingAyer(mapa);
-      }
-    } catch(e) { console.error(e); }
-    finally { setCargando(false); }
-  };
-
-  // ── Dense rank con tracking del primer del grupo ──────────
-  // Memorizado: solo se recalcula cuando cambia la lista de usuarios.
-  const filasMeta = useMemo(() => {
-    const result = [];
-    for (let i = 0; i < usuarios.length; i++) {
-      const u = usuarios[i];
-      const esPrimero = (i === 0) || (u.puntosTotal < usuarios[i-1].puntosTotal);
-      let posicion = i + 1;
-      if (i > 0 && u.puntosTotal === usuarios[i-1].puntosTotal) {
-        posicion = result[i-1].posicion;
-      } else {
-        posicion = i + 1;
-      }
-      result.push({ posicion, esPrimero });
-    }
-    return result;
-  }, [usuarios]);
-
-  const medallas = ["🥇","🥈","🥉"];
-
-  return (
-    <div style={{ padding:"16px 16px 80px" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
-        {onVolver && (
-          <button
-            className="btn-pixel btn-gris"
-            onClick={onVolver}
-            style={{ padding:"8px 12px", fontSize:"8px" }}
-          >
-            ← VOLVER
-          </button>
-        )}
-        <h2 className="text-amarillo">🏆 RANKING COMPLETO</h2>
-      </div>
-      {fechaActualizacion && (
-        <p style={{
-          fontSize: "6px",
-          color: "var(--gris-claro)",
-          textAlign: "center",
-          marginTop: "4px",
-          marginBottom: "12px",
-          lineHeight: 1.5
-        }}>
-          🕒 Última actualización: {new Date(fechaActualizacion).toLocaleString()}
-        </p>
-      )}
-
-      {Object.keys(rankingAyer).length > 0 && (
-        <p style={{ fontSize:"5px",color:"var(--gris-claro)",marginBottom:"10px",lineHeight:2 }}>
-          ▲▼ junto a los puntos = cambio respecto al ranking de ayer
-        </p>
-      )}
-
-      {cargando ? (
-        <div className="text-center" style={{ padding:"40px",fontSize:"8px",color:"var(--verde-claro)" }}>
-          <span className="spinner">⚙</span><br/><br/>CARGANDO...
-        </div>
-      ) : (
-        <div className="caja-pixel" style={{ padding:0, overflow:"hidden" }}>
-          <table className="ranking-tabla" style={{ borderCollapse:"collapse", width:"100%" }}>
-            <thead>
-              <tr>
-                <th style={{ width:"28px", textAlign:"center" }}>#</th>
-                <th>JUGADOR</th>
-                <th style={{ textAlign:"right", paddingRight:"10px" }}>PUNTOS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map((u, i) => {
-                const { posicion, esPrimero } = filasMeta[i];
-                const estilo = FONDO_POS[posicion];
-                const posAyer   = rankingAyer[u.uid];
-                const diff = posAyer ? posAyer - posicion : 0;
-                const isTop = i < 3; // primeras tres filas (resalte visual)
-
-                return (
-                  <tr
-                    key={u.id}
-                    onClick={() => setJugadorSel(u)}
-                    style={{
-                      cursor: "pointer",
-                      background: estilo?.bg || (i % 2 === 0 ? "rgba(255,255,255,0.03)" : "transparent"),
-                      borderLeft: estilo ? `3px solid ${estilo.borde}` : "3px solid transparent",
-                      borderBottom: "1px solid rgba(82,183,136,0.15)",
-                    }}
-                  >
-                    {/* Columna # con número de fondo gigante */}
-                    <td
-                      style={{
-                        position: 'relative',
-                        textAlign: "center",
-                        padding: isTop ? "12px 4px" : "8px 4px",
-                        width: "28px",
-                        fontFamily: "'Press Start 2P', monospace",
-                        fontSize: isTop ? "10px" : "7px",
-                        color: estilo?.texto || "var(--gris-claro)"
-                      }}
-                    >
-                      {/* Número de fondo (solo para puestos 1,2,3 y primera fila del grupo) */}
-                      {posicion <= 3 && esPrimero && (
-                        <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '48px',
-                          fontWeight: 'bold',
-                          color: estilo?.texto === "#000000" ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.2)",
-                          pointerEvents: 'none',
-                          zIndex: 0,
-                          fontFamily: "'Press Start 2P', monospace",
-                        }}>
-                          {posicion}
-                        </div>
-                      )}
-                      <span style={{ position: 'relative', zIndex: 1 }}>
-                        {esPrimero ? (posicion <= 3 ? medallas[posicion - 1] : posicion) : ""}
-                      </span>
-                    </td>
-
-                    {/* Columna jugador */}
-                    <td style={{ padding: isTop ? "12px 6px" : "8px 6px" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap: isTop ? "10px" : "6px" }}>
-                        <AvatarSmall avatarId={u.avatarId} avatarSlug={u.avatarSlug} />
-                        <div style={{ fontSize: isTop ? "9px" : "7px", color:"var(--blanco)", lineHeight:1.6 }}>
-                          {u.nickname}
-                          {u.uid === firebaseUser?.uid && (
-                            <span style={{
-                              marginLeft:"6px",
-                              fontSize:"5px",
-                              background:"var(--verde-claro)",
-                              color:"var(--negro)",
-                              padding:"1px 4px",
-                              border:"1px solid var(--negro)"
-                            }}>TÚ</span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Columna puntos + flecha */}
-                    <td style={{ textAlign:"right", padding: isTop ? "12px 10px" : "8px 10px" }}>
-                      <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"6px" }}>
-                        {diff !== 0 && (
-                          <span style={{
-                            fontFamily:"'Press Start 2P',monospace",
-                            fontSize: isTop ? "10px" : "8px",
-                            color: diff > 0 ? "#4ade80" : "var(--rojo-chile)",
-                          }}>
-                            {diff > 0 ? `▲${diff}` : `▼${Math.abs(diff)}`}
-                          </span>
-                        )}
-                        <span style={{
-                          fontFamily:"'Press Start 2P',monospace",
-                          fontSize: isTop ? "12px" : "9px",
-                          display:"inline-block",
-                          background: "var(--negro)",
-                          color: "#f4d03f",
-                          border: "2px solid var(--amarillo)",
-                          padding: "2px 8px",
-                          boxShadow: "2px 2px 0 rgba(0,0,0,0.4)",
-                          minWidth: "32px",
-                          textAlign: "center",
-                        }}>
-                          {u.puntosTotal ?? 0}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {usuarios.length === 0 && (
-                <tr>
-                  <td colSpan={3} style={{ textAlign:"center",padding:"20px",
-                    fontSize:"7px",color:"var(--gris-claro)" }}>Aún no hay jugadores</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {jugadorSel && (
-        <ModalPerfilConHistorial jugador={jugadorSel} onCerrar={() => setJugadorSel(null)} />
-      )}
-    </div>
-  );
-}
-</file>
-
-<file path="src/utils/scoring.js">
-// src/utils/scoring.js — lógica pura de puntaje (SIN firebase; testeable)
-// Movida desde helpers.js para poder testearla sin inicializar firebase.
-import { CARTAS } from "../data/sampleData.js";
-
-// ── Cálculo de puntos ────────────────────────────────────────
-// Multiplicador por fase eliminatoria
-function multFase(fase) {
-  if (fase === "dieciseisavos" || fase === "octavos") return 2;
-  if (fase === "cuartos")    return 4;
-  if (fase === "semifinal")  return 8;
-  if (fase === "final")      return 12;
-  return 1;
-}
-
-export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado) {
-  if (!resultado || !prediccion) return { puntos: 0, esMaximo: false };
-  const esElim = fase && fase !== "grupos";
-  if (!esElim) {
-    const { golesLocal: gl, golesVisitante: gv } = resultado;
-    const ganReal = gl > gv ? "local" : gv > gl ? "visitante" : "empate";
-    const difReal = Math.abs(gl-gv) === 1 ? "1" : "2+";
-    if (estaDestacado) {
-      const exacto = Number(prediccion.golesLocalPred) === gl && Number(prediccion.golesVisitantePred) === gv;
-      if (exacto) return { puntos: 5, esMaximo: true };
-      if (prediccion.ganador === ganReal) return { puntos: 2, esMaximo: true };
-      return { puntos: 0, esMaximo: false };
-    } else {
-      let pts = 0;
-      if (prediccion.ganador === ganReal) {
-        pts += 1;
-        if (ganReal !== "empate" && prediccion.diferencia === difReal) pts += 2;
-      }
-      const m = multFase(fase); if (m > 1 && pts > 0) pts *= m;
-  return { puntos: pts, esMaximo: pts > 0 };
-    }
-  }
-  const { golesLocal: gl, golesVisitante: gv, definicion,
-    golesLocalAlargue, golesVisitanteAlargue,
-    penalesLocal, penalesVisitante, ganadorFinal } = resultado;
-  const gan90     = gl > gv ? "local" : gv > gl ? "visitante" : null;
-  const dif90Real = Math.abs(gl-gv) === 1 ? "1" : "2+";
-  // Ganador real del partido (puede ser por normal, alargue o penales)
-  const ganadorReal = ganadorFinal || gan90;
-
-  let pts = 0;
-
-  // El ganador pronosticado puede estar en cualquier campo según la definición elegida
-  const ganadorPred = prediccion.ganador90 || prediccion.ganadorAlargue || prediccion.ganadorPenales;
-
-  if (definicion === "normal") {
-    if (prediccion.definicion === "normal" && prediccion.ganador90 === gan90) {
-      pts += 2;
-      if (prediccion.diferencia90 === dif90Real) pts += 1;
-    } else if (ganadorPred === gan90) {
-      // Acertó el ganador aunque pronosticó otra definición → premio base
-      pts += 2;
-    }
-  } else if (definicion === "alargue") {
-    if (prediccion.definicion === "alargue") {
-      pts += 3;
-      const dAlg  = Math.abs((golesLocalAlargue??0)-(golesVisitanteAlargue??0));
-      const dAlgR = dAlg === 1 ? "1" : "2+";
-      if (prediccion.ganadorAlargue === ganadorFinal && prediccion.diferenciaAlargue === dAlgR) pts += 3;
-    } else if (ganadorPred === ganadorFinal) {
-      // Acertó el ganador aunque pronosticó otra definición → premio base
-      pts += 2;
-    }
-  } else if (definicion === "penales") {
-    if (prediccion.definicion === "penales") {
-      pts += 3;
-      const exacta = Number(prediccion.penalesLocal) === penalesLocal && Number(prediccion.penalesVisitante) === penalesVisitante;
-      if (exacta) pts += 4;
-      else if (prediccion.ganadorPenales === ganadorFinal) pts += 2;
-    } else if (ganadorPred === ganadorFinal) {
-      // Acertó el ganador aunque pronosticó otra definición → premio base
-      pts += 2;
-    }
-  }
-
-  const mult = multFase(fase); if (mult > 1 && pts > 0) pts *= mult;
-  return { puntos: pts, esMaximo: pts > 0 };
-}
-
-export function calcularPuntosPregunta(resp, correcta) {
-  if (!correcta || !resp) return 0;
-  return resp === correcta ? 2 : 0;
-}
-
-export function aplicarMultiplicadorCarta(puntos, esMaximo, cartaId) {
-  if (!cartaId || !esMaximo || puntos === 0) return puntos;
-  const carta = CARTAS.find(c => c.id === cartaId);
-  return carta ? puntos * carta.multiplicador : puntos;
-}
-
-// ¿Se aplica la carta a esta predicción?
-// - En recálculo (ya consumida antes), se respeta la decisión original.
-// - En primer procesamiento, solo si hay stock disponible en el inventario.
-// Evita que una misma carta multiplique varios partidos y que el contador
-// quede negativo.
-export function cartaSeAplica(tieneCartaId, yaConsumio, stockActual) {
-  if (!tieneCartaId) return false;
-  if (yaConsumio) return true;
-  return (stockActual || 0) > 0;
-}
-</file>
-
-<file path="firestore.rules">
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    function esAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    match /usuarios/{uid} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if request.auth != null;
-      match /notificaciones/{notifId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
-      }
-    }
-
-    match /predicciones/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /respuestas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /partidos/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /preguntas/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /puntosDelDia/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /cartasDelUsuario/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /config/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /mensajesDia/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
-    }
-
-    match /mensajesDia/{docId}/reacciones/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-
-    match /admins/{uid} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-
-    match /sobresDelDia/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    match /pronosticoCuartos/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /pronosticoCuartos_votos/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /semifinales/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /semifinales_votos/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /eventoEnVivo/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    match /eventoEnVivo/{docId}/respuestas/{respId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if false;
-    }
-
-  }
-}
-</file>
-
 <file path="src/components/HistorialPredicciones.jsx">
 // src/components/HistorialPredicciones.jsx  — v7 (Patch 2)
 // ─────────────────────────────────────────────────────────────
@@ -9230,6 +8379,857 @@ export default function HistorialPredicciones({ userId, puntosTotal }) {
       )}
     </div>
   );
+}
+</file>
+
+<file path="src/components/OnboardingModal.jsx">
+// src/components/OnboardingModal.jsx  — v7 (Patch 4)
+// ─────────────────────────────────────────────────────────────
+// TUTORIAL ACTUALIZADO:
+//   Paso 0: Bienvenida
+//   Paso 1: Cómo predecir (fase eliminatoria / muere-muere)
+//   Paso 2: Sistema de puntos muere-muere (ya no hay grupos)
+//   Paso 3: Podio y ranking diario
+//   Paso 4: Cartas multiplicadoras
+//   Paso 5: Láminas coleccionables
+// ─────────────────────────────────────────────────────────────
+import React, { useEffect, useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+
+const LOCAL_KEY = "cp8b_onboarding_visto_v7";
+
+function FilaPts({ pts, desc, color = "var(--amarillo)" }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+      padding:"5px 8px", border:"1px solid var(--verde-campo)",
+      fontSize:"6px", background:"rgba(0,0,0,0.3)" }}>
+      <span style={{ color:"var(--gris-claro)", lineHeight:1.8, flex:1 }}>{desc}</span>
+      <span style={{ color, fontWeight:"bold", marginLeft:"8px",
+        background:`rgba(${color==="var(--amarillo)"?"244,208,63":"82,183,136"},0.1)`,
+        padding:"1px 6px", border:`1px solid ${color}`, whiteSpace:"nowrap" }}>{pts}</span>
+    </div>
+  );
+}
+
+export default function OnboardingModal({ isOpen, onClose }) {
+  const { firebaseUser, userProfile, refreshProfile } = useAuth();
+  const [visible, setVisible] = useState(false);
+  const [paso,    setPaso]    = useState(0);
+
+  const esControlado  = isOpen !== undefined;
+  const mostrarModal  = esControlado ? isOpen : visible;
+
+  useEffect(() => {
+    if (esControlado) { if (isOpen) setPaso(0); return; }
+    const yaVioLocal     = localStorage.getItem(LOCAL_KEY);
+    const yaVioFirestore = userProfile?.onboardingVisto;
+    if (!yaVioLocal && !yaVioFirestore) {
+      const t = setTimeout(() => { setPaso(0); setVisible(true); }, 600);
+      return () => clearTimeout(t);
+    }
+  }, [userProfile, isOpen, esControlado]);
+
+  const handleCerrar = async () => {
+    if (esControlado) { if (onClose) onClose(); return; }
+    setVisible(false);
+    localStorage.setItem(LOCAL_KEY, "1");
+    if (firebaseUser) {
+      try {
+        await updateDoc(doc(db,"usuarios",firebaseUser.uid), { onboardingVisto:true });
+      } catch(_) {}
+    }
+  };
+
+  if (!mostrarModal) return null;
+
+  const pasos = [
+    // ── 0. Bienvenida ─────────────────────────────────────
+    {
+      icono: "⚽",
+      titulo: "¡BIENVENIDO!",
+      color: "var(--verde-claro)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2 }}>
+            <span style={{ color:"var(--amarillo)" }}>International Superstar Polla</span> es
+            una competencia de pronósticos del{" "}
+            <span style={{ color:"var(--verde-claro)" }}>Mundial 2026</span>.
+            Pronostica partidos, acumula puntos y sube al ranking.
+          </p>
+          <div style={{ marginTop:"12px", padding:"10px",
+            border:"2px solid var(--verde-campo)", background:"rgba(82,183,136,0.08)" }}>
+            <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"6px" }}>🗂 PESTAÑAS:</p>
+            <div style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2.2 }}>
+              <p>🏠 <span style={{ color:"var(--blanco)" }}>INICIO</span> — Podio, mensajes y tabla de puntos</p>
+              <p>⚽ <span style={{ color:"var(--blanco)" }}>PARTIDOS</span> — Pronósticos del día y pregunta</p>
+              <p>📊 <span style={{ color:"var(--blanco)" }}>RANKING</span> — Tabla completa de posiciones</p>
+              <p>🖼️ <span style={{ color:"var(--blanco)" }}>LÁMINAS</span> — Colección y sobre diario</p>
+              <p>👤 <span style={{ color:"var(--blanco)" }}>PERFIL</span> — Cartas y estadísticas</p>
+            </div>
+          </div>
+        </>
+      ),
+    },
+
+    // ── 1. Cómo predecir ──────────────────────────────────
+    {
+      icono: "💀",
+      titulo: "CÓMO PREDECIR",
+      color: "var(--rojo-chile)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2, marginBottom:"10px" }}>
+            Estamos en <span style={{ color:"var(--rojo-chile)" }}>fase eliminatoria</span>.
+            Cada partido puede decidirse en 90 minutos, alargue o penales.
+            Elige cómo crees que se define cada partido.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
+              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>⚽ 90 MIN</p>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+                Predice quién gana y por cuánto (1 gol o 2+).
+              </p>
+            </div>
+            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
+              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>⏱ ALARGUE</p>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+                Si empatan en 90 min y va a alargue. Predice quién gana en el alargue y diferencia.
+              </p>
+            </div>
+            <div style={{ padding:"8px", border:"2px solid var(--gris)", background:"rgba(0,0,0,0.3)" }}>
+              <p style={{ fontSize:"6px", color:"var(--amarillo)", marginBottom:"4px" }}>🎯 PENALES</p>
+              <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+                Si empatan en alargue y va a penales. Predice quién gana y la diferencia exacta de la tanda.
+              </p>
+            </div>
+          </div>
+          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
+            ⚠ Tienes hasta el inicio del partido para guardar tu pronóstico.
+          </p>
+        </>
+      ),
+    },
+
+    // ── 2. Sistema de puntos ──────────────────────────────
+    {
+      icono: "🔢",
+      titulo: "SISTEMA DE PUNTOS FASE MUERE MUERE",
+      color: "var(--rojo-chile)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2, marginBottom:"8px", fontSize:"6px" }}>
+            Todos los puntos <span style={{ color:"var(--amarillo)" }}>aumentaron</span> en
+            fase eliminatoria. Cuanto más exacto tu pronóstico, más puntos.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:"3px" }}>
+            <FilaPts pts="+4/8/16/24"  desc="Ganador en 90 min (sube por fase)" color="var(--rojo-chile)" />
+            <FilaPts pts="+6/12/24/36" desc="Ganador + diferencia 90 min" color="var(--rojo-chile)" />
+            <FilaPts pts="+6/12/24/36" desc="Acertar que va a Alargue" color="var(--rojo-chile)" />
+            <FilaPts pts="+12/24/48/72" desc="Alargue + diferencia exacta" color="var(--rojo-chile)" />
+            <FilaPts pts="+6/12/24/36" desc="Acertar que va a Penales" color="var(--rojo-chile)" />
+            <FilaPts pts="+10/20/40/60" desc="Penales + quién gana la tanda" color="var(--rojo-chile)" />
+            <FilaPts pts="+14/28/56/84" desc="Penales + diferencia exacta" color="var(--rojo-chile)" />
+            <FilaPts pts="+2"  desc="Pregunta del día correcta" />
+            <FilaPts pts="+2"  desc="Ganador del día (bonus diario)" color="var(--verde-claro)" />
+          </div>
+        </>
+      ),
+    },
+
+    // ── 3. Podio y ranking ────────────────────────────────
+    {
+      icono: "🏆",
+      titulo: "PODIO Y RANKING",
+      color: "var(--amarillo)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2 }}>
+            Cada día hay un <span style={{ color:"var(--amarillo)" }}>ganador del día</span>:
+            quien acumule más puntos en esa jornada recibe{" "}
+            <span style={{ color:"var(--verde-claro)" }}>+2 pts bonus</span> y una{" "}
+            <span style={{ color:"var(--amarillo)" }}>carta ×4</span>.
+          </p>
+          <div style={{ marginTop:"10px", padding:"10px",
+            border:"2px solid var(--amarillo)", background:"rgba(244,208,63,0.06)",
+            display:"flex", flexDirection:"column", gap:"6px" }}>
+            <p style={{ fontSize:"6px", color:"var(--amarillo)", lineHeight:2 }}>
+              🥇 1° del día → carta <strong>×4</strong> + <strong>+2 pts</strong>
+            </p>
+            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
+              🥈 2° del día → carta <strong>×3</strong>
+            </p>
+            <p style={{ fontSize:"6px", color:"var(--gris-claro)", lineHeight:2 }}>
+              🥉 3° del día → carta <strong>×2</strong>
+            </p>
+          </div>
+          <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
+            En el RANKING puedes ver las flechas ▲▼ que indican cuántos puestos
+            subiste o bajaste respecto al día anterior.
+          </p>
+        </>
+      ),
+    },
+
+    // ── 4. Cartas multiplicadoras ─────────────────────────
+    {
+      icono: "🃏",
+      titulo: "CARTAS MULTIPLICADORAS",
+      color: "var(--verde-claro)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2, marginBottom:"10px" }}>
+            Las cartas <span style={{ color:"var(--amarillo)" }}>multiplican tus puntos</span> en
+            un partido. Úsalas estratégicamente en los partidos donde más confías.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"10px" }}>
+            {[
+              { mult:"×2", desc:"Duplica los puntos del partido", color:"#4ade80" },
+              { mult:"×3", desc:"Triplica los puntos del partido", color:"var(--amarillo)" },
+              { mult:"×4", desc:"Cuadruplica los puntos del partido", color:"var(--rojo-chile)" },
+            ].map((c,i) => (
+              <div key={i} style={{ display:"flex", justifyContent:"space-between",
+                alignItems:"center", padding:"6px 8px",
+                border:`1px solid ${c.color}`, background:"rgba(0,0,0,0.3)" }}>
+                <span style={{ fontSize:"6px", color:"var(--gris-claro)" }}>{c.desc}</span>
+                <span style={{ fontSize:"12px", fontWeight:"bold", color:c.color }}>{c.mult}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
+            💡 La carta se consume al procesar el resultado, aunque no hayas acertado.
+          </p>
+        </>
+      ),
+    },
+
+    // ── 5. Láminas ────────────────────────────────────────
+    {
+      icono: "🖼️",
+      titulo: "LÁMINAS COLECCIONABLES",
+      color: "var(--amarillo)",
+      contenido: (
+        <>
+          <p style={{ lineHeight:2.2 }}>
+            Cada día recibes un{" "}
+            <span style={{ color:"var(--amarillo)" }}>sobre de láminas</span> en la
+            pestaña 🖼️ LÁMINAS. Ábrelo y da vuelta cada lámina para revelarla.
+          </p>
+          <div style={{ marginTop:"10px", display:"flex", flexDirection:"column", gap:"8px" }}>
+            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
+              📦 <strong style={{ color:"var(--blanco)" }}>SOBRE DIARIO:</strong>{" "}
+              4 láminas por día. Mejor ranking → mejores cartas extra.
+            </p>
+            <p style={{ fontSize:"6px", color:"var(--verde-claro)", lineHeight:2 }}>
+              📚 <strong style={{ color:"var(--blanco)" }}>COLECCIÓN:</strong>{" "}
+              Las láminas se organizan por categoría. Completa una categoría entera
+              y reclama <span style={{ color:"var(--amarillo)" }}>2 cartas multiplicadoras</span> de regalo.
+            </p>
+          </div>
+        </>
+      ),
+    },
+  ];
+
+  const esUltimo   = paso === pasos.length - 1;
+  const pasActual  = pasos[paso];
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)",
+      zIndex:900, display:"flex", alignItems:"center", justifyContent:"center",
+      padding:"20px", overflowY:"auto" }}>
+      <div style={{ background:"var(--negro)", border:`4px solid ${pasActual.color}`,
+        boxShadow:`6px 6px 0 ${pasActual.color}44`,
+        padding:"24px 20px 20px", maxWidth:"400px", width:"100%",
+        display:"flex", flexDirection:"column", gap:"16px",
+        maxHeight:"88vh", overflowY:"auto" }}>
+
+        {/* Puntos de progreso */}
+        <div style={{ display:"flex", justifyContent:"center", gap:"6px" }}>
+          {pasos.map((_,i) => (
+            <div key={i} style={{
+              width: i===paso ? "16px" : "8px", height:"8px",
+              background: i<=paso ? pasActual.color : "var(--gris)",
+              border:`1px solid ${i<=paso?pasActual.color:"var(--gris)"}`,
+              transition:"width 0.2s",
+            }} />
+          ))}
+        </div>
+
+        {/* Icono + título */}
+        <div style={{ textAlign:"center" }}>
+          <span style={{ fontSize:"32px" }}>{pasActual.icono}</span>
+          <h2 style={{ color:pasActual.color, marginTop:"8px", fontSize:"10px" }}>
+            {pasActual.titulo}
+          </h2>
+        </div>
+
+        {/* Contenido */}
+        <div style={{ fontSize:"7px", color:"var(--blanco)", lineHeight:2, flex:1 }}>
+          {pasActual.contenido}
+        </div>
+
+        {/* Navegación */}
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+          {!esUltimo ? (
+            <button className="btn-pixel btn-amarillo w-full" style={{ fontSize:"8px" }}
+              onClick={() => setPaso(p=>p+1)}>
+              SIGUIENTE →
+            </button>
+          ) : (
+            <button className="btn-pixel btn-amarillo w-full" style={{ fontSize:"8px" }}
+              onClick={handleCerrar}>
+              {esControlado ? "✕ CERRAR" : "✅ ¡ENTENDIDO! JUGAR"}
+            </button>
+          )}
+          {paso > 0 && (
+            <button onClick={() => setPaso(p=>p-1)}
+              style={{ background:"none", border:"none", color:"var(--gris)",
+                fontSize:"6px", fontFamily:"'Press Start 2P',monospace",
+                cursor:"pointer", textAlign:"center" }}>
+              ← anterior
+            </button>
+          )}
+          {!esUltimo && (
+            <button onClick={handleCerrar}
+              style={{ background:"none", border:"none", color:"var(--gris)",
+                fontSize:"6px", fontFamily:"'Press Start 2P',monospace",
+                cursor:"pointer", textAlign:"center" }}>
+              {esControlado ? "Cerrar ✕" : "Saltar intro →"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/PronosticoSemis.jsx">
+// src/components/PronosticoSemis.jsx
+// Widget flotante para votar los 4 semifinalistas.
+// Firestore:
+//   semifinales/config → { activo, partidos:[{id,local,visitante,fecha,cerrado}], clasificados:[] }
+//   semifinales_votos/{uid} → { uid, selecciones:[], calculado, puntos, aciertos }
+
+import React, { useState, useEffect } from "react";
+import { doc, onSnapshot, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
+
+const REF_CONFIG = () => doc(db, "semifinales", "config");
+const REF_VOTO   = (uid) => doc(db, "semifinales_votos", uid);
+
+const TABLA = [0, 250, 500, 750, 1000]; // índice = aciertos
+
+export default function PronosticoSemis() {
+  const { firebaseUser } = useAuth();
+  const [config,      setConfig]      = useState(null);
+  const [miVoto,      setMiVoto]      = useState(null);
+  const [abierto,     setAbierto]     = useState(false);
+  const [guardando,   setGuardando]   = useState(false);
+  const [guardadoOk,  setGuardadoOk]  = useState(false);
+  const [selecciones, setSelecciones] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cp8b_semis_sel") || "[]"); }
+    catch { return []; }
+  });
+
+  useEffect(() => {
+    const unsub = onSnapshot(REF_CONFIG(), snap => {
+      setConfig(snap.exists() ? snap.data() : null);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    getDoc(REF_VOTO(firebaseUser.uid)).then(snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setMiVoto(data);
+        setSelecciones(data.selecciones || []);
+        localStorage.setItem("cp8b_semis_sel", JSON.stringify(data.selecciones || []));
+      }
+    });
+  }, [firebaseUser]);
+
+  if (!config?.activo) return null;
+
+  const partidos = config.partidos || [];
+  const hoy      = new Date().toISOString().split("T")[0];
+  const abiertos = partidos.filter(p => !p.cerrado && p.fecha >= hoy);
+  const cerrados = partidos.filter(p => p.cerrado  || p.fecha <  hoy);
+  const yaVoto   = miVoto?.calculado;
+
+  const toggleEquipo = (nombre) => {
+    if (yaVoto) return;
+    const partido = partidos.find(p => p.local.nombre === nombre || p.visitante.nombre === nombre);
+    if (!partido) return;
+    if (partido.cerrado || partido.fecha < hoy) return;
+    const rival = partido.local.nombre === nombre ? partido.visitante.nombre : partido.local.nombre;
+    setSelecciones(prev => {
+      let next;
+      if (prev.includes(nombre)) {
+        next = prev.filter(n => n !== nombre);
+      } else {
+        next = [...prev.filter(n => n !== rival), nombre];
+      }
+      localStorage.setItem("cp8b_semis_sel", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const guardar = async () => {
+    if (!firebaseUser || selecciones.length === 0) return;
+    setGuardando(true);
+    try {
+      await setDoc(REF_VOTO(firebaseUser.uid), {
+        uid: firebaseUser.uid, selecciones,
+        timestamp: serverTimestamp(), calculado: false, puntos: 0,
+      });
+      setMiVoto(prev => ({ ...(prev||{}), selecciones, calculado:false, puntos:0 }));
+      setGuardadoOk(true);
+      setTimeout(() => setGuardadoOk(false), 3500);
+    } catch(e) { console.error(e); }
+    finally { setGuardando(false); }
+  };
+
+  // ── BOTÓN LATERAL ─────────────────────────────────────────────
+  if (!abierto) return (
+    <button onClick={() => setAbierto(true)}
+      style={{
+        position:"fixed", bottom:"220px", right:0, zIndex:600,
+        background:"linear-gradient(135deg,#4c1d95,#6d28d9)",
+        border:"3px solid #a78bfa", borderRight:"none",
+        borderRadius:"8px 0 0 8px", padding:"10px 10px",
+        display:"flex", flexDirection:"column", alignItems:"center",
+        gap:"4px", cursor:"pointer", maxWidth:"66px",
+        boxShadow:"-4px 0 14px rgba(167,139,250,0.5)",
+        animation:"pulsoVioleta 2s ease-in-out infinite",
+      }}>
+      <span style={{ fontSize:"20px" }}>⚽</span>
+      <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"4px",
+        color:"#c4b5fd", lineHeight:1.6, textAlign:"center" }}>
+        PRONOSTICA<br/>SEMIS
+      </span>
+      <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"4px", color:"var(--amarillo)" }}>
+        ¡1000 pts!
+      </span>
+      <style>{`@keyframes pulsoVioleta{0%,100%{box-shadow:-4px 0 14px rgba(167,139,250,0.5)}50%{box-shadow:-4px 0 22px rgba(167,139,250,0.9)}}`}</style>
+    </button>
+  );
+
+  // ── PANEL ABIERTO ─────────────────────────────────────────────
+  return (
+    <div style={{
+      position:"fixed", right:0, top:0, bottom:0, zIndex:600,
+      width:"min(340px,100vw)",
+      background:"linear-gradient(180deg,#1e0040 0%,#0d001a 100%)",
+      border:"2px solid #6d28d9", borderRight:"none",
+      display:"flex", flexDirection:"column",
+      fontFamily:"'Press Start 2P',monospace",
+      boxShadow:"-4px 0 20px rgba(109,40,217,0.4)",
+      overflowY:"auto",
+    }}>
+      {/* Header */}
+      <div style={{ padding:"12px 14px", flexShrink:0,
+        background:"linear-gradient(90deg,#4c1d95,#6d28d9)",
+        display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div>
+          <p style={{ fontSize:"7px", color:"#c4b5fd", marginBottom:"2px" }}>⚽ SEMIFINALES</p>
+          <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)" }}>¿Quiénes clasifican?</p>
+        </div>
+        <button onClick={() => setAbierto(false)}
+          style={{ background:"rgba(0,0,0,0.3)", border:"1px solid rgba(255,255,255,0.2)",
+            color:"var(--blanco)", fontSize:"14px", width:"28px", height:"28px",
+            cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+      </div>
+
+      {/* Explicación + tabla */}
+      <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
+        <p style={{ fontSize:"5px", color:"#c4b5fd", lineHeight:2.2, marginBottom:"8px" }}>
+          Elige el equipo que crees que clasificará a semifinales en cada partido.
+          Puedes cambiar tu voto hasta que el partido empiece.
+        </p>
+        <p style={{ fontSize:"5px", color:"var(--amarillo)", marginBottom:"6px" }}>PUNTOS SEGÚN ACIERTOS:</p>
+        <div style={{ display:"flex", gap:"4px", flexWrap:"wrap" }}>
+          {[4,3,2,1].map(n => (
+            <div key={n} style={{ background:"rgba(109,40,217,0.3)",
+              border:"1px solid rgba(167,139,250,0.4)", padding:"4px 8px", textAlign:"center" }}>
+              <p style={{ fontSize:"4px", color:"#c4b5fd" }}>{n} ✓</p>
+              <p style={{ fontSize:"6px", color:"var(--amarillo)" }}>{TABLA[n]} pts</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Resultado si ya calculado */}
+      {yaVoto && miVoto?.puntos > 0 && (
+        <div style={{ padding:"10px 14px", background:"rgba(52,211,153,0.1)",
+          borderBottom:"1px solid rgba(52,211,153,0.3)" }}>
+          <p style={{ fontSize:"7px", color:"#34d399", textAlign:"center" }}>
+            🎉 GANASTE {miVoto.puntos} PTS
+          </p>
+        </div>
+      )}
+
+      <div style={{ padding:"12px 14px", flex:1 }}>
+        {/* Partidos abiertos */}
+        {abiertos.length > 0 && (
+          <>
+            <p style={{ fontSize:"5px", color:"#c4b5fd", marginBottom:"8px", letterSpacing:"1px" }}>
+              ELIGE UN CLASIFICADO POR PARTIDO:
+            </p>
+            {abiertos.map(p => {
+              const selL = selecciones.includes(p.local.nombre);
+              const selV = selecciones.includes(p.visitante.nombre);
+              return (
+                <div key={p.id} style={{ marginBottom:"8px" }}>
+                  <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)", marginBottom:"4px" }}>{p.fecha}</p>
+                  <div style={{ display:"flex", gap:"6px" }}>
+                    {[{eq:p.local,sel:selL},{eq:p.visitante,sel:selV}].map(({eq,sel},ii) => (
+                      <button key={ii} onClick={() => toggleEquipo(eq.nombre)} disabled={yaVoto}
+                        style={{ flex:1, padding:"7px 4px",
+                          fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+                          cursor: yaVoto?"default":"pointer",
+                          border:`2px solid ${sel?"#a78bfa":"rgba(255,255,255,0.15)"}`,
+                          background: sel?"rgba(167,139,250,0.2)":"rgba(0,0,0,0.4)",
+                          color:"var(--blanco)", textAlign:"center" }}>
+                        {eq.bandera}<br/>{eq.nombre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {/* Partidos cerrados */}
+        {cerrados.length > 0 && (
+          <>
+            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.3)",
+              margin:"10px 0 6px", letterSpacing:"1px" }}>CERRADOS:</p>
+            {cerrados.map(p => {
+              const selL = selecciones.includes(p.local.nombre);
+              const selV = selecciones.includes(p.visitante.nombre);
+              const clas = config.clasificados?.find(n => n===p.local.nombre||n===p.visitante.nombre);
+              return (
+                <div key={p.id} style={{ marginBottom:"6px", opacity:0.65 }}>
+                  <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)" }}>
+                    {p.local.bandera} {p.local.nombre} vs {p.visitante.nombre} {p.visitante.bandera}
+                  </p>
+                  {clas && (
+                    <p style={{ fontSize:"5px", color:"#34d399", marginTop:"2px" }}>
+                      ✅ Clasificó: {clas}
+                      {(selL||selV) && (
+                        <span style={{ marginLeft:"6px",
+                          color:(selL&&clas===p.local.nombre)||(selV&&clas===p.visitante.nombre)?"#34d399":"#f87171" }}>
+                          {(selL&&clas===p.local.nombre)||(selV&&clas===p.visitante.nombre)?"✓ acertaste":"✗ fallaste"}
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {/* Mis selecciones guardadas */}
+        {(selecciones.length > 0) && (
+          <div style={{ marginTop:"10px", padding:"8px",
+            border:"1px solid rgba(167,139,250,0.3)", background:"rgba(109,40,217,0.15)" }}>
+            <p style={{ fontSize:"5px", color:"#c4b5fd", marginBottom:"6px" }}>
+              {miVoto ? `✅ TUS ${miVoto.selecciones?.length||selecciones.length} PRONÓSTICOS:` : `TUS ${selecciones.length} SELECCIÓN(ES):`}
+            </p>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:"4px" }}>
+              {(miVoto?.selecciones||selecciones).map(n => {
+                const correcto   = config.clasificados?.includes(n);
+                const incorrecto = config.clasificados?.length > 0 && !correcto;
+                return (
+                  <span key={n} style={{ fontSize:"5px", color:"var(--blanco)",
+                    background: correcto?"rgba(52,211,153,0.2)":incorrecto?"rgba(248,113,113,0.2)":"rgba(167,139,250,0.2)",
+                    border:`1px solid ${correcto?"#34d399":incorrecto?"#f87171":"#a78bfa"}`,
+                    padding:"2px 6px" }}>
+                    {correcto?"✓ ":incorrecto?"✗ ":""}{n}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Botón guardar/editar */}
+        {!yaVoto && (
+          <button className="btn-pixel btn-rojo w-full"
+            style={{ fontSize:"7px", marginTop:"10px", padding:"10px" }}
+            onClick={guardar}
+            disabled={guardando || (selecciones.length === 0 && !miVoto)}>
+            {guardando ? "⚙ GUARDANDO..."
+              : selecciones.length === 0 && miVoto ? "✏ EDITAR PRONÓSTICOS"
+              : miVoto ? `✏ ACTUALIZAR ${selecciones.length} PRONÓSTICOS`
+              : `💾 GUARDAR MIS ${selecciones.length} PRONÓSTICOS`}
+          </button>
+        )}
+
+        {abiertos.length === 0 && !miVoto && (
+          <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
+            textAlign:"center", marginTop:"10px", lineHeight:2 }}>
+            Todos los partidos están cerrados.
+          </p>
+        )}
+      </div>
+
+      {/* Overlay confirmación */}
+      {guardadoOk && (
+        <div style={{ position:"fixed", inset:0, zIndex:900,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          background:"rgba(0,0,0,0.8)" }}>
+          <div style={{ background:"#1a0030", border:"4px solid #a78bfa",
+            padding:"28px 24px", textAlign:"center",
+            boxShadow:"0 0 40px rgba(167,139,250,0.6)", maxWidth:"280px" }}>
+            <p style={{ fontSize:"32px", marginBottom:"12px" }}>✅</p>
+            <p style={{ fontSize:"9px", color:"#c4b5fd", lineHeight:2 }}>¡PRONÓSTICOS<br/>GUARDADOS!</p>
+            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.5)",
+              lineHeight:2, marginTop:"8px" }}>
+              Puedes editarlos hasta que empiece cada partido.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="src/utils/scoring.js">
+// src/utils/scoring.js — lógica pura de puntaje (SIN firebase; testeable)
+// Movida desde helpers.js para poder testearla sin inicializar firebase.
+import { CARTAS } from "../data/sampleData.js";
+
+// ── Cálculo de puntos ────────────────────────────────────────
+// Multiplicador por fase eliminatoria
+function multFase(fase) {
+  if (fase === "dieciseisavos" || fase === "octavos") return 2;
+  if (fase === "cuartos")    return 4;
+  if (fase === "semifinal")  return 8;
+  if (fase === "final")      return 12;
+  return 1;
+}
+
+export function calcularPuntosPartido(prediccion, resultado, fase, estaDestacado) {
+  if (!resultado || !prediccion) return { puntos: 0, esMaximo: false };
+  const esElim = fase && fase !== "grupos";
+  if (!esElim) {
+    const { golesLocal: gl, golesVisitante: gv } = resultado;
+    const ganReal = gl > gv ? "local" : gv > gl ? "visitante" : "empate";
+    const difReal = Math.abs(gl-gv) === 1 ? "1" : "2+";
+    if (estaDestacado) {
+      const exacto = Number(prediccion.golesLocalPred) === gl && Number(prediccion.golesVisitantePred) === gv;
+      if (exacto) return { puntos: 5, esMaximo: true };
+      if (prediccion.ganador === ganReal) return { puntos: 2, esMaximo: true };
+      return { puntos: 0, esMaximo: false };
+    } else {
+      let pts = 0;
+      if (prediccion.ganador === ganReal) {
+        pts += 1;
+        if (ganReal !== "empate" && prediccion.diferencia === difReal) pts += 2;
+      }
+      const m = multFase(fase); if (m > 1 && pts > 0) pts *= m;
+  return { puntos: pts, esMaximo: pts > 0 };
+    }
+  }
+  const { golesLocal: gl, golesVisitante: gv, definicion,
+    golesLocalAlargue, golesVisitanteAlargue,
+    penalesLocal, penalesVisitante, ganadorFinal } = resultado;
+  const gan90     = gl > gv ? "local" : gv > gl ? "visitante" : null;
+  const dif90Real = Math.abs(gl-gv) === 1 ? "1" : "2+";
+  // Ganador real del partido (puede ser por normal, alargue o penales)
+  const ganadorReal = ganadorFinal || gan90;
+
+  let pts = 0;
+
+  // El ganador pronosticado puede estar en cualquier campo según la definición elegida
+  const ganadorPred = prediccion.ganador90 || prediccion.ganadorAlargue || prediccion.ganadorPenales;
+
+  if (definicion === "normal") {
+    if (prediccion.definicion === "normal" && prediccion.ganador90 === gan90) {
+      pts += 2;
+      if (prediccion.diferencia90 === dif90Real) pts += 1;
+    } else if (ganadorPred === gan90) {
+      // Acertó el ganador aunque pronosticó otra definición → premio base
+      pts += 2;
+    }
+  } else if (definicion === "alargue") {
+    if (prediccion.definicion === "alargue") {
+      pts += 3;
+      const dAlg  = Math.abs((golesLocalAlargue??0)-(golesVisitanteAlargue??0));
+      const dAlgR = dAlg === 1 ? "1" : "2+";
+      if (prediccion.ganadorAlargue === ganadorFinal && prediccion.diferenciaAlargue === dAlgR) pts += 3;
+    } else if (ganadorPred === ganadorFinal) {
+      // Acertó el ganador aunque pronosticó otra definición → premio base
+      pts += 2;
+    }
+  } else if (definicion === "penales") {
+    if (prediccion.definicion === "penales") {
+      pts += 3;
+      const exacta = Number(prediccion.penalesLocal) === penalesLocal && Number(prediccion.penalesVisitante) === penalesVisitante;
+      if (exacta) pts += 4;
+      else if (prediccion.ganadorPenales === ganadorFinal) pts += 2;
+    } else if (ganadorPred === ganadorFinal) {
+      // Acertó el ganador aunque pronosticó otra definición → premio base
+      pts += 2;
+    }
+  }
+
+  const mult = multFase(fase); if (mult > 1 && pts > 0) pts *= mult;
+  return { puntos: pts, esMaximo: pts > 0 };
+}
+
+export function calcularPuntosPregunta(resp, correcta) {
+  if (!correcta || !resp) return 0;
+  return resp === correcta ? 2 : 0;
+}
+
+export function aplicarMultiplicadorCarta(puntos, esMaximo, cartaId) {
+  if (!cartaId || !esMaximo || puntos === 0) return puntos;
+  const carta = CARTAS.find(c => c.id === cartaId);
+  return carta ? puntos * carta.multiplicador : puntos;
+}
+
+// ¿Se aplica la carta a esta predicción?
+// - En recálculo (ya consumida antes), se respeta la decisión original.
+// - En primer procesamiento, solo si hay stock disponible en el inventario.
+// Evita que una misma carta multiplique varios partidos y que el contador
+// quede negativo.
+export function cartaSeAplica(tieneCartaId, yaConsumio, stockActual) {
+  if (!tieneCartaId) return false;
+  if (yaConsumio) return true;
+  return (stockActual || 0) > 0;
+}
+</file>
+
+<file path="firestore.rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function esAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /usuarios/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null;
+      match /notificaciones/{notifId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    match /predicciones/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /respuestas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /partidos/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /preguntas/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /puntosDelDia/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /cartasDelUsuario/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /mensajesDia/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    match /mensajesDia/{docId}/reacciones/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /admins/{uid} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /sobresDelDia/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /preguntasEnVivo/{partidoId}/preguntas/{pregId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /preguntasEnVivo/{partidoId}/respuestasEnVivo/{respId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /pronosticoCuartos/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /pronosticoCuartos_votos/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /semifinales/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /semifinales_votos/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /eventoEnVivo/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /eventoEnVivo/{docId}/respuestas/{respId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+
+  }
 }
 </file>
 
@@ -13459,10 +13459,18 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                       )}
                     </span>
                     <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
-                      <span style={{ fontSize:"5px", color:"var(--amarillo)",
-                        border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
-                        +{preg.puntosEnVivo} PTS
-                      </span>
+                      {preg.modoApuesta !== "apuesta" && (
+                        <span style={{ fontSize:"5px", color:"var(--amarillo)",
+                          border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
+                          {preg.modoApuesta === "apuesta" ? `×${(preg.multiplicador||1).toFixed(1)}` : `+${preg.puntosEnVivo} PTS`}
+                        </span>
+                      )}
+                      {(preg.modoApuesta === "apuesta" || preg.modoApuesta === "ambos") && (
+                        <span style={{ fontSize:"5px", color:"var(--rojo-chile)",
+                          border:"1px solid var(--rojo-chile)", padding:"2px 6px" }}>
+                          ×{(preg.multiplicador||1).toFixed(1)}
+                        </span>
+                      )}
                       <button
                         onClick={() => {
                           if (editandoId === preg.id) { setEditandoId(null); return; }
@@ -13856,7 +13864,7 @@ export default function EventoEnVivo() {
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   if (abiertas.length > 0) console.log("modoApuesta:", abiertas[0].modoApuesta, abiertas[0]);
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
-  const ptsJugados = preguntas.reduce((s, p) => s + (p.puntosEnVivo || 0), 0);
+  const ptsJugados = preguntas.reduce((s, p) => s + (p.modoApuesta === "apuesta" ? 0 : (p.puntosEnVivo || 0)), 0);
 
   const idsAbiertas = abiertas.map(p => p.id).join(",");
   useEffect(() => {
@@ -14148,7 +14156,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
             background:"rgba(244,208,63,0.15)",
             border:"1px solid rgba(244,208,63,0.4)",
             padding:"2px 8px" }}>
-            +{pts} PTS
+            {pts > 0 ? `+${ptsReales} PTS` : `×${pregunta.multiplicador?.toFixed(1) || ""}`}
           </span>
         )}
         {(pregunta.modoApuesta === "apuesta" || pregunta.modoApuesta === "ambos") && pregunta.multiplicador && (
@@ -14315,7 +14323,7 @@ function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle
         ) : (
           <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
             color:"rgba(255,255,255,0.35)", display:"flex", alignItems:"center", gap:"4px" }}>
-            SIN RESPONDER
+            NO PARTICIPÓ
             <span style={{ fontSize:"8px" }}>{expandida ? "▲" : "▼"}</span>
           </span>
         )}
