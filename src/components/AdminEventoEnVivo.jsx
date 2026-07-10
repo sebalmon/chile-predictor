@@ -41,6 +41,8 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   const [puntos,   setPuntos]   = useState(3);
   const [creando,  setCreando]  = useState(false);
   const [timerMin, setTimerMin] = useState(0); // 0 = sin límite
+  const [modoApuesta,   setModoApuesta]   = useState("fijo");
+  const [multiplicador, setMultiplicador] = useState(2.0);
 
   // Cierre — ahora un mapa por pregunta
   const [respSels,  setRespSels]  = useState({}); // { preguntaId: opcion }
