@@ -39,6 +39,8 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   const [textoPrg, setTextoPrg] = useState("");
   const [opciones, setOpciones] = useState(["",""]);
   const [puntos,   setPuntos]   = useState(3);
+  const [modoApuesta,   setModoApuesta]   = useState("fijo");
+  const [multiplicador, setMultiplicador] = useState(2);
   const [creando,  setCreando]  = useState(false);
   const [timerMin, setTimerMin] = useState(0); // 0 = sin límite
 
