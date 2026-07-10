@@ -430,13 +430,21 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
         )}
       </div>
 
-      <div style={{ padding:"14px 12px 10px" }}>
-        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"12px",
-          color:"var(--blanco)", lineHeight:2.2, textAlign:"center",
-          textShadow:"0 1px 4px rgba(0,0,0,0.6)" }}>
-          {pregunta.texto}
-        </p>
-      </div>
+      <div style={{ padding: "4px 12px 10px" }}>
+  <p style={{
+    fontFamily: "'Press Start 2P', monospace",
+    fontSize: "10px",
+    color: "var(--blanco)",
+    lineHeight: 2.2,
+    textAlign: "center",
+    background: "rgba(0, 0, 0, 0.6)",
+    padding: "10px 14px",
+    borderRadius: "4px",
+    boxShadow: "inset 0 0 10px rgba(0,0,0,0.3)"
+  }}>
+    {pregunta.texto}
+  </p>
+</div>
 
       {secsLeft !== null && (
         <div style={{ textAlign:"center", padding:"6px 12px 2px" }}>
