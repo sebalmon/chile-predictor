@@ -40,7 +40,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   const [opciones, setOpciones] = useState(["",""]);
   const [puntos,   setPuntos]   = useState(3);
   const [creando,  setCreando]  = useState(false);
-  const [timerMin, setTimerMin] = useState(0); // 0 = sin límite
+  const [timerMin,      setTimerMin]      = useState(0);
   const [modoApuesta,   setModoApuesta]   = useState("fijo");
   const [multiplicador, setMultiplicador] = useState(2.0);
 
@@ -136,12 +136,14 @@ export default function AdminEventoEnVivo({ onMensaje }) {
         puntosEnVivo:      Number(puntos),
         creadaEn:          new Date().toISOString(),
         timerMinutos:      Number(timerMin) || 0,
+        modoApuesta:       modoApuesta,
+        multiplicador:     modoApuesta !== "fijo" ? Number(multiplicador) : null,
       };
       await updateDoc(REF_EVENTO(), {
         preguntas: [...preguntas, pregNueva],
       });
       onMensaje("ok", `🔴 Pregunta #${numeroSiguiente} publicada (+${puntos} pts)`);
-      setTextoPrg(""); setOpciones(["",""]); setPuntos(3); setTimerMin(0);
+      setTextoPrg(""); setOpciones(["",""]); setPuntos(3); setTimerMin(0); setModoApuesta("fijo"); setMultiplicador(2.0);
     } catch (e) { onMensaje("error", e.message); }
     finally { setCreando(false); }
   };
@@ -249,24 +251,33 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       ));
       const batch = writeBatch(db);
       let acertaron = 0;
+      const modo = pregunta.modoApuesta || "fijo";
+      const mult = pregunta.multiplicador || 1;
+
       snapR.docs.forEach(d => {
-        const esCorrecta = d.data().respuesta === respCorrecta;
-        if (esCorrecta) {
-          batch.update(doc(db, "usuarios", d.data().uid), {
-            puntosTotal: increment(pts),
-          });
+        const r = d.data();
+        const esCorrecta = r.respuesta === respCorrecta;
+        const apuesta    = Number(r.apuesta || 0);
+        let ptsGanados   = 0;
+        let ptsDelta     = 0;
+
+        if ((modo === "fijo" || modo === "ambos") && esCorrecta) {
+          ptsGanados += pts; ptsDelta += pts; acertaron++;
+        } else if (modo === "apuesta" && esCorrecta) {
           acertaron++;
         }
-        batch.update(d.ref, {
-          correcta: esCorrecta,
-          puntosGanados: esCorrecta ? pts : 0,
-        });
+        if (apuesta > 0 && (modo === "apuesta" || modo === "ambos")) {
+          if (esCorrecta) {
+            const g = Math.round(apuesta * mult);
+            ptsGanados += g; ptsDelta += g;
+          } else { ptsDelta -= apuesta; }
+        }
+        if (ptsDelta !== 0)
+          batch.update(doc(db,"usuarios",r.uid),{ puntosTotal: increment(ptsDelta) });
+        batch.update(d.ref,{ correcta:esCorrecta, puntosGanados, ptsDelta });
       });
       await batch.commit();
-
-      onMensaje("ok",
-        `✅ Pregunta #${pregunta.numero} cerrada. ${acertaron} de ${snapR.size} acertaron → +${pts} pts c/u.`
-      );
+      onMensaje("ok",`✅ Pregunta #${pregunta.numero} cerrada. ${acertaron}/${snapR.size} acertaron.`);
       setRespSels(prev => { const n = { ...prev }; delete n[pregunta.id]; return n; });
     } catch (e) { onMensaje("error", e.message); }
     finally { setCerrando(null); }
@@ -604,9 +615,42 @@ export default function AdminEventoEnVivo({ onMensaje }) {
               </button>
             )}
 
+            {/* Modo apuesta */}
+            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
+              💰 MODO:
+            </p>
+            <div style={{ display:"flex", gap:"4px", marginBottom:"10px" }}>
+              {[["fijo","🎁 Premio"],["apuesta","💰 Apuesta"],["ambos","🎁+💰 Ambos"]].map(([val,lbl]) => (
+                <button key={val} onClick={() => setModoApuesta(val)}
+                  style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
+                    flex:1, padding:"5px 2px", cursor:"pointer",
+                    border:`2px solid ${modoApuesta===val?"var(--amarillo)":"var(--gris)"}`,
+                    background:modoApuesta===val?"rgba(244,208,63,0.15)":"transparent",
+                    color:modoApuesta===val?"var(--amarillo)":"var(--gris-claro)" }}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+            {(modoApuesta === "apuesta" || modoApuesta === "ambos") && (
+              <div style={{ marginBottom:"10px" }}>
+                <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
+                  ✖ MULTIPLICADOR: ×{multiplicador.toFixed(1)}
+                </p>
+                <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                  <input type="range" min="11" max="100" step="1"
+                    value={Math.round(multiplicador*10)}
+                    onChange={e => setMultiplicador(Number(e.target.value)/10)}
+                    style={{ flex:1 }} />
+                  <span style={{ fontFamily:"'Press Start 2P',monospace",
+                    fontSize:"10px", color:"var(--rojo-chile)" }}>×{multiplicador.toFixed(1)}</span>
+                </div>
+              </div>
+            )}
+            {modoApuesta !== "apuesta" && (
             <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
               PUNTAJE:
-            </p>
+            </p>)}
+            {modoApuesta !== "apuesta" && (
             <div style={{ display:"flex", alignItems:"center", gap:"5px",
               marginBottom:"12px", flexWrap:"wrap" }}>
               {[1,2,3,5,7,10].map(n => (
@@ -625,7 +669,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                   width:"44px", height:"33px", textAlign:"center",
                   border:"2px solid var(--amarillo)",
                   background:"var(--negro)", color:"var(--amarillo)", outline:"none" }} />
-            </div>
+            </div>)}
 
             <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
               ⏱ CRONÓMETRO (minutos, 0 = sin límite):
