@@ -62,10 +62,10 @@ useEffect(() => {
     snapshot.docs.forEach(doc => {
       const r = doc.data();
       nuevasData[r.preguntaId] = {
-        apuesta:       r.apuesta || 0,
-        puntosGanados: r.puntosGanados ?? null,
-        respuesta:     r.respuesta,
-      };
+  apuesta:       r.apuesta || 0,
+  puntosGanados: r.puntosGanados ?? null,
+  correcta:      r.correcta ?? null,   // <--- AGREGAMOS ESTA LÍNEA
+};
     });
     setMisRespuestasData(nuevasData);
   });
@@ -495,7 +495,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
 
 function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle }) {
   const correcta  = pregunta.respuestaCorrecta;
-  const acerte    = miRespuesta && miRespuesta === correcta;
+  const acerte = miData?.correcta ?? (miRespuesta && miRespuesta === correcta);
   const pts       = pregunta.modoApuesta === "apuesta" ? 0 : (pregunta.puntosEnVivo || 0);
   const apuesta   = miData?.apuesta || 0;
   const ptsReales = miData?.puntosGanados ??
