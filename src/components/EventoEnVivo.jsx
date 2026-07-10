@@ -1,4 +1,4 @@
-// src/components/EventoEnVivo.jsx  — v9 (con botón CERRAR que oculta completamente)
+// src/components/EventoEnVivo.jsx  — v8 (estable, con apuesta visible en desplegable)
 import React, { useState, useEffect } from "react";
 import {
   doc, getDoc, collection, onSnapshot, setDoc, serverTimestamp,
@@ -20,7 +20,6 @@ export default function EventoEnVivo() {
   const [imgError,          setImgError]          = useState(false);
   const [expandidaId,       setExpandidaId]       = useState(null);
   const [puntosVivos,       setPuntosVivos]       = useState(0);
-  const [oculto,            setOculto]            = useState(false); // <--- NUEVO: para ocultar completamente
 
   // Escuchar puntosTotal en tiempo real
   useEffect(() => {
@@ -101,25 +100,51 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, [firebaseUser?.uid, evento]);
 
-  // Si el usuario ocultó manualmente, no mostramos nada
-  if (oculto) return null;
-
-  // Si no hay evento o no tiene preguntas, no mostramos nada
-  if (!evento) return null;
-  if (evento.preguntas?.length === 0) return null;
-
-  const preguntas  = evento.preguntas || [];
+  const preguntas  = evento?.preguntas || [];
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
   const ptsJugados = preguntas.reduce((s, p) => s + (p.modoApuesta === "apuesta" ? 0 : (p.puntosEnVivo || 0)), 0);
 
-  // Si el evento está desactivado y no hay preguntas cerradas, no mostramos nada
-  if (!evento.activo && cerradas.length === 0) return null;
+  const idsAbiertas = abiertas.map(p => p.id).join(",");
+  useEffect(() => {
+    if (abiertas.length > 0) setMinimizado(false);
+  }, [idsAbiertas]);
 
-  const estaActivo = evento.activo === true;
+  const responder = async (pregunta, opcion) => {
+    if (!firebaseUser || misRespuestas[pregunta.id] || enviando) return;
+    setEnviando(pregunta.id);
+    try {
+      await setDoc(
+        doc(db, "eventoEnVivo", "actual", "respuestas", `${firebaseUser.uid}_${pregunta.id}`),
+        {
+          uid:        firebaseUser.uid,
+          respuesta:  opcion,
+          preguntaId: pregunta.id,
+          timestamp:  serverTimestamp(),
+          apuesta:    apuestas[pregunta.id] || 0,
+          texto:      pregunta.texto,      // Guardamos el texto
+          numero:     pregunta.numero,     // Guardamos el número
+        }
+      );
+      setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
+      localStorage.setItem(`cp8b_ev_resp_${pregunta.id}`, opcion);
+      if (apuestas[pregunta.id]) {
+        setMisRespuestasData(prev => ({ ...prev, [pregunta.id]: { apuesta: apuestas[pregunta.id] } }));
+      }
+    } catch (e) { console.error(e); }
+    finally { setEnviando(null); }
+  };
 
-  // Si está minimizado y el evento está activo, mostramos el botón flotante
-  if (minimizado && estaActivo) {
+  if (!evento?.activo) return null;
+  if (preguntas.length === 0) return null;
+
+  const localBandera     = evento.equipoLocal?.bandera     || "🏳️";
+  const visitanteBandera = evento.equipoVisitante?.bandera || "🏳️";
+  const localNombre      = evento.equipoLocal?.nombre      || "Local";
+  const visitanteNombre  = evento.equipoVisitante?.nombre  || "Visitante";
+  const imagenFondo      = evento.imagenFondo;
+
+  if (minimizado) {
     return (
       <button
         onClick={() => setMinimizado(false)}
@@ -141,173 +166,123 @@ export default function EventoEnVivo() {
     );
   }
 
-  // Si el evento está desactivado y minimizado, forzamos a mostrarlo (no se minimiza)
-  if (!estaActivo && minimizado) {
-    setMinimizado(false);
-  }
-
-  const localBandera     = evento.equipoLocal?.bandera     || "🏳️";
-  const visitanteBandera = evento.equipoVisitante?.bandera || "🏳️";
-  const localNombre      = evento.equipoLocal?.nombre      || "Local";
-  const visitanteNombre  = evento.equipoVisitante?.nombre  || "Visitante";
-  const imagenFondo      = evento.imagenFondo;
-
   return (
     <div style={{
       position:"fixed", inset:0, zIndex:700,
       display:"flex", flexDirection:"column",
       fontFamily:"'Press Start 2P', monospace",
-      background: estaActivo ? "#0a0510" : "#0a0a0a",
+      background:"#0a0510",
     }}>
-      {/* Botón CERRAR (oculta completamente) */}
-      <button
-        onClick={() => setOculto(true)}
-        style={{
-          position:"absolute", top:"14px", left:"14px", zIndex:10,
-          background:"rgba(0,0,0,0.7)",
-          border:"2px solid var(--gris)",
-          color:"var(--blanco)",
-          fontSize:"10px",
-          padding:"6px 12px",
-          cursor:"pointer",
-          fontFamily:"'Press Start 2P', monospace",
-        }}
-      >
-        ✕ CERRAR
-      </button>
-
-      {estaActivo && (
-        <div style={{
-          position:"relative", width:"100%", height:"42vh",
-          minHeight:"260px", flexShrink:0, overflow:"hidden",
-        }}>
-          {imagenFondo && !imgError ? (
-            <img
-              src={`/${imagenFondo}`}
-              alt="Imagen del partido"
-              style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div style={{
-              width:"100%", height:"100%",
-              background:"radial-gradient(ellipse at center, #2a0050 0%, #0a0510 100%)",
-            }} />
-          )}
-
+      {/* IMAGEN PROTAGONISTA */}
+      <div style={{
+        position:"relative", width:"100%", height:"42vh",
+        minHeight:"260px", flexShrink:0, overflow:"hidden",
+      }}>
+        {imagenFondo && !imgError ? (
+          <img
+            src={`/${imagenFondo}`}
+            alt="Imagen del partido"
+            style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+            onError={() => setImgError(true)}
+          />
+        ) : (
           <div style={{
-            position:"absolute", left:0, right:0, bottom:0, height:"50%",
-            background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
+            width:"100%", height:"100%",
+            background:"radial-gradient(ellipse at center, #2a0050 0%, #0a0510 100%)",
           }} />
+        )}
 
-          <button
-            onClick={() => setMinimizado(true)}
-            style={{
-              position:"absolute", top:"14px", right:"14px", zIndex:2,
-              width:"34px", height:"34px",
-              background:"rgba(0,0,0,0.55)",
-              border:"2px solid rgba(255,255,255,0.35)",
-              color:"var(--blanco)", fontSize:"15px",
-              cursor:"pointer", display:"flex",
-              alignItems:"center", justifyContent:"center",
-            }}
-          >✕</button>
+        <div style={{
+          position:"absolute", left:0, right:0, bottom:0, height:"50%",
+          background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
+        }} />
 
-          {imagenFondo && imgError && (
+        <button
+          onClick={() => setMinimizado(true)}
+          style={{
+            position:"absolute", top:"14px", right:"14px", zIndex:2,
+            width:"34px", height:"34px",
+            background:"rgba(0,0,0,0.55)",
+            border:"2px solid rgba(255,255,255,0.35)",
+            color:"var(--blanco)", fontSize:"15px",
+            cursor:"pointer", display:"flex",
+            alignItems:"center", justifyContent:"center",
+          }}
+        >✕</button>
+
+        {imagenFondo && imgError && (
+          <div style={{
+            position:"absolute", top:"14px", left:"14px", zIndex:2,
+            fontSize:"5px", color:"var(--amarillo)",
+            background:"rgba(0,0,0,0.6)", padding:"4px 8px",
+            border:"1px solid var(--amarillo)", maxWidth:"180px", lineHeight:2,
+          }}>
+            ⚠ No se encontró /{imagenFondo}
+          </div>
+        )}
+
+        {/* Banderas superpuestas */}
+        <div style={{
+          position:"absolute", left:0, right:0, bottom:0, zIndex:1,
+          padding:"0 16px 14px",
+          display:"flex", flexDirection:"column", alignItems:"center",
+        }}>
+          {/* Puntos en juego */}
+          {ptsJugados > 0 && (
             <div style={{
-              position:"absolute", top:"14px", left:"14px", zIndex:2,
-              fontSize:"5px", color:"var(--amarillo)",
-              background:"rgba(0,0,0,0.6)", padding:"4px 8px",
-              border:"1px solid var(--amarillo)", maxWidth:"180px", lineHeight:2,
+              marginBottom:"8px",
+              background:"rgba(0,0,0,0.6)",
+              border:"2px solid var(--amarillo)",
+              padding:"4px 14px",
+              boxShadow:"0 0 12px rgba(244,208,63,0.3)",
             }}>
-              ⚠ No se encontró /{imagenFondo}
+              <p style={{
+                fontFamily:"'Press Start 2P',monospace",
+                fontSize:"7px", color:"var(--amarillo)",
+                lineHeight:1.8,
+              }}>
+                🏆 {ptsJugados} PTS EN JUEGO
+              </p>
             </div>
           )}
 
-          <div style={{
-            position:"absolute", left:0, right:0, bottom:0, zIndex:1,
-            padding:"0 16px 14px",
-            display:"flex", flexDirection:"column", alignItems:"center",
-          }}>
-            {ptsJugados > 0 && (
-              <div style={{
-                marginBottom:"8px",
-                background:"rgba(0,0,0,0.6)",
-                border:"2px solid var(--amarillo)",
-                padding:"4px 14px",
-                boxShadow:"0 0 12px rgba(244,208,63,0.3)",
-              }}>
-                <p style={{
-                  fontFamily:"'Press Start 2P',monospace",
-                  fontSize:"7px", color:"var(--amarillo)",
-                  lineHeight:1.8,
+          <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
+            <span style={{ fontSize:"40px", lineHeight:1,
+              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
+              {localBandera}
+            </span>
+            <div style={{ textAlign:"center" }}>
+              {abiertas.length > 0 && (
+                <span style={{
+                  background:"var(--rojo-chile)", color:"var(--blanco)",
+                  padding:"2px 8px", fontSize:"5px",
+                  animation:"parpadeo 1s ease-in-out infinite",
+                  display:"inline-block",
                 }}>
-                  🏆 {ptsJugados} PTS EN JUEGO
-                </p>
-              </div>
-            )}
-
-            <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
-              <span style={{ fontSize:"40px", lineHeight:1,
-                filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
-                {localBandera}
-              </span>
-              <div style={{ textAlign:"center" }}>
-                {abiertas.length > 0 && (
-                  <span style={{
-                    background:"var(--rojo-chile)", color:"var(--blanco)",
-                    padding:"2px 8px", fontSize:"5px",
-                    animation:"parpadeo 1s ease-in-out infinite",
-                    display:"inline-block",
-                  }}>
-                    🔴 EN VIVO
-                  </span>
-                )}
-              </div>
-              <span style={{ fontSize:"40px", lineHeight:1,
-                filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
-                {visitanteBandera}
-              </span>
+                  🔴 EN VIVO
+                </span>
+              )}
             </div>
-            <p style={{ fontSize:"6px", color:"var(--blanco)", textAlign:"center",
-              lineHeight:1.8, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>
-              {localNombre} vs {visitanteNombre}
-            </p>
+            <span style={{ fontSize:"40px", lineHeight:1,
+              filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}>
+              {visitanteBandera}
+            </span>
           </div>
-        </div>
-      )}
-
-      {!estaActivo && (
-        <div style={{
-          padding: "16px",
-          textAlign: "center",
-          background: "rgba(128,128,128,0.15)",
-          borderBottom: "2px solid var(--gris)",
-        }}>
-          <p style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: "8px",
-            color: "var(--gris-claro)",
-          }}>
-            🔚 EVENTO FINALIZADO
-          </p>
-          <p style={{
-            fontSize: "6px",
-            color: "var(--gris)",
-            marginTop: "6px",
-          }}>
-            Historial de preguntas en las que participaste
+          <p style={{ fontSize:"6px", color:"var(--blanco)", textAlign:"center",
+            lineHeight:1.8, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>
+            {localNombre} vs {visitanteNombre}
           </p>
         </div>
-      )}
+      </div>
 
+      {/* ZONA INFERIOR: preguntas */}
       <div style={{
         flex:1, overflowY:"auto",
         width:"100%", maxWidth:"440px", margin:"0 auto",
         padding:"16px 16px 24px",
         display:"flex", flexDirection:"column", gap:"10px",
       }}>
-        {estaActivo && abiertas.length > 0 && (
+        {abiertas.length > 0 && (
           <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
             {abiertas.map(preg => (
               <PreguntaGrande
@@ -315,7 +290,7 @@ export default function EventoEnVivo() {
                 pregunta={preg}
                 miRespuesta={misRespuestas[preg.id]}
                 enviando={enviando === preg.id}
-                onResponder={(op) => responder(preg, op, firebaseUser, apuestas, setMisRespuestas, setMisRespuestasData, setEnviando)}
+                onResponder={(op) => responder(preg, op)}
                 apuesta={apuestas[preg.id] || 0}
                 onApuesta={(v) => setApuestas(prev => ({ ...prev, [preg.id]: v }))}
                 puntosDisponibles={puntosVivos}
@@ -326,16 +301,10 @@ export default function EventoEnVivo() {
 
         {cerradas.length > 0 && (
           <div>
-            {estaActivo && abiertas.length > 0 && (
+            {abiertas.length > 0 && (
               <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
                 margin:"8px 0 6px", letterSpacing:"1px" }}>
                 PREGUNTAS ANTERIORES
-              </p>
-            )}
-            {!estaActivo && (
-              <p style={{ fontSize:"5px", color:"var(--gris-claro)",
-                margin:"0 0 10px", letterSpacing:"1px", textAlign:"center" }}>
-                📋 HISTORIAL DE PREGUNTAS
               </p>
             )}
             <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
@@ -353,7 +322,7 @@ export default function EventoEnVivo() {
           </div>
         )}
 
-        {estaActivo && abiertas.length === 0 && (
+        {abiertas.length === 0 && (
           <button
             onClick={() => setMinimizado(true)}
             className="btn-pixel btn-gris w-full"
@@ -370,34 +339,7 @@ export default function EventoEnVivo() {
   );
 }
 
-// ── Función responder (para usar dentro del componente) ──
-async function responder(pregunta, opcion, firebaseUser, apuestas, setMisRespuestas, setMisRespuestasData, setEnviando) {
-  if (!firebaseUser) return;
-  setEnviando(pregunta.id);
-  try {
-    await setDoc(
-      doc(db, "eventoEnVivo", "actual", "respuestas", `${firebaseUser.uid}_${pregunta.id}`),
-      {
-        uid:        firebaseUser.uid,
-        respuesta:  opcion,
-        preguntaId: pregunta.id,
-        timestamp:  serverTimestamp(),
-        apuesta:    apuestas[pregunta.id] || 0,
-        texto:      pregunta.texto,
-        numero:     pregunta.numero,
-      }
-    );
-    setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
-    localStorage.setItem(`cp8b_ev_resp_${pregunta.id}`, opcion);
-    if (apuestas[pregunta.id]) {
-      setMisRespuestasData(prev => ({ ...prev, [pregunta.id]: { apuesta: apuestas[pregunta.id] } }));
-    }
-  } catch (e) { console.error(e); }
-  finally { setEnviando(null); }
-}
-
-// ── Componentes auxiliares ──────────────────────────────────────
-
+// ── Paleta de colores por pregunta ────────────────────────────
 const PALETA = [
   { borde:"#f59e0b", fondo:"rgba(245,158,11,0.12)", texto:"#f59e0b" },
   { borde:"#60a5fa", fondo:"rgba(96,165,250,0.12)", texto:"#60a5fa" },
@@ -629,6 +571,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
   );
 }
 
+// ── PreguntaMinimizada (con apuesta visible al desplegar) ──
 function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle }) {
   const correcta  = pregunta.respuestaCorrecta;
   const acerte    = miRespuesta && miRespuesta === correcta;
@@ -694,6 +637,7 @@ function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle
               Tu respuesta: {miRespuesta}
             </p>
           )}
+          {/* ===== Apuesta visible ===== */}
           {miData?.apuesta !== undefined && (
             <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
               color:"var(--amarillo)", marginTop:"4px" }}>
