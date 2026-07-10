@@ -1,4 +1,4 @@
-// src/components/EventoEnVivo.jsx  — v5 (con carga inicial y listener)
+// src/components/EventoEnVivo.jsx  — v6 (con resumen de apuesta al responder)
 import React, { useState, useEffect } from "react";
 import {
   doc, getDoc, collection, onSnapshot, setDoc, serverTimestamp,
@@ -50,7 +50,7 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, []);
 
-  // === NUEVO: Cargar respuestas al inicio y escuchar cambios ===
+  // Cargar respuestas al inicio y escuchar cambios
   useEffect(() => {
     if (!firebaseUser?.uid) return;
 
@@ -81,7 +81,6 @@ export default function EventoEnVivo() {
 
     cargarRespuestas();
 
-    // Listener en tiempo real
     const respuestasRef = collection(db, "eventoEnVivo", "actual", "respuestas");
     const q = query(respuestasRef, where("uid", "==", firebaseUser.uid));
     const unsub = onSnapshot(q, (snapshot) => {
@@ -369,6 +368,7 @@ function useCountdown(pregunta) {
   return secsLeft;
 }
 
+// ── Componente PreguntaGrande (con resumen de apuesta) ──
 function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta, onApuesta, puntosDisponibles }) {
   const pts           = pregunta.puntosEnVivo || 3;
   const color         = colorPregunta(pregunta.numero);
@@ -376,6 +376,22 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
   const secsLeft      = useCountdown(pregunta);
   const tiempoAgotado = secsLeft !== null && secsLeft <= 0;
   const fmtTime = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+
+  // Calcular ganancia esperada si acierta
+  const calcularGanancia = () => {
+    const modo = pregunta.modoApuesta || "fijo";
+    let total = 0;
+    if (modo !== "apuesta") {
+      total += pts; // puntos fijos
+    }
+    if (modo === "apuesta" || modo === "ambos") {
+      const mult = pregunta.multiplicador || 1;
+      total += apuesta * mult;
+    }
+    return total;
+  };
+
+  const gananciaEsperada = calcularGanancia();
 
   return (
     <div style={{
@@ -439,7 +455,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
       )}
 
       <div style={{ padding:"0 12px 14px" }}>
-        {/* Apuesta propia */}
+        {/* Apuesta propia (solo si no ha respondido) */}
         {!miRespuesta && (pregunta.modoApuesta === "apuesta" || pregunta.modoApuesta === "ambos") && (
           <div style={{ padding:"4px 12px 10px" }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"5px" }}>
@@ -497,29 +513,52 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
             ))}
           </div>
         ) : (
+          // --- BLOQUE CUANDO YA RESPONDIÓ (con resumen de apuesta) ---
           <div style={{
-            background:"rgba(0,0,0,0.35)", border:`1px solid ${color.borde}88`,
-            padding:"12px", textAlign:"center",
+            background:"rgba(0,0,0,0.35)",
+            border:`1px solid ${color.borde}88`,
+            padding:"12px",
+            textAlign:"center",
           }}>
-            {miRespuesta ? (
-              <>
-                <p style={{ fontSize:"6px", color: color.texto, lineHeight:2 }}>
-                  ✅ Respondiste:
+            <p style={{ fontSize:"6px", color: color.texto, lineHeight:2 }}>
+              ✅ Respondiste:
+            </p>
+            <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+              color:"var(--blanco)", marginTop:"4px", lineHeight:2 }}>
+              {miRespuesta}
+            </p>
+
+            {/* Resumen de la apuesta (solo si modo no es "fijo") */}
+            {pregunta.modoApuesta !== "fijo" && (
+              <div style={{ marginTop: "10px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "8px" }}>
+                <p style={{ fontSize:"6px", color:"var(--amarillo)" }}>
+                  💰 Apuesta: <strong>{apuesta} pts</strong>
                 </p>
-                <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                  color:"var(--blanco)", marginTop:"4px", lineHeight:2 }}>
-                  {miRespuesta}
-                </p>
-                <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
-                  marginTop:"6px", lineHeight:2 }}>
-                  El admin cerrará la pregunta en breve...
-                </p>
-              </>
-            ) : (
-              <p style={{ fontSize:"6px", color:"var(--rojo-chile)", lineHeight:2 }}>
-                ⏰ Tiempo agotado — no respondiste a tiempo
-              </p>
+                <div style={{ display: "flex", justifyContent: "space-around", marginTop: "6px", flexWrap: "wrap", gap: "4px" }}>
+                  <span style={{ fontSize:"6px", color:"#34d399" }}>
+                    ✅ Si aciertas: +{gananciaEsperada} pts
+                  </span>
+                  {apuesta > 0 && (
+                    <span style={{ fontSize:"6px", color:"#f87171" }}>
+                      ❌ Si fallas: -{apuesta} pts
+                    </span>
+                  )}
+                </div>
+              </div>
             )}
+
+            {pregunta.modoApuesta === "fijo" && (
+              <div style={{ marginTop: "8px" }}>
+                <span style={{ fontSize:"6px", color:"var(--amarillo)" }}>
+                  🎁 Puntos fijos: +{pts} pts si aciertas
+                </span>
+              </div>
+            )}
+
+            <p style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)",
+              marginTop:"8px", lineHeight:2 }}>
+              El admin cerrará la pregunta en breve...
+            </p>
           </div>
         )}
       </div>
@@ -527,6 +566,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
   );
 }
 
+// ── Componente PreguntaMinimizada (sin cambios) ──
 function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle }) {
   const correcta  = pregunta.respuestaCorrecta;
   const acerte    = miRespuesta && miRespuesta === correcta;
