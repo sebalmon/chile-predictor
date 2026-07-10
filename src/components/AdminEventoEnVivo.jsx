@@ -279,7 +279,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       await batch.commit();
       onMensaje("ok",`✅ Pregunta #${pregunta.numero} cerrada. ${acertaron}/${snapR.size} acertaron.`);
       setRespSels(prev => { const n = { ...prev }; delete n[pregunta.id]; return n; });
-    } catch (e) { onMensaje("error", e.message); }
+    } catch (e) { console.error("ERROR:", e); onMensaje("error", e.message || String(e)); }
     finally { setCerrando(null); }
   };
 
