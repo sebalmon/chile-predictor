@@ -1,8 +1,8 @@
-// src/components/EventoEnVivo.jsx  — v4
+// src/components/EventoEnVivo.jsx  — v5 (con carga inicial y listener)
 import React, { useState, useEffect } from "react";
 import {
   doc, getDoc, collection, onSnapshot, setDoc, serverTimestamp,
-  query, where,
+  query, where, getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
@@ -30,6 +30,7 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, [firebaseUser?.uid]);
 
+  // Escuchar el evento en vivo
   useEffect(() => {
     const unsub = onSnapshot(REF_EVENTO(), snap => {
       if (snap.exists()) {
@@ -49,35 +50,62 @@ export default function EventoEnVivo() {
     return () => unsub();
   }, []);
 
-  const preguntas  = evento?.preguntas || [];
-  console.log("preguntas:", preguntas.length, preguntas.map(p=>p.modoApuesta));
+  // === NUEVO: Cargar respuestas al inicio y escuchar cambios ===
+  useEffect(() => {
+    if (!firebaseUser?.uid) return;
 
-// Listener en tiempo real de las respuestas del usuario
-useEffect(() => {
-  if (!firebaseUser?.uid) return;
-  const respuestasRef = collection(db, "eventoEnVivo", "actual", "respuestas");
-  const q = query(respuestasRef, where("uid", "==", firebaseUser.uid));
-  const unsub = onSnapshot(q, (snapshot) => {
-    const nuevasData = {};
-    const nuevasResp = {};
-    snapshot.docs.forEach(doc => {
-      const r = doc.data();
-      nuevasResp[r.preguntaId] = r.respuesta;
-      nuevasData[r.preguntaId] = {
-        apuesta:       r.apuesta || 0,
-        puntosGanados: r.puntosGanados ?? null,
-        correcta:      r.correcta ?? null,
-      };
+    const cargarRespuestas = async () => {
+      try {
+        const respuestasRef = collection(db, "eventoEnVivo", "actual", "respuestas");
+        const q = query(respuestasRef, where("uid", "==", firebaseUser.uid));
+        const snapshot = await getDocs(q);
+        const nuevasData = {};
+        const nuevasResp = {};
+        snapshot.docs.forEach(doc => {
+          const r = doc.data();
+          nuevasResp[r.preguntaId] = r.respuesta;
+          nuevasData[r.preguntaId] = {
+            apuesta:       r.apuesta || 0,
+            puntosGanados: r.puntosGanados ?? null,
+            correcta:      r.correcta ?? null,
+          };
+        });
+        console.log("📩 Cargadas respuestas del usuario:", nuevasResp);
+        console.log("📩 Datos completos:", nuevasData);
+        setMisRespuestas(nuevasResp);
+        setMisRespuestasData(nuevasData);
+      } catch (error) {
+        console.error("Error cargando respuestas:", error);
+      }
+    };
+
+    cargarRespuestas();
+
+    // Listener en tiempo real
+    const respuestasRef = collection(db, "eventoEnVivo", "actual", "respuestas");
+    const q = query(respuestasRef, where("uid", "==", firebaseUser.uid));
+    const unsub = onSnapshot(q, (snapshot) => {
+      const nuevasData = {};
+      const nuevasResp = {};
+      snapshot.docs.forEach(doc => {
+        const r = doc.data();
+        nuevasResp[r.preguntaId] = r.respuesta;
+        nuevasData[r.preguntaId] = {
+          apuesta:       r.apuesta || 0,
+          puntosGanados: r.puntosGanados ?? null,
+          correcta:      r.correcta ?? null,
+        };
+      });
+      console.log("🔄 Actualización en tiempo real:", nuevasResp);
+      setMisRespuestas(nuevasResp);
+      setMisRespuestasData(nuevasData);
     });
-    console.log("📩 Respuestas recibidas:", nuevasResp);
-    console.log("📩 Datos completos:", nuevasData);
-    setMisRespuestas(nuevasResp);
-    setMisRespuestasData(nuevasData);
-  });
-  return () => unsub();
-}, [firebaseUser?.uid, evento]);
+
+    return () => unsub();
+  }, [firebaseUser?.uid, evento]);
+
+  const preguntas  = evento?.preguntas || [];
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
-  if (abiertas.length > 0) console.log("modoApuesta:", abiertas[0].modoApuesta, abiertas[0]);
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
   const ptsJugados = preguntas.reduce((s, p) => s + (p.modoApuesta === "apuesta" ? 0 : (p.puntosEnVivo || 0)), 0);
 
@@ -287,6 +315,7 @@ useEffect(() => {
                   key={pq.id}
                   pregunta={pq}
                   miRespuesta={misRespuestas[pq.id]}
+                  miData={misRespuestasData[pq.id] || {}}
                   expandida={expandidaId === pq.id}
                   onToggle={() => setExpandidaId(prev => prev===pq.id ? null : pq.id)}
                 />
@@ -371,7 +400,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
             background:"rgba(244,208,63,0.15)",
             border:"1px solid rgba(244,208,63,0.4)",
             padding:"2px 8px" }}>
-            {pts > 0 ? `+${ptsReales} PTS` : `×${pregunta.multiplicador?.toFixed(1) || ""}`}
+            {pts > 0 ? `+${pts} PTS` : `×${pregunta.multiplicador?.toFixed(1) || ""}`}
           </span>
         )}
         {(pregunta.modoApuesta === "apuesta" || pregunta.modoApuesta === "ambos") && pregunta.multiplicador && (
@@ -500,7 +529,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
 
 function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle }) {
   const correcta  = pregunta.respuestaCorrecta;
-  const acerte = miData?.correcta ?? (miRespuesta && miRespuesta === correcta);
+  const acerte    = miRespuesta && miRespuesta === correcta;
   const pts       = pregunta.modoApuesta === "apuesta" ? 0 : (pregunta.puntosEnVivo || 0);
   const apuesta   = miData?.apuesta || 0;
   const ptsReales = miData?.puntosGanados ??
