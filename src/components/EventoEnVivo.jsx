@@ -10,13 +10,24 @@ const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
 
 export default function EventoEnVivo() {
   const { firebaseUser } = useAuth();
-  const [evento,        setEvento]        = useState(null);
+  const [evento,            setEvento]            = useState(null);
   const [misRespuestas,     setMisRespuestas]     = useState({});
-  const [misRespuestasData, setMisRespuestasData] = useState({}); // {pregId: {puntosGanados, apuesta, ptsDelta}}
-  const [enviando,      setEnviando]      = useState(null);
-  const [minimizado,    setMinimizado]    = useState(false);
-  const [imgError,      setImgError]      = useState(false);
-  const [expandidaId,   setExpandidaId]   = useState(null);
+  const [misRespuestasData, setMisRespuestasData] = useState({});
+  const [apuestas,          setApuestas]          = useState({});
+  const [enviando,          setEnviando]          = useState(null);
+  const [minimizado,        setMinimizado]        = useState(false);
+  const [imgError,          setImgError]          = useState(false);
+  const [expandidaId,       setExpandidaId]       = useState(null);
+  const [puntosVivos,       setPuntosVivos]       = useState(0);
+
+  // Escuchar puntosTotal en tiempo real
+  useEffect(() => {
+    if (!firebaseUser?.uid) return;
+    const unsub = onSnapshot(doc(db,"usuarios",firebaseUser.uid), snap => {
+      if (snap.exists()) setPuntosVivos(snap.data().puntosTotal ?? 0);
+    });
+    return () => unsub();
+  }, [firebaseUser?.uid]);
 
   useEffect(() => {
     const unsub = onSnapshot(REF_EVENTO(), snap => {
@@ -58,11 +69,11 @@ export default function EventoEnVivo() {
           respuesta:  opcion,
           preguntaId: pregunta.id,
           timestamp:  serverTimestamp(),
+          apuesta:    apuestas[pregunta.id] || 0,
         }
       );
       setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
       localStorage.setItem(`cp8b_ev_resp_${pregunta.id}`, opcion);
-      // Guardar apuesta para mostrar en resultado
       if (apuestas[pregunta.id]) {
         setMisRespuestasData(prev => ({ ...prev, [pregunta.id]: { apuesta: apuestas[pregunta.id] } }));
       }
@@ -226,6 +237,9 @@ export default function EventoEnVivo() {
                 miRespuesta={misRespuestas[preg.id]}
                 enviando={enviando === preg.id}
                 onResponder={(op) => responder(preg, op)}
+                apuesta={apuestas[preg.id] || 0}
+                onApuesta={(v) => setApuestas(prev => ({ ...prev, [preg.id]: v }))}
+                puntosDisponibles={puntosVivos}
               />
             ))}
           </div>
@@ -298,7 +312,7 @@ function useCountdown(pregunta) {
   return secsLeft;
 }
 
-function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
+function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta, onApuesta, puntosDisponibles }) {
   const pts           = pregunta.puntosEnVivo || 3;
   const color         = colorPregunta(pregunta.numero);
   const letras        = ["A","B","C","D","E"];
@@ -323,13 +337,24 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
           color: color.texto, letterSpacing:"1px" }}>
           PREGUNTA #{pregunta.numero}
         </span>
-        <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-          color:"var(--amarillo)",
-          background:"rgba(244,208,63,0.15)",
-          border:"1px solid rgba(244,208,63,0.4)",
-          padding:"2px 8px" }}>
-          +{pts} PTS
-        </span>
+        {pregunta.modoApuesta !== "apuesta" && (
+          <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color:"var(--amarillo)",
+            background:"rgba(244,208,63,0.15)",
+            border:"1px solid rgba(244,208,63,0.4)",
+            padding:"2px 8px" }}>
+            +{pts} PTS
+          </span>
+        )}
+        {(pregunta.modoApuesta === "apuesta" || pregunta.modoApuesta === "ambos") && pregunta.multiplicador && (
+          <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
+            color:"var(--rojo-chile)",
+            background:"rgba(214,40,40,0.15)",
+            border:"1px solid var(--rojo-chile)",
+            padding:"2px 8px" }}>
+            ×{pregunta.multiplicador.toFixed(1)}
+          </span>
+        )}
       </div>
 
       <div style={{ padding:"14px 12px 10px" }}>
@@ -357,6 +382,35 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
       )}
 
       <div style={{ padding:"0 12px 14px" }}>
+        {/* Apuesta propia */}
+        {!miRespuesta && (pregunta.modoApuesta === "apuesta" || pregunta.modoApuesta === "ambos") && (
+          <div style={{ padding:"4px 12px 10px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"5px" }}>
+              <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px", color:"var(--amarillo)" }}>
+                💰 APUESTA: <strong>{apuesta} pts</strong>
+              </span>
+              <span style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)" }}>
+                Tenés {puntosDisponibles} · máx 200
+              </span>
+            </div>
+            <input type="range" min="0"
+              max={Math.min(200, puntosDisponibles)}
+              step="1" value={apuesta}
+              onChange={e => onApuesta(Number(e.target.value))}
+              style={{ width:"100%", accentColor: color.borde }} />
+            {apuesta > 0 && (
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:"6px" }}>
+                <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px", color:"#34d399" }}>
+                  ✅ Si acertás → +{Math.round(apuesta * (pregunta.multiplicador || 1))} pts
+                </span>
+                <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px", color:"#f87171" }}>
+                  ❌ Si fallás → -{apuesta} pts
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {!miRespuesta && !tiempoAgotado ? (
           <div style={{ display:"flex", flexDirection:"column", gap:"7px" }}>
             {(pregunta.opciones||[]).map((op,i) => (
@@ -417,10 +471,9 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
 }
 
 function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle }) {
-  const correcta = pregunta.respuestaCorrecta;
-  const acerte   = miRespuesta && miRespuesta === correcta;
-  const pts      = pregunta.puntosEnVivo || 0;
-  // Puntos reales: puntosGanados si disponible, sino calcular del premio fijo
+  const correcta  = pregunta.respuestaCorrecta;
+  const acerte    = miRespuesta && miRespuesta === correcta;
+  const pts       = pregunta.puntosEnVivo || 0;
   const ptsReales = miData?.puntosGanados ?? (acerte ? pts : 0);
   const apuesta   = miData?.apuesta || 0;
 
