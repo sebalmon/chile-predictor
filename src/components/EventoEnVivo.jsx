@@ -70,6 +70,7 @@ export default function EventoEnVivo() {
     });
   }, [JSON.stringify(preguntas.map(p=>p.estado)), firebaseUser?.uid]);
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
+  if (abiertas.length > 0) console.log("modoApuesta:", abiertas[0].modoApuesta, abiertas[0]);
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
   const ptsJugados = preguntas.reduce((s, p) => s + (p.puntosEnVivo || 0), 0);
 
