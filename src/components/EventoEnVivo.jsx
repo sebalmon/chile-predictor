@@ -68,7 +68,7 @@ export default function EventoEnVivo() {
         }));
       }).catch(()=>{});
     });
-  }, [preguntas.filter(p=>p.estado==="cerrada").map(p=>p.id).join(","), firebaseUser?.uid]);
+  }, [JSON.stringify(preguntas.map(p=>p.estado)), firebaseUser?.uid]);
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
   const ptsJugados = preguntas.reduce((s, p) => s + (p.puntosEnVivo || 0), 0);
