@@ -9,13 +9,14 @@ import { useAuth } from "../contexts/AuthContext";
 const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
 
 export default function EventoEnVivo() {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, userProfile } = useAuth();
   const [evento,        setEvento]        = useState(null);
   const [misRespuestas, setMisRespuestas] = useState({});
   const [enviando,      setEnviando]      = useState(null);
   const [minimizado,    setMinimizado]    = useState(false);
   const [imgError,      setImgError]      = useState(false);
   const [expandidaId,   setExpandidaId]   = useState(null);
+  const [apuestas,      setApuestas]      = useState({}); // { pregId: monto }
 
   useEffect(() => {
     const unsub = onSnapshot(REF_EVENTO(), snap => {
@@ -57,6 +58,7 @@ export default function EventoEnVivo() {
           respuesta:  opcion,
           preguntaId: pregunta.id,
           timestamp:  serverTimestamp(),
+          apuesta:    apuestas[pregunta.id] || 0,
         }
       );
       setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
@@ -221,6 +223,9 @@ export default function EventoEnVivo() {
                 miRespuesta={misRespuestas[preg.id]}
                 enviando={enviando === preg.id}
                 onResponder={(op) => responder(preg, op)}
+                apuesta={apuestas[preg.id] || 0}
+                onApuesta={(v) => setApuestas(prev => ({ ...prev, [preg.id]: v }))}
+                puntosDisponibles={userProfile?.puntosTotal || 0}
               />
             ))}
           </div>
@@ -293,7 +298,7 @@ function useCountdown(pregunta) {
   return secsLeft;
 }
 
-function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
+function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta, onApuesta, puntosDisponibles }) {
   const pts           = pregunta.puntosEnVivo || 3;
   const color         = colorPregunta(pregunta.numero);
   const letras        = ["A","B","C","D","E"];
@@ -334,6 +339,36 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder }) {
           {pregunta.texto}
         </p>
       </div>
+
+      {/* Apuesta propia */}
+      {!miRespuesta && (pregunta.modoApuesta === "apuesta" || pregunta.modoApuesta === "ambos") && (
+        <div style={{ padding:"0 12px 10px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"4px" }}>
+            <span style={{ fontSize:"5px", color:"var(--amarillo)" }}>
+              💰 APUESTA: <strong>{apuesta} pts</strong>
+            </span>
+            <span style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)" }}>
+              Tenés {puntosDisponibles} pts · máx 200
+            </span>
+          </div>
+          <input type="range" min="0" max={Math.min(200, puntosDisponibles)} step="1"
+            value={apuesta}
+            onChange={e => onApuesta(Number(e.target.value))}
+            disabled={!!miRespuesta}
+            style={{ width:"100%", accentColor: color.borde }} />
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:"3px" }}>
+            <span style={{ fontSize:"4px", color:"rgba(255,255,255,0.4)" }}>0 pts</span>
+            {apuesta > 0 && (
+              <span style={{ fontSize:"5px", color: color.texto }}>
+                Si acertás → +{Math.round(apuesta * (pregunta.multiplicador || 1))} pts
+              </span>
+            )}
+            <span style={{ fontSize:"4px", color:"rgba(255,255,255,0.4)" }}>
+              {Math.min(200, puntosDisponibles)} pts
+            </span>
+          </div>
+        </div>
+      )}
 
       {secsLeft !== null && (
         <div style={{ textAlign:"center", padding:"6px 12px 2px" }}>
