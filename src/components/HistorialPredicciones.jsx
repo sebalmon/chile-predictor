@@ -1,13 +1,4 @@
-// src/components/HistorialPredicciones.jsx  — v7 (Patch 2)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v7:
-//   Punto 3: Total del día calculado con fuente de verdad correcta:
-//     se usa puntosDelDia.puntos cuando existe (ya incluye bonus);
-//     si no, suma predicciones + pregunta + bonus localmente.
-//     Se elimina el doble-conteo del bonus.
-//   Punto 9: En FilaPartido, muestra "🃏 ×N" si pred.cartaId
-//     y pred.cartaConsumida, junto al multiplicador utilizado.
-// ─────────────────────────────────────────────────────────────
+// src/components/HistorialPredicciones.jsx  — v8 (orden cronológico en en vivo)
 import React, { useEffect, useState } from "react";
 import {
   collection, getDocs, query, where, documentId, doc, getDoc,
@@ -83,20 +74,18 @@ function labelFecha(fechaStr) {
   return `${d} de ${meses[m-1]} de ${y}${nDia ? ` — Día ${nDia}` : ""}`;
 }
 
-// ── Fila de un partido (punto 9: aviso de carta) ──────────────
+// ── Fila de un partido ────────────────────────────────────────
 function FilaPartido({ pred, partido }) {
   if (!partido?.resultado) return null;
   const { resultado, estaDestacado, local, visitante } = partido;
   const acertaste  = pred.esMaximo === true;
   const pts        = typeof pred.puntosGanados === "number" ? pred.puntosGanados : null;
-  // Puntos BASE (sin multiplicar) para el desglose
   const ptsBase    = typeof pred.puntosBase === "number" ? pred.puntosBase : pts;
   const desglose   = ptsBase ? desgloseDesglose(ptsBase, estaDestacado, pred) : "";
   const apuesta    = textoApuestaPartido(pred);
   const resReal    = textoResultadoReal(resultado);
   const nombrePart = `${local?.bandera??""} ${local?.nombre??""} vs ${visitante?.nombre??""} ${visitante?.bandera??""}`;
 
-  // Carta usada (punto 9)
   const cartaUsada = pred.cartaId && pred.cartaConsumida
     ? CARTAS.find(c => c.id === pred.cartaId)
     : null;
@@ -116,7 +105,6 @@ function FilaPartido({ pred, partido }) {
           Tu apuesta: <span style={{ color:"var(--blanco)" }}>{apuesta}</span>
           {" · "}Real: <span style={{ color:"var(--amarillo)" }}>{resReal}</span>
         </p>
-        {/* Aviso de carta (punto 9) */}
         {cartaUsada && (
           <p style={{ fontSize:"5px",color:"var(--amarillo)",lineHeight:1.8,marginTop:"2px" }}>
             🃏 Carta <strong>{cartaUsada.nombre}</strong> ×{cartaUsada.multiplicador} utilizada
@@ -149,15 +137,10 @@ function FilaPartido({ pred, partido }) {
 function BloqueDia({ fecha, predicciones, partidos, respuesta, pregunta, puntosDelDia }) {
   const [abierto, setAbierto] = useState(true);
 
-  // Punto 3: Total del día con fuente correcta
-  // puntosDelDia.puntos ya es la suma definitiva guardada por helpers.js
-  // (incluye partidos + pregunta + bonus diario).
-  // Solo calculamos localmente si no hay ese documento.
   const ptsParts    = predicciones.reduce((s,p) => s + (p.puntosGanados??0), 0);
   const ptsPregunta = respuesta?.puntosGanados ?? 0;
   const bonusGanador = puntosDelDia?.esGanador ? (puntosDelDia.bonusGanador ?? 2) : 0;
 
-  // Fuente de verdad: puntosDelDia.puntos si existe, calculado si no
   const totalDia = puntosDelDia?.puntos !== undefined && puntosDelDia?.puntos !== null
     ? puntosDelDia.puntos
     : ptsParts + ptsPregunta + bonusGanador;
@@ -250,7 +233,6 @@ function BloqueEnVivo({ respuestasEnVivo, ptsEnVivo }) {
   const [abierto, setAbierto] = useState(true);
   if (!respuestasEnVivo || respuestasEnVivo.length === 0) return null;
 
-  // Usar ptsEnVivo calculado desde puntosTotal cuando no hay puntosGanados en respuestas
   const totalPtsGuardados = respuestasEnVivo.reduce((s, r) => s + (r.puntosGanados ?? 0), 0);
   const totalPts = totalPtsGuardados > 0 ? totalPtsGuardados : (ptsEnVivo || 0);
 
@@ -269,8 +251,6 @@ function BloqueEnVivo({ respuestasEnVivo, ptsEnVivo }) {
       {abierto && (
         <div>
           {respuestasEnVivo.map(r => {
-            // Fix: usar correcta/puntosGanados guardados en la respuesta
-            // (no depender de estado que requiere que el evento siga activo)
             const resuelta  = r.correcta !== undefined;
             const pendiente = !resuelta;
             const pts = r.puntosGanados ?? 0;
@@ -353,33 +333,50 @@ export default function HistorialPredicciones({ userId, puntosTotal }) {
       // en el array `preguntas` del documento del evento.
       const preguntasEvento = snapEventoDoc.exists() ? (snapEventoDoc.data().preguntas || []) : [];
       const respsEV = snapEV.docs
-  .map(d => {
-    const data = d.data();
-    // Usamos los campos guardados directamente (ya no dependemos de preguntasEvento)
-    const correcta = data.correcta !== undefined
-      ? data.correcta
-      : data.respuestaCorrecta !== undefined
-        ? data.respuesta === data.respuestaCorrecta
-        : undefined;
-    const puntosGanados = data.puntosGanados !== undefined
-      ? data.puntosGanados
-      : data.respuestaCorrecta !== undefined
-        ? (data.respuesta === data.respuestaCorrecta ? (data.puntosEnVivo || 3) : 0)
-        : undefined;
-    return {
-      id:                d.id,
-      ...data,
-      // Usamos los campos guardados en la respuesta (texto, numero)
-      texto:             data.texto             ?? "Pregunta",
-      numero:            data.numero            ?? 0,
-      respuestaCorrecta: data.respuestaCorrecta ?? null,
-      correcta,
-      puntosGanados,
-    };
-  })
-  .sort((a,b) => (b.numero ?? 0) - (a.numero ?? 0));
+        .map(d => {
+          const data = d.data();
+          const preg = preguntasEvento.find(p => p.id === data.preguntaId);
+
+          const correcta = data.correcta !== undefined
+            ? data.correcta
+            : preg?.estado === "cerrada"
+              ? data.respuesta === preg?.respuestaCorrecta
+              : undefined;
+
+          const puntosGanados = data.puntosGanados !== undefined
+            ? data.puntosGanados
+            : preg?.estado === "cerrada"
+              ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
+              : undefined;
+
+          // Extraer timestamp de Firestore (si existe)
+          let timestamp = data.timestamp;
+          if (timestamp && typeof timestamp.toDate === "function") {
+            timestamp = timestamp.toDate().getTime();
+          } else if (timestamp && typeof timestamp === "object" && timestamp.seconds) {
+            timestamp = timestamp.seconds * 1000;
+          } else {
+            // Si no hay timestamp, usar el id (que incluye timestamp) o 0
+            timestamp = 0;
+          }
+
+          return {
+            id:                d.id,
+            ...data,
+            texto:             data.texto             ?? preg?.texto,
+            numero:            data.numero            ?? preg?.numero,
+            respuestaCorrecta: data.respuestaCorrecta ?? preg?.respuestaCorrecta,
+            correcta,
+            puntosGanados,
+            timestamp, // <- guardamos para ordenar
+          };
+        })
+        // ORDENAR POR TIMESTAMP DESCENDENTE (más reciente primero)
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
       setRespuestasEnVivo(respsEV);
 
+      // ── Resto del código (partidos, preguntas del día) ──
       const porFecha = {};
 
       for (const pDoc of snapPreds.docs) {
