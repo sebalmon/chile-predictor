@@ -73,7 +73,7 @@ export default function EventoEnVivo() {
   const abiertas   = preguntas.filter(p => p.estado === "abierta").slice().reverse();
   if (abiertas.length > 0) console.log("modoApuesta:", abiertas[0].modoApuesta, abiertas[0]);
   const cerradas   = preguntas.filter(p => p.estado === "cerrada").slice().reverse();
-  const ptsJugados = preguntas.reduce((s, p) => s + (p.puntosEnVivo || 0), 0);
+  const ptsJugados = preguntas.reduce((s, p) => s + (p.modoApuesta === "apuesta" ? 0 : (p.puntosEnVivo || 0)), 0);
 
   const idsAbiertas = abiertas.map(p => p.id).join(",");
   useEffect(() => {
@@ -359,7 +359,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
           color: color.texto, letterSpacing:"1px" }}>
           PREGUNTA #{pregunta.numero}
         </span>
-        {pts > 0 && (
+        {pregunta.modoApuesta !== "apuesta" && (
           <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
             color:"var(--amarillo)",
             background:"rgba(244,208,63,0.15)",
@@ -532,7 +532,7 @@ function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle
         ) : (
           <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
             color:"rgba(255,255,255,0.35)", display:"flex", alignItems:"center", gap:"4px" }}>
-            SIN RESPONDER
+            NO PARTICIPÓ
             <span style={{ fontSize:"8px" }}>{expandida ? "▲" : "▼"}</span>
           </span>
         )}

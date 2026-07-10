@@ -437,10 +437,18 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                       )}
                     </span>
                     <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
-                      <span style={{ fontSize:"5px", color:"var(--amarillo)",
-                        border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
-                        +{preg.puntosEnVivo} PTS
-                      </span>
+                      {preg.modoApuesta !== "apuesta" && (
+                        <span style={{ fontSize:"5px", color:"var(--amarillo)",
+                          border:"1px solid var(--amarillo)", padding:"2px 6px" }}>
+                          +{preg.puntosEnVivo} PTS
+                        </span>
+                      )}
+                      {(preg.modoApuesta === "apuesta" || preg.modoApuesta === "ambos") && (
+                        <span style={{ fontSize:"5px", color:"var(--rojo-chile)",
+                          border:"1px solid var(--rojo-chile)", padding:"2px 6px" }}>
+                          ×{(preg.multiplicador||1).toFixed(1)}
+                        </span>
+                      )}
                       <button
                         onClick={() => {
                           if (editandoId === preg.id) { setEditandoId(null); return; }
