@@ -13,7 +13,18 @@ export default function EventoEnVivo() {
   const [evento,            setEvento]            = useState(null);
   const [misRespuestas,     setMisRespuestas]     = useState({});
   const [misRespuestasData, setMisRespuestasData] = useState({});
-  const [apuestas,          setApuestas]          = useState({});
+  const [apuestas, setApuestas] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cp8b_ev_apuestas") || "{}"); }
+    catch { return {}; }
+  });
+
+  const setApuesta = (pregId, valor) => {
+    setApuestas(prev => {
+      const next = { ...prev, [pregId]: valor };
+      localStorage.setItem("cp8b_ev_apuestas", JSON.stringify(next));
+      return next;
+    });
+  };
   const [enviando,          setEnviando]          = useState(null);
   const [minimizado,        setMinimizado]        = useState(false);
   const [imgError,          setImgError]          = useState(false);
@@ -238,7 +249,7 @@ export default function EventoEnVivo() {
                 enviando={enviando === preg.id}
                 onResponder={(op) => responder(preg, op)}
                 apuesta={apuestas[preg.id] || 0}
-                onApuesta={(v) => setApuestas(prev => ({ ...prev, [preg.id]: v }))}
+                onApuesta={(v) => setApuesta(preg.id, v)}
                 puntosDisponibles={puntosVivos}
               />
             ))}
@@ -396,7 +407,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
             <input type="range" min="0"
               max={Math.min(200, puntosDisponibles)}
               step="1" value={apuesta}
-              onChange={e => onApuesta(Number(e.target.value))}
+              onChange={e => { onApuesta(Number(e.target.value)); }}
               style={{ width:"100%", accentColor: color.borde }} />
             {apuesta > 0 && (
               <div style={{ display:"flex", justifyContent:"space-between", marginTop:"6px" }}>
