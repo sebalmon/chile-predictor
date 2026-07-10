@@ -463,7 +463,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
                 💰 APUESTA: <strong>{apuesta} pts</strong>
               </span>
               <span style={{ fontSize:"5px", color:"rgba(255,255,255,0.4)" }}>
-                Tenés {puntosDisponibles} · máx 200
+                Tienes {puntosDisponibles} · máx 200
               </span>
             </div>
             <input type="range" min="0"
@@ -474,10 +474,10 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
             {apuesta > 0 && (
               <div style={{ display:"flex", justifyContent:"space-between", marginTop:"6px" }}>
                 <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px", color:"#34d399" }}>
-                  ✅ Si acertás → +{Math.round(apuesta * (pregunta.multiplicador || 1))} pts
+                  ✅ Si aciertas → +{Math.round(apuesta * (pregunta.multiplicador || 1))} pts
                 </span>
                 <span style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px", color:"#f87171" }}>
-                  ❌ Si fallás → -{apuesta} pts
+                  ❌ Si fallas → -{apuesta} pts
                 </span>
               </div>
             )}
