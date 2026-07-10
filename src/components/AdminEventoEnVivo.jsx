@@ -38,9 +38,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
   // Form nueva pregunta
   const [textoPrg, setTextoPrg] = useState("");
   const [opciones, setOpciones] = useState(["",""]);
-  const [puntos,      setPuntos]      = useState(3);
-  const [modoApuesta, setModoApuesta] = useState("fijo"); // "fijo" | "apuesta" | "ambos"
-  const [multiplicador, setMultiplicador] = useState(2);
+  const [puntos,   setPuntos]   = useState(3);
   const [creando,  setCreando]  = useState(false);
   const [timerMin, setTimerMin] = useState(0); // 0 = sin límite
 
@@ -134,8 +132,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
         estado:            "abierta",
         respuestaCorrecta: null,
         puntosEnVivo:      Number(puntos),
-        modoApuesta:       modoApuesta,
-        multiplicador:     modoApuesta !== "fijo" ? Number(multiplicador) : null,
         creadaEn:          new Date().toISOString(),
         timerMinutos:      Number(timerMin) || 0,
       };
@@ -143,7 +139,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
         preguntas: [...preguntas, pregNueva],
       });
       onMensaje("ok", `🔴 Pregunta #${numeroSiguiente} publicada (+${puntos} pts)`);
-      setTextoPrg(""); setOpciones(["",""]); setPuntos(3); setTimerMin(0); setModoApuesta("fijo"); setMultiplicador(2);
+      setTextoPrg(""); setOpciones(["",""]); setPuntos(3); setTimerMin(0);
     } catch (e) { onMensaje("error", e.message); }
     finally { setCreando(false); }
   };
@@ -251,55 +247,23 @@ export default function AdminEventoEnVivo({ onMensaje }) {
       ));
       const batch = writeBatch(db);
       let acertaron = 0;
-      const modo = pregunta.modoApuesta || "fijo";
-      const mult = pregunta.multiplicador || 1;
-
       snapR.docs.forEach(d => {
-        const r = d.data();
-        const esCorrecta = r.respuesta === respCorrecta;
-        let ptsGanados = 0;
-        let ptsDelta   = 0;
-
-        // Premio fijo
-        if (modo === "fijo" || modo === "ambos") {
-          if (esCorrecta) ptsGanados += pts;
-        }
-
-        // Apuesta propia
-        const apuesta = Number(r.apuesta || 0);
-        if ((modo === "apuesta" || modo === "ambos") && apuesta > 0) {
-          if (esCorrecta) {
-            const ganancia = Math.round(apuesta * mult);
-            ptsGanados += ganancia;
-            ptsDelta   += ganancia; // gana la apuesta multiplicada
-          } else {
-            ptsDelta -= apuesta; // pierde lo apostado
-          }
-        }
-
-        if (esCorrecta && (modo === "fijo" || modo === "ambos")) {
-          ptsDelta += pts;
-          acertaron++;
-        } else if (esCorrecta && modo === "apuesta") {
-          acertaron++;
-        }
-
-        // Actualizar puntos del usuario
-        if (ptsDelta !== 0) {
-          batch.update(doc(db, "usuarios", r.uid), {
-            puntosTotal: increment(ptsDelta),
+        const esCorrecta = d.data().respuesta === respCorrecta;
+        if (esCorrecta) {
+          batch.update(doc(db, "usuarios", d.data().uid), {
+            puntosTotal: increment(pts),
           });
+          acertaron++;
         }
         batch.update(d.ref, {
-          correcta:     esCorrecta,
-          puntosGanados: ptsGanados,
-          ptsDelta,
+          correcta: esCorrecta,
+          puntosGanados: esCorrecta ? pts : 0,
         });
       });
       await batch.commit();
 
       onMensaje("ok",
-        `✅ Pregunta #${pregunta.numero} cerrada. ${acertaron}/${snapR.size} acertaron.`
+        `✅ Pregunta #${pregunta.numero} cerrada. ${acertaron} de ${snapR.size} acertaron → +${pts} pts c/u.`
       );
       setRespSels(prev => { const n = { ...prev }; delete n[pregunta.id]; return n; });
     } catch (e) { onMensaje("error", e.message); }
@@ -638,65 +602,31 @@ export default function AdminEventoEnVivo({ onMensaje }) {
               </button>
             )}
 
-            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
-              PUNTAJE:
-            </p>
-            <div style={{ display:"flex", alignItems:"center", gap:"5px",
-              marginBottom:"12px", flexWrap:"wrap" }}>
-              {[1,2,3,5,7,10].map(n => (
-                <button key={n} onClick={() => setPuntos(n)}
-                  style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                    width:"33px", height:"33px", cursor:"pointer",
-                    border:`2px solid ${puntos===n?"var(--amarillo)":"var(--gris)"}`,
-                    background:puntos===n?"rgba(244,208,63,0.2)":"transparent",
-                    color:puntos===n?"var(--amarillo)":"var(--gris-claro)" }}>
-                  +{n}
-                </button>
-              ))}
-              <input type="number" min="1" max="99" value={puntos}
-                onChange={e => setPuntos(Math.max(1,Math.min(99,Number(e.target.value)||1)))}
-                style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                  width:"44px", height:"33px", textAlign:"center",
-                  border:"2px solid var(--amarillo)",
-                  background:"var(--negro)", color:"var(--amarillo)", outline:"none" }} />
-            </div>
-
-            {/* Modo de apuesta */}
-            <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
-              💰 MODO DE APUESTA:
-            </p>
-            <div style={{ display:"flex", gap:"5px", marginBottom:"10px" }}>
-              {[["fijo","🎁 Solo Premio"],["apuesta","💰 Solo Apuesta"],["ambos","🎁+💰 Ambos"]].map(([val,lbl]) => (
-                <button key={val} onClick={() => setModoApuesta(val)}
-                  style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"5px",
-                    flex:1, padding:"5px 3px", cursor:"pointer",
-                    border:`2px solid ${modoApuesta===val?"var(--amarillo)":"var(--gris)"}`,
-                    background: modoApuesta===val?"rgba(244,208,63,0.15)":"transparent",
-                    color: modoApuesta===val?"var(--amarillo)":"var(--gris-claro)" }}>
-                  {lbl}
-                </button>
-              ))}
-            </div>
-
-            {(modoApuesta === "apuesta" || modoApuesta === "ambos") && (
-              <div style={{ marginBottom:"10px" }}>
+            {modoApuesta !== "apuesta" && (
+              <>
                 <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
-                  ✖ MULTIPLICADOR (1.1x – 10x):
+                  PUNTAJE:
                 </p>
-                <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-                  <input type="range" min="11" max="100" step="1"
-                    value={Math.round(multiplicador * 10)}
-                    onChange={e => setMultiplicador(Number(e.target.value) / 10)}
-                    style={{ flex:1 }} />
-                  <span style={{ fontFamily:"'Press Start 2P',monospace",
-                    fontSize:"10px", color:"var(--rojo-chile)", minWidth:"40px" }}>
-                    ×{multiplicador.toFixed(1)}
-                  </span>
+                <div style={{ display:"flex", alignItems:"center", gap:"5px",
+                  marginBottom:"12px", flexWrap:"wrap" }}>
+                  {[1,2,3,5,7,10].map(n => (
+                    <button key={n} onClick={() => setPuntos(n)}
+                      style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                        width:"33px", height:"33px", cursor:"pointer",
+                        border:`2px solid ${puntos===n?"var(--amarillo)":"var(--gris)"}`,
+                        background:puntos===n?"rgba(244,208,63,0.2)":"transparent",
+                        color:puntos===n?"var(--amarillo)":"var(--gris-claro)" }}>
+                      +{n}
+                    </button>
+                  ))}
+                  <input type="number" min="1" max="99" value={puntos}
+                    onChange={e => setPuntos(Math.max(1,Math.min(99,Number(e.target.value)||1)))}
+                    style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+                      width:"44px", height:"33px", textAlign:"center",
+                      border:"2px solid var(--amarillo)",
+                      background:"var(--negro)", color:"var(--amarillo)", outline:"none" }} />
                 </div>
-                <p style={{ fontSize:"4px", color:"var(--gris-claro)", marginTop:"3px" }}>
-                  Quien acierta gana su apuesta × {multiplicador.toFixed(1)}. Quien falla pierde lo apostado.
-                </p>
-              </div>
+              </>
             )}
 
             <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
