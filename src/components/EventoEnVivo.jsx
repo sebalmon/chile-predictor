@@ -505,11 +505,17 @@ function PreguntaMinimizada({ pregunta, miRespuesta, miData, expandida, onToggle
             color: acerte ? "var(--verde-claro)" : "var(--rojo-chile)",
             display:"flex", alignItems:"center", gap:"4px",
           }}>
-            {acerte
-              ? `🎉 +${ptsReales} PTS`
-              : apuesta > 0
-                ? `❌ -${apuesta} pts`
-                : "❌ NO ACERTASTE"}
+            {pregunta.modoApuesta === "apuesta"
+              ? acerte
+                ? `✅ Apostaste ${apuesta} → +${Math.round(apuesta * (pregunta.multiplicador||1))} pts`
+                : `❌ Apostaste ${apuesta} → -${apuesta} pts`
+              : pregunta.modoApuesta === "ambos"
+                ? acerte
+                  ? `✅ +${ptsReales} pts${apuesta>0?` (incl. apuesta ×${pregunta.multiplicador})`:""}`
+                  : apuesta>0 ? `❌ -${apuesta} pts apostados` : "❌ NO ACERTASTE"
+                : acerte
+                  ? `🎉 +${ptsReales} PTS`
+                  : "❌ NO ACERTASTE"}
             <span style={{ color:"rgba(255,255,255,0.4)", fontSize:"8px" }}>
               {expandida ? "▲" : "▼"}
             </span>
