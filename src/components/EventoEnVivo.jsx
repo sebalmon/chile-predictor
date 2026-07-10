@@ -431,7 +431,7 @@ function PreguntaGrande({ pregunta, miRespuesta, enviando, onResponder, apuesta,
       </div>
 
       <div style={{ padding:"14px 12px 10px" }}>
-        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
+        <p style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"12px",
           color:"var(--blanco)", lineHeight:2.2, textAlign:"center",
           textShadow:"0 1px 4px rgba(0,0,0,0.6)" }}>
           {pregunta.texto}
