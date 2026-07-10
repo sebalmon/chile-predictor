@@ -118,15 +118,17 @@ export default function EventoEnVivo() {
     setEnviando(pregunta.id);
     try {
       await setDoc(
-        doc(db, "eventoEnVivo", "actual", "respuestas", `${firebaseUser.uid}_${pregunta.id}`),
-        {
-          uid:        firebaseUser.uid,
-          respuesta:  opcion,
-          preguntaId: pregunta.id,
-          timestamp:  serverTimestamp(),
-          apuesta:    apuestas[pregunta.id] || 0,
-        }
-      );
+  doc(db, "eventoEnVivo", "actual", "respuestas", `${firebaseUser.uid}_${pregunta.id}`),
+  {
+    uid:        firebaseUser.uid,
+    respuesta:  opcion,
+    preguntaId: pregunta.id,
+    timestamp:  serverTimestamp(),
+    apuesta:    apuestas[pregunta.id] || 0,
+    texto:      pregunta.texto,      // <--- NUEVO
+    numero:     pregunta.numero,     // <--- NUEVO
+  }
+);
       setMisRespuestas(prev => ({ ...prev, [pregunta.id]: opcion }));
       localStorage.setItem(`cp8b_ev_resp_${pregunta.id}`, opcion);
       if (apuestas[pregunta.id]) {

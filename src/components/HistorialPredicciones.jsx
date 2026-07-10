@@ -353,38 +353,31 @@ export default function HistorialPredicciones({ userId, puntosTotal }) {
       // en el array `preguntas` del documento del evento.
       const preguntasEvento = snapEventoDoc.exists() ? (snapEventoDoc.data().preguntas || []) : [];
       const respsEV = snapEV.docs
-        .map(d => {
-          const data = d.data();
-          // Buscar la pregunta en el evento activo (puede no existir si el evento cambió)
-          const preg = preguntasEvento.find(p => p.id === data.preguntaId);
-
-          // Usar campos guardados en la respuesta primero (persistentes),
-          // luego cruzar con la pregunta activa si están disponibles.
-          const correcta = data.correcta !== undefined
-            ? data.correcta
-            : preg?.estado === "cerrada"
-              ? data.respuesta === preg?.respuestaCorrecta
-              : undefined;
-
-          const puntosGanados = data.puntosGanados !== undefined
-            ? data.puntosGanados
-            : preg?.estado === "cerrada"
-              ? (data.respuesta === preg?.respuestaCorrecta ? (preg?.puntosEnVivo || 3) : 0)
-              : undefined;
-
-          return {
-            id:                d.id,
-            ...data,
-            // Texto y número: usar lo guardado en la respuesta, o del evento activo
-            texto:             data.texto             ?? preg?.texto,
-            numero:            data.numero            ?? preg?.numero,
-            respuestaCorrecta: data.respuestaCorrecta ?? preg?.respuestaCorrecta,
-            correcta,
-            puntosGanados,
-          };
-        })
-        // Última pregunta primero
-        .sort((a,b) => (b.numero ?? 0) - (a.numero ?? 0));
+  .map(d => {
+    const data = d.data();
+    // Usamos los campos guardados directamente (ya no dependemos de preguntasEvento)
+    const correcta = data.correcta !== undefined
+      ? data.correcta
+      : data.respuestaCorrecta !== undefined
+        ? data.respuesta === data.respuestaCorrecta
+        : undefined;
+    const puntosGanados = data.puntosGanados !== undefined
+      ? data.puntosGanados
+      : data.respuestaCorrecta !== undefined
+        ? (data.respuesta === data.respuestaCorrecta ? (data.puntosEnVivo || 3) : 0)
+        : undefined;
+    return {
+      id:                d.id,
+      ...data,
+      // Usamos los campos guardados en la respuesta (texto, numero)
+      texto:             data.texto             ?? "Pregunta",
+      numero:            data.numero            ?? 0,
+      respuestaCorrecta: data.respuestaCorrecta ?? null,
+      correcta,
+      puntosGanados,
+    };
+  })
+  .sort((a,b) => (b.numero ?? 0) - (a.numero ?? 0));
       setRespuestasEnVivo(respsEV);
 
       const porFecha = {};
