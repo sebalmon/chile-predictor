@@ -1,14 +1,4 @@
-// src/components/AdminPanel.jsx  — v7 (Patch 1)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v7:
-//   Punto 4: Crear pregunta libre desde el panel (sin depender
-//             del BANCO_PREGUNTAS). Opciones dinámicas (2-5).
-//             Lista de preguntas viene de Firestore, no del banco.
-//   Punto 5: "ENTREGAR CARTAS Y BONUS" bloqueado si la pregunta
-//             del día tiene respuestaCorrecta === null.
-//   Sonido diario: campo en config/sonidoDia → archivo MP3/OGG
-//             que TabPartidos reproduce automáticamente.
-// ─────────────────────────────────────────────────────────────
+// src/components/AdminPanel.jsx  — v8 (con fecha configurable en IMÁGENES)
 import React, { useState, useEffect } from "react";
 import {
   collection, getDocs, query, orderBy, limit, doc,
@@ -72,7 +62,7 @@ export default function AdminPanel({ onVolver }) {
 function AdminPanelInterno({ onVolver }) {
   const [tab, setTab]           = useState("partidos");
   const [partidos, setPartidos] = useState([]);
-  const [preguntas, setPreguntas] = useState([]); // preguntas de Firestore
+  const [preguntas, setPreguntas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje]   = useState(null);
 
@@ -83,7 +73,6 @@ function AdminPanelInterno({ onVolver }) {
     try {
       const snapP = await getDocs(query(collection(db,"partidos"), orderBy("fecha")));
       setPartidos(snapP.docs.map(d => ({ id:d.id, ...d.data() })));
-      // Cargar TODAS las preguntas de Firestore (banco + nuevas)
       const snapQ = await getDocs(query(collection(db,"preguntas"), orderBy("fecha","desc")));
       setPreguntas(snapQ.docs.map(d => ({ id:d.id, ...d.data() })));
     } catch(e) { console.error(e); }
@@ -158,7 +147,7 @@ function AdminPanelInterno({ onVolver }) {
   );
 }
 
-// ── Tab Partidos ──────────────────────────────────────────────
+// ── TabPartidosAdmin ──────────────────────────────────────────
 function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
   const [sel, setSel]         = useState(null);
   const [procesando, setProc] = useState(false);
@@ -339,15 +328,13 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
   );
 }
 
-// ── Tab Preguntas ─────────────────────────────────────────────
+// ── TabPreguntasAdmin ─────────────────────────────────────────
 function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
-  const [modo, setModo] = useState("marcar"); // "marcar" | "crear"
+  const [modo, setModo] = useState("marcar");
   const [pregSel, setPregSel]   = useState(null);
   const [respCorrecta, setResp] = useState("");
   const [procesando, setProc]   = useState(false);
   const [fechaNueva, setFechaNueva] = useState(new Date().toISOString().split("T")[0]);
-
-  // Formulario para crear pregunta nueva
   const [textoNueva, setTextoNueva]   = useState("");
   const [opcionesNueva, setOpcionesN] = useState(["",""]);
   const [creando, setCreando]         = useState(false);
@@ -406,7 +393,6 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
 
   return (
     <div>
-      {/* Selector de modo */}
       <div style={{ display:"flex",gap:"6px",marginBottom:"14px" }}>
         {[
           {id:"marcar",label:"✅ MARCAR RESPUESTA"},
@@ -421,20 +407,17 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
         ))}
       </div>
 
-      {/* ── Crear pregunta nueva ─────────────────────────── */}
       {modo === "crear" && (
         <div className="caja-pixel" style={{ borderColor:"var(--amarillo)" }}>
           <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"12px" }}>
             CREAR NUEVA PREGUNTA
           </p>
-
           <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"4px" }}>FECHA DE PUBLICACIÓN</p>
           <input type="date" value={fechaNueva} onChange={e => setFechaNueva(e.target.value)}
             style={{ fontFamily:"'Press Start 2P',monospace",fontSize:"8px",
               padding:"6px 10px",border:"3px solid var(--negro)",
               background:"var(--blanco)",color:"var(--negro)",width:"100%",
               marginBottom:"12px",outline:"none" }} />
-
           <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"4px" }}>TEXTO DE LA PREGUNTA</p>
           <textarea value={textoNueva} onChange={e => setTextoNueva(e.target.value)}
             placeholder="Escribe la pregunta aquí..." rows={3}
@@ -442,7 +425,6 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
               width:"100%",padding:"8px",border:"3px solid var(--negro)",
               background:"var(--blanco)",color:"var(--negro)",
               outline:"none",resize:"vertical",lineHeight:2,marginBottom:"12px" }} />
-
           <p style={{ fontSize:"6px",color:"var(--verde-claro)",marginBottom:"6px" }}>
             OPCIONES DE RESPUESTA ({opcionesNueva.length}/5)
           </p>
@@ -463,14 +445,12 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
               </div>
             ))}
           </div>
-
           {opcionesNueva.length < 5 && (
             <button className="btn-pixel btn-gris w-full" style={{ fontSize:"6px",marginBottom:"12px" }}
               onClick={agregarOpcion}>
               + AGREGAR OPCIÓN
             </button>
           )}
-
           <button className="btn-pixel btn-rojo w-full" style={{ fontSize:"7px" }}
             onClick={crearPregunta} disabled={creando}>
             {creando ? "⚙ GUARDANDO..." : "⚡ CREAR Y PUBLICAR EN FIRESTORE"}
@@ -482,7 +462,6 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
         </div>
       )}
 
-      {/* ── Marcar respuesta correcta ────────────────────── */}
       {modo === "marcar" && (
         <>
           <p style={{ fontSize:"7px",color:"var(--amarillo)",marginBottom:"8px" }}>
@@ -547,14 +526,12 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
   );
 }
 
-// ── Tab Cartas y Bonus ────────────────────────────────────────
-// Punto 5: bloquea si hay pregunta del día sin respuestaCorrecta
+// ── TabCartasBonus ────────────────────────────────────────────
 function TabCartasBonus({ preguntas, onMensaje }) {
   const [fecha, setFecha]       = useState(new Date().toISOString().split("T")[0]);
   const [procesando, setProc]   = useState(false);
   const [resultado, setResultado] = useState(null);
 
-  // Verificar si la pregunta de esa fecha está pendiente
   const preguntaDelDia   = preguntas.find(p => p.fecha === fecha);
   const preguntaPendiente = preguntaDelDia && preguntaDelDia.respuestaCorrecta === null;
 
@@ -601,7 +578,6 @@ function TabCartasBonus({ preguntas, onMensaje }) {
             background:"var(--blanco)",color:"var(--negro)",width:"100%",
             marginBottom:"14px",outline:"none" }} />
 
-        {/* Aviso de bloqueo */}
         {preguntaPendiente && (
           <div style={{ padding:"10px",marginBottom:"12px",
             border:"2px solid var(--rojo-chile)",background:"rgba(214,40,40,0.1)" }}>
@@ -647,7 +623,7 @@ function TabCartasBonus({ preguntas, onMensaje }) {
   );
 }
 
-// ── Tab Aviso ─────────────────────────────────────────────────
+// ── TabAviso ──────────────────────────────────────────────────
 function TabAviso({ onMensaje }) {
   const [texto,    setTexto]   = useState("");
   const [tipo,     setTipo]    = useState("unaVez");
@@ -712,7 +688,7 @@ function TabAviso({ onMensaje }) {
   );
 }
 
-// ── Tab Mensajes ──────────────────────────────────────────────
+// ── TabMensajes ───────────────────────────────────────────────
 function TabMensajes({ onMensaje }) {
   const [mensajes, setMensajes]     = useState([]);
   const [cargando, setCargando]     = useState(true);
@@ -806,7 +782,7 @@ function TabMensajes({ onMensaje }) {
   );
 }
 
-// ── Tab Sonido diario ─────────────────────────────────────────
+// ── TabSonido ──────────────────────────────────────────────────
 function TabSonido({ onMensaje }) {
   const [archivo,   setArchivo]   = useState("");
   const [volumen,   setVolumen]   = useState(0.4);
@@ -907,34 +883,46 @@ function TabSonido({ onMensaje }) {
   );
 }
 
-
-// ── Tab Imágenes Promocionales ────────────────────────────────
+// ── TabPromoImagenes (MODIFICADO: con fecha configurable) ──
 function TabPromoImagenes({ onMensaje }) {
-  const [activo,    setActivo]    = React.useState(false);
-  const [imagenes,  setImagenes]  = React.useState(["A_PAISES_MARRUECOS.jpg","A_Nuevospun.jpg","A_500.jpg"]);
-  const [guardando, setGuardando] = React.useState(false);
+  const [activo,    setActivo]    = useState(false);
+  const [imagenes,  setImagenes]  = useState(["A_PAISES_MARRUECOS.jpg"]);
+  const [fechaPromo, setFechaPromo] = useState(() => {
+    // Por defecto, la fecha de hoy
+    return new Date().toISOString().split("T")[0];
+  });
+  const [guardando, setGuardando] = useState(false);
 
-  React.useEffect(() => {
-    import("firebase/firestore").then(({ getDoc, doc }) => {
-      getDoc(doc(db,"config","promoImagenes")).then(snap => {
+  // Cargar configuración existente
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "promoImagenes"));
         if (snap.exists()) {
-          setActivo(snap.data().activo || false);
-          setImagenes(snap.data().imagenes || imagenes);
+          const data = snap.data();
+          setActivo(data.activo || false);
+          setImagenes(data.imagenes || ["A_PAISES_MARRUECOS.jpg"]);
+          setFechaPromo(data.fecha || new Date().toISOString().split("T")[0]);
         }
-      }).catch(() => {});
-    });
+      } catch (e) {
+        console.error("Error cargando promoImagenes:", e);
+      }
+    };
+    cargar();
   }, []);
 
   const guardar = async (nuevoActivo) => {
     setGuardando(true);
     try {
-      const { setDoc, doc } = await import("firebase/firestore");
-      await setDoc(doc(db,"config","promoImagenes"), {
+      await setDoc(doc(db, "config", "promoImagenes"), {
         activo:   nuevoActivo ?? activo,
         imagenes: imagenes.filter(i => i.trim()),
+        fecha:    fechaPromo,   // <--- GUARDAMOS LA FECHA
       });
       setActivo(nuevoActivo ?? activo);
-      onMensaje("ok", (nuevoActivo ?? activo) ? "✅ Imágenes activadas." : "Imágenes desactivadas.");
+      onMensaje("ok", (nuevoActivo ?? activo)
+        ? `✅ Imágenes activadas para el ${fechaPromo}.`
+        : "Imágenes desactivadas.");
     } catch(e) { onMensaje("error", e.message); }
     finally { setGuardando(false); }
   };
@@ -943,34 +931,87 @@ function TabPromoImagenes({ onMensaje }) {
     <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
       <p style={{ fontSize:"7px", color:"var(--amarillo)" }}>🖼 IMÁGENES PROMOCIONALES</p>
       <p style={{ fontSize:"5px", color:"var(--gris-claro)", lineHeight:2 }}>
-        Aparecen al entrar a la app. El admin decide cuándo activarlas o retirarlas.
+        Aparecen al entrar a la app, <strong>solo en la fecha que elijas</strong>.
+        El admin decide cuándo activarlas o retirarlas.
         Estado: <span style={{ color: activo ? "var(--verde-claro)" : "var(--gris)" }}>
           {activo ? "🟢 ACTIVAS" : "⚪ INACTIVAS"}
         </span>
       </p>
-      <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"4px" }}>
-        NOMBRES DE ARCHIVO (en /public/):
-      </p>
-      {imagenes.map((img,i) => (
-        <div key={i} style={{ display:"flex", gap:"6px", alignItems:"center" }}>
-          <span style={{ fontSize:"5px", color:"var(--gris-claro)", width:"16px" }}>{i+1}.</span>
-          <input value={img}
-            onChange={e => setImagenes(prev => prev.map((x,idx) => idx===i ? e.target.value : x))}
-            style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"6px",
-              flex:1, padding:"5px 7px", border:"2px solid var(--negro)",
-              background:"var(--blanco)", color:"var(--negro)", outline:"none" }} />
-        </div>
-      ))}
-      <div style={{ display:"flex", gap:"8px", marginTop:"4px" }}>
-        <button className="btn-pixel btn-rojo" style={{ flex:2, fontSize:"6px" }}
-          onClick={() => guardar(true)} disabled={guardando}>
+
+      {/* FECHA DE PROMOCIÓN */}
+      <div>
+        <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"4px" }}>
+          📅 FECHA EN QUE SE MOSTRARÁ:
+        </p>
+        <input
+          type="date"
+          value={fechaPromo}
+          onChange={e => setFechaPromo(e.target.value)}
+          style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "8px",
+            padding: "6px 10px",
+            border: "2px solid var(--negro)",
+            background: "var(--blanco)",
+            color: "var(--negro)",
+            outline: "none",
+            width: "100%",
+          }}
+        />
+        <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"4px" }}>
+          Los usuarios verán la imagen solo en esta fecha (formato YYYY-MM-DD).
+        </p>
+      </div>
+
+      {/* NOMBRES DE ARCHIVOS */}
+      <div>
+        <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"4px" }}>
+          🖼 NOMBRES DE ARCHIVO (en /public/):
+        </p>
+        {imagenes.map((img, i) => (
+          <div key={i} style={{ display:"flex", gap:"6px", alignItems:"center", marginBottom:"4px" }}>
+            <span style={{ fontSize:"5px", color:"var(--gris-claro)", width:"16px" }}>{i+1}.</span>
+            <input
+              value={img}
+              onChange={e => setImagenes(prev => prev.map((x, idx) => idx === i ? e.target.value : x))}
+              style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: "6px",
+                flex: 1,
+                padding: "5px 7px",
+                border: "2px solid var(--negro)",
+                background: "var(--blanco)",
+                color: "var(--negro)",
+                outline: "none",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:"flex", gap:"8px", marginTop:"4px", flexWrap:"wrap" }}>
+        <button
+          className="btn-pixel btn-rojo"
+          style={{ flex:2, fontSize:"6px" }}
+          onClick={() => guardar(true)}
+          disabled={guardando}
+        >
           🟢 GUARDAR Y ACTIVAR
         </button>
-        <button className="btn-pixel btn-gris" style={{ flex:1, fontSize:"6px" }}
-          onClick={() => guardar(false)} disabled={guardando}>
+        <button
+          className="btn-pixel btn-gris"
+          style={{ flex:1, fontSize:"6px" }}
+          onClick={() => guardar(false)}
+          disabled={guardando}
+        >
           DESACTIVAR
         </button>
       </div>
+
+      <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginTop:"8px", lineHeight:2 }}>
+        La primera imagen de la lista se mostrará como promoción en la fecha indicada.
+        Los usuarios la verán al entrar a la app.
+      </p>
     </div>
   );
 }

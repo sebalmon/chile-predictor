@@ -1,13 +1,6 @@
-// src/components/Dashboard.jsx  — v10 (Modal promocional de una sola imagen)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v10:
-//   • Modal promocional ahora muestra SOLO una imagen (A_PAISES_MARRUECOS.jpg).
-//   • Eliminada la secuencia de 3 imágenes.
-//   • Al hacer clic en CERRAR o fuera, el modal se oculta.
-//   • Sigue mostrándose solo en la fecha configurada (FECHA_PROMO).
-// ─────────────────────────────────────────────────────────────
+// src/components/Dashboard.jsx  — v11 (con fecha de promoción leída desde Firestore)
 import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { diaNumero, ayerStr } from "../utils/helpers";
@@ -134,9 +127,6 @@ const PANTALLAS = {
   LAMINAS:  "laminas",
 };
 
-// ── FECHA DE PROMOCIÓN ──────────────────────────────────────
-const FECHA_PROMO = "2026-07-02"; // Cambiar manualmente cada día
-
 function DashboardInterno() {
   const { firebaseUser, userProfile } = useAuth();
   const { activado: sonidosOn, toggle: toggleSonidos, playSound } = useSonidos();
@@ -145,16 +135,34 @@ function DashboardInterno() {
   const [cargando, setCargando]         = useState(true);
   const [mostrarTutorial, setMostrarTutorial] = useState(false);
 
-  // ── Modal promocional (SOLO UNA IMAGEN) ──────────────────
+  // ── Modal promocional (leer configuración desde Firestore) ──
   const [mostrarPromo, setMostrarPromo] = useState(false);
+  const [imagenPromo, setImagenPromo]   = useState("A_PAISES_MARRUECOS.jpg");
 
   useEffect(() => {
-    const hoy = new Date().toISOString().slice(0,10);
-    if (hoy === FECHA_PROMO) {
-      setMostrarPromo(true);
-    } else {
-      setMostrarPromo(false);
-    }
+    const cargarPromo = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "promoImagenes"));
+        if (snap.exists()) {
+          const data = snap.data();
+          const hoy = new Date().toISOString().slice(0, 10);
+          // Mostrar si está activo, la fecha coincide, y hay al menos una imagen
+          if (data.activo && data.fecha === hoy && data.imagenes && data.imagenes.length > 0) {
+            setImagenPromo(data.imagenes[0]); // Usar la primera imagen de la lista
+            setMostrarPromo(true);
+          } else {
+            setMostrarPromo(false);
+          }
+        } else {
+          // Si no hay configuración, no mostrar nada
+          setMostrarPromo(false);
+        }
+      } catch (error) {
+        console.error("Error cargando promoción:", error);
+        setMostrarPromo(false);
+      }
+    };
+    cargarPromo();
   }, []);
 
   const cerrarPromo = () => {
@@ -195,8 +203,8 @@ function DashboardInterno() {
     setPantalla(p);
   };
 
-  // ── Contenido con el modal promocional (una imagen) ──────
-  const contenidoConPromo = (
+  // ── Render con modal promocional ──────────────────────────
+  return (
     <>
       {mostrarPromo && (
         <div
@@ -212,7 +220,7 @@ function DashboardInterno() {
             padding: "20px",
             cursor: "pointer",
           }}
-          onClick={cerrarPromo} // Cierra al tocar el fondo
+          onClick={cerrarPromo}
         >
           <div
             style={{
@@ -222,10 +230,10 @@ function DashboardInterno() {
               overflowY: "auto",
               cursor: "default",
             }}
-            onClick={(e) => e.stopPropagation()} // Evita cerrar al hacer clic dentro
+            onClick={(e) => e.stopPropagation()}
           >
             <img
-              src="/A_PAISES_MARRUECOS.jpg"
+              src={`/${imagenPromo}`}
               alt="Afiche promocional"
               style={{
                 width: "100%",
@@ -337,8 +345,6 @@ function DashboardInterno() {
       )}
     </>
   );
-
-  return contenidoConPromo;
 }
 
 export default function Dashboard() {
@@ -471,7 +477,6 @@ function MenuInferior({ pantalla, setPantalla, esAdmin }) {
         overflowX: "hidden",
       }}
     >
-      {/* Ocultar scrollbar en Chrome/Safari */}
       <style>
         {`
           .menu-inferior::-webkit-scrollbar {
