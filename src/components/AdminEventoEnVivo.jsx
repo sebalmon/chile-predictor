@@ -260,7 +260,6 @@ export default function AdminEventoEnVivo({ onMensaje }) {
         const apuesta    = Number(r.apuesta || 0);
         let ptsGanados   = 0;
         let ptsDelta     = 0;
-        let puntosGanados = 0;
 
         if ((modo === "fijo" || modo === "ambos") && esCorrecta) {
           ptsGanados += pts; ptsDelta += pts; acertaron++;
@@ -275,12 +274,12 @@ export default function AdminEventoEnVivo({ onMensaje }) {
         }
         if (ptsDelta !== 0)
           batch.update(doc(db,"usuarios",r.uid),{ puntosTotal: increment(ptsDelta) });
-        batch.update(d.ref,{ correcta:esCorrecta, puntosGanados, ptsDelta });
+        batch.update(d.ref,{ correcta:esCorrecta, puntosGanados:ptsGanados, ptsDelta });
       });
       await batch.commit();
       onMensaje("ok",`✅ Pregunta #${pregunta.numero} cerrada. ${acertaron}/${snapR.size} acertaron.`);
       setRespSels(prev => { const n = { ...prev }; delete n[pregunta.id]; return n; });
-    } catch (e) { console.error("ERROR:", e); onMensaje("error", e.message || String(e)); }
+    } catch (e) { onMensaje("error", e.message); }
     finally { setCerrando(null); }
   };
 
