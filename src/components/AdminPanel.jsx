@@ -1,4 +1,4 @@
-// src/components/AdminPanel.jsx  — v8 (con fecha configurable en IMÁGENES)
+// src/components/AdminPanel.jsx  — v9 (con pestaña SEMIS restaurada)
 import React, { useState, useEffect } from "react";
 import {
   collection, getDocs, query, orderBy, limit, doc,
@@ -14,6 +14,7 @@ import { FASES_ELIMINATORIAS, FASE_LABELS } from "../data/sampleData";
 import AdminSuperDestacado from "./AdminSuperDestacado";
 import AdminEventoEnVivo from "./AdminEventoEnVivo";
 import AdminPronosticoCuartos from "./AdminPronosticoCuartos";
+import AdminSemifinal from "./AdminSemifinal"; // <--- IMPORTAMOS SEMIFINAL
 
 const ADMIN_EMAILS = ["xtokesu@gmail.com"];
 
@@ -84,10 +85,12 @@ function AdminPanelInterno({ onVolver }) {
     setTimeout(() => setMensaje(null), 9000);
   };
 
+  // ===== AÑADIDA LA PESTAÑA "SEMIS" =====
   const TABS = [
     { id:"partidos",  label:"⚽ PARTIDOS" },
     { id:"envivo",    label:"🔴 EN VIVO" },
     { id:"cuartos",   label:"🏆 CUARTOS" },
+    { id:"semis",     label:"⚽ SEMIS" },   // <--- NUEVA PESTAÑA
     { id:"preguntas", label:"❓ PREGUNTAS" },
     { id:"cartas",    label:"🃏 CARTAS Y BONUS" },
     { id:"aviso",     label:"📢 AVISO" },
@@ -135,6 +138,7 @@ function AdminPanelInterno({ onVolver }) {
           {tab==="partidos"  && <TabPartidosAdmin partidos={partidos} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="envivo"    && <AdminEventoEnVivo onMensaje={msg} />}
           {tab==="cuartos"   && <AdminPronosticoCuartos onMensaje={msg} />}
+          {tab==="semis"     && <AdminSemifinal onMensaje={msg} />}  {/* <--- AQUÍ SE RENDERIZA */}
           {tab==="preguntas" && <TabPreguntasAdmin preguntas={preguntas} onActualizar={cargarDatos} onMensaje={msg} />}
           {tab==="cartas"    && <TabCartasBonus preguntas={preguntas} onMensaje={msg} />}
           {tab==="aviso"     && <TabAviso onMensaje={msg} />}
@@ -147,7 +151,7 @@ function AdminPanelInterno({ onVolver }) {
   );
 }
 
-// ── TabPartidosAdmin ──────────────────────────────────────────
+// ── TabPartidosAdmin (sin cambios) ──────────────────────────
 function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
   const [sel, setSel]         = useState(null);
   const [procesando, setProc] = useState(false);
@@ -328,7 +332,7 @@ function TabPartidosAdmin({ partidos, onActualizar, onMensaje }) {
   );
 }
 
-// ── TabPreguntasAdmin ─────────────────────────────────────────
+// ── TabPreguntasAdmin (sin cambios) ─────────────────────────
 function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
   const [modo, setModo] = useState("marcar");
   const [pregSel, setPregSel]   = useState(null);
@@ -526,7 +530,7 @@ function TabPreguntasAdmin({ preguntas, onActualizar, onMensaje }) {
   );
 }
 
-// ── TabCartasBonus ────────────────────────────────────────────
+// ── TabCartasBonus (sin cambios) ────────────────────────────
 function TabCartasBonus({ preguntas, onMensaje }) {
   const [fecha, setFecha]       = useState(new Date().toISOString().split("T")[0]);
   const [procesando, setProc]   = useState(false);
@@ -623,7 +627,7 @@ function TabCartasBonus({ preguntas, onMensaje }) {
   );
 }
 
-// ── TabAviso ──────────────────────────────────────────────────
+// ── TabAviso (sin cambios) ──────────────────────────────────
 function TabAviso({ onMensaje }) {
   const [texto,    setTexto]   = useState("");
   const [tipo,     setTipo]    = useState("unaVez");
@@ -688,7 +692,7 @@ function TabAviso({ onMensaje }) {
   );
 }
 
-// ── TabMensajes ───────────────────────────────────────────────
+// ── TabMensajes (sin cambios) ───────────────────────────────
 function TabMensajes({ onMensaje }) {
   const [mensajes, setMensajes]     = useState([]);
   const [cargando, setCargando]     = useState(true);
@@ -782,7 +786,7 @@ function TabMensajes({ onMensaje }) {
   );
 }
 
-// ── TabSonido ──────────────────────────────────────────────────
+// ── TabSonido (sin cambios) ──────────────────────────────────
 function TabSonido({ onMensaje }) {
   const [archivo,   setArchivo]   = useState("");
   const [volumen,   setVolumen]   = useState(0.4);
@@ -883,17 +887,15 @@ function TabSonido({ onMensaje }) {
   );
 }
 
-// ── TabPromoImagenes (MODIFICADO: con fecha configurable) ──
+// ── TabPromoImagenes (con fecha configurable) ───────────────
 function TabPromoImagenes({ onMensaje }) {
   const [activo,    setActivo]    = useState(false);
   const [imagenes,  setImagenes]  = useState(["A_PAISES_MARRUECOS.jpg"]);
   const [fechaPromo, setFechaPromo] = useState(() => {
-    // Por defecto, la fecha de hoy
     return new Date().toISOString().split("T")[0];
   });
   const [guardando, setGuardando] = useState(false);
 
-  // Cargar configuración existente
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -917,7 +919,7 @@ function TabPromoImagenes({ onMensaje }) {
       await setDoc(doc(db, "config", "promoImagenes"), {
         activo:   nuevoActivo ?? activo,
         imagenes: imagenes.filter(i => i.trim()),
-        fecha:    fechaPromo,   // <--- GUARDAMOS LA FECHA
+        fecha:    fechaPromo,
       });
       setActivo(nuevoActivo ?? activo);
       onMensaje("ok", (nuevoActivo ?? activo)
@@ -938,7 +940,6 @@ function TabPromoImagenes({ onMensaje }) {
         </span>
       </p>
 
-      {/* FECHA DE PROMOCIÓN */}
       <div>
         <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"4px" }}>
           📅 FECHA EN QUE SE MOSTRARÁ:
@@ -963,7 +964,6 @@ function TabPromoImagenes({ onMensaje }) {
         </p>
       </div>
 
-      {/* NOMBRES DE ARCHIVOS */}
       <div>
         <p style={{ fontSize:"6px", color:"var(--verde-claro)", marginBottom:"4px" }}>
           🖼 NOMBRES DE ARCHIVO (en /public/):
