@@ -1,8 +1,4 @@
-// src/components/AdminEventoEnVivo.jsx  — v4 (Agregada bandera Egipto)
-// ─────────────────────────────────────────────────────────────
-// CAMBIOS v4:
-//   • Agregada bandera de Egipto (🇪🇬) al selector de banderas.
-// ─────────────────────────────────────────────────────────────
+// src/components/AdminEventoEnVivo.jsx  — v5 (límite de puntos aumentado a 10,000)
 import React, { useState, useEffect, useRef } from "react";
 import {
   doc, onSnapshot, setDoc, updateDoc,
@@ -13,10 +9,10 @@ import { db } from "../firebase";
 const REF_EVENTO = () => doc(db, "eventoEnVivo", "actual");
 const REF_RESPS  = () => collection(db, "eventoEnVivo", "actual", "respuestas");
 
-// ─── LISTA DE BANDERAS (AGREGADA 🇪🇬) ──────────────────────
+// ─── LISTA DE BANDERAS ──────────────────────────────────────
 const BANDERAS = [
   "🇦🇷","🇧🇷","🇨🇱","🇺🇾","🇩🇪","🇫🇷","🇪🇸","🇵🇹","🇮🇹",
-  "🇬🇧","🇳🇱","🇧🇪","🇧🇦","🇪🇬",  // <-- AGREGADA AQUÍ
+  "🇬🇧","🇳🇱","🇧🇪","🇧🇦","🇪🇬",
   "🇨🇷","🇲🇽","🇨🇴","🇵🇪","🇵🇾","🇪🇨",
   "🇺🇸","🇯🇵","🇰🇷","🇲🇦","🇸🇳","🇬🇭","🇨🇲","🇨🇭","🇦🇹",
   "🇵🇱","🇭🇷","🇸🇪","🇩🇰","🇳🇴","🇦🇺","🇳🇿","🇸🇦","🇮🇷",
@@ -509,17 +505,17 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                       <div style={{ display:"flex", gap:"10px", marginBottom:"10px", flexWrap:"wrap" }}>
                         <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
                           <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>PTS:</span>
-                          <input type="number" min="1" max="99" value={editForm.puntosEnVivo}
-                            onChange={e => setEditForm(f => ({ ...f, puntosEnVivo: Math.max(1,Math.min(99,Number(e.target.value)||1)) }))}
+                          <input type="number" min="1" max="10000" value={editForm.puntosEnVivo}
+                            onChange={e => setEditForm(f => ({ ...f, puntosEnVivo: Math.max(1, Math.min(10000, Number(e.target.value) || 1)) }))}
                             style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                              width:"44px", padding:"4px", textAlign:"center",
+                              width:"60px", padding:"4px", textAlign:"center",
                               border:"2px solid var(--amarillo)", background:"var(--negro)",
                               color:"var(--amarillo)", outline:"none" }} />
                         </div>
                         <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
                           <span style={{ fontSize:"5px", color:"var(--gris-claro)" }}>⏱ MINS (0=∞):</span>
                           <input type="number" min="0" max="99" value={editForm.timerMinutos ?? 0}
-                            onChange={e => setEditForm(f => ({ ...f, timerMinutos: Math.max(0,Math.min(99,Number(e.target.value)||0)) }))}
+                            onChange={e => setEditForm(f => ({ ...f, timerMinutos: Math.max(0, Math.min(99, Number(e.target.value) || 0)) }))}
                             style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
                               width:"44px", padding:"4px", textAlign:"center",
                               border:"2px solid var(--rojo-chile)", background:"var(--negro)",
@@ -660,7 +656,7 @@ export default function AdminEventoEnVivo({ onMensaje }) {
             )}
             {modoApuesta !== "apuesta" && (
             <p style={{ fontSize:"5px", color:"var(--gris-claro)", marginBottom:"5px" }}>
-              PUNTAJE:
+              PUNTAJE (máximo 10,000 pts):
             </p>)}
             {modoApuesta !== "apuesta" && (
             <div style={{ display:"flex", alignItems:"center", gap:"5px",
@@ -675,10 +671,10 @@ export default function AdminEventoEnVivo({ onMensaje }) {
                   +{n}
                 </button>
               ))}
-              <input type="number" min="1" max="99" value={puntos}
-                onChange={e => setPuntos(Math.max(1,Math.min(99,Number(e.target.value)||1)))}
+              <input type="number" min="1" max="10000" value={puntos}
+                onChange={e => setPuntos(Math.max(1, Math.min(10000, Number(e.target.value) || 1)))}
                 style={{ fontFamily:"'Press Start 2P',monospace", fontSize:"8px",
-                  width:"44px", height:"33px", textAlign:"center",
+                  width:"70px", height:"33px", textAlign:"center",
                   border:"2px solid var(--amarillo)",
                   background:"var(--negro)", color:"var(--amarillo)", outline:"none" }} />
             </div>)}
